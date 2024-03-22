@@ -1,19 +1,16 @@
 # Read medication concept sets
 info(logger, "Instantiate characterisation cohorts: ")
 
+# Medications
 info(logger, "  - Medications")
-medications_concept_list <- readConceptList(
-  cdm,
-    path = here("1_InstantiateCohorts", "Cohorts", "Comedications")
+medications_cohort_set <- readCohortSet(
+  path = here("1_InstantiateCohorts", "Cohorts", "Comedications")
 )
-
-#  Generate cohorts in cdm
-cdm <- CDMConnector::generateConceptCohortSet(
+cdm <- generateCohortSet(
   cdm = cdm,
+  cohortSet = medications_cohort_set,
   name = medications_table_name,
-  conceptSet = medications_concept_list,
-  limit = "all",
-  end = "event_end_date",
+  computeAttrition = TRUE,
   overwrite = TRUE
 )
 
@@ -24,7 +21,7 @@ conditions_concept_list <- readConceptList(
   path = here("1_InstantiateCohorts", "Cohorts", "Comorbidities")
 )
 
-cdm <- CDMConnector::generateConceptCohortSet(
+cdm <-  DrugUtilisation::generateConceptCohortSet(
   cdm = cdm,
   name = conditions_table_name,
   conceptSet = conditions_concept_list,

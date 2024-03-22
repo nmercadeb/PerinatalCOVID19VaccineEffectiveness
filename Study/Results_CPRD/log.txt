@@ -1,0 +1,5 @@
+INFO  [2024-03-22 14:30:44] CREATE LOGGER
+INFO  [2024-03-22 14:30:44] STEP 0 INITIAL SETTINGS ----
+INFO  [2024-03-22 14:30:44] Load study parameters
+INFO  [2024-03-22 14:30:44] Load study functions 
+INFO  [2024-03-22 14:30:54]   - Other vaccines

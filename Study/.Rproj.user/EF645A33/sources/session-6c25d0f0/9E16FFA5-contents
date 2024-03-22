@@ -1,0 +1,8 @@
+INFO  [2024-03-19 10:40:05] CREATE LOGGER
+INFO  [2024-03-19 10:40:05] STEP 0 INITIAL SETTINGS ----
+INFO  [2024-03-19 10:40:05] Load study parameters
+INFO  [2024-03-19 10:40:05] Load study functions 
+INFO  [2024-03-19 11:07:01] Instantiate characterisation cohorts: 
+INFO  [2024-03-19 11:07:01]   - Medications
+INFO  [2024-03-19 13:47:46] Instantiate characterisation cohorts: 
+INFO  [2024-03-19 13:47:46]   - Medications

@@ -27,7 +27,7 @@ library(SqlRender)
 database_name <- "CPRD" # "SIDIAP", "UiO", "CPRD
 
 # Connection details
-server_dbi <- Sys.getenv("DB_SERVER_DBI_gd_vax")
+server_dbi <- Sys.getenv("DB_SERVER_DBI_gd")
 user <- Sys.getenv("DB_USER")
 password <- Sys.getenv("DB_PASSWORD")
 port <- Sys.getenv("DB_PORT")
@@ -56,6 +56,7 @@ cdm <- cdmFromCon(
 )
 
 # Pregnancy tables details:
+mother_table_schema <- results_database_schema
 mother_table_name <- "pregnancy_episode"
 
 # minimum counts to report
@@ -66,7 +67,7 @@ results <- paste0("Results_", cdmName(cdm))
 
 # study dates
 study.start <- as.Date("2020-12-27") # date of initiation of the vaccination campaing
-study.end   <- as.Date("...") # end of data availability
+study.end   <- as.Date("2022-06-20") # end of data availability
 
 # standard days between vaccine doses
 days.booster     <- 150
@@ -81,6 +82,6 @@ runPSMathcing         <- TRUE
 runEvaluateCohorts    <- TRUE
 runOutcomeModel       <- TRUE
 
-source(here("RunStudy.R"))
+source(here("0_SetUp/RunStudy.R"))
 
 print("Thanks for running the analysis!! :D")

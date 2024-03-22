@@ -20,7 +20,7 @@ info(logger, "STEP 0 INITIAL SETTINGS ----")
 info(logger, "Load study parameters")
 
 # Dates:
-enrollment.end <- study.end - days(90)
+# enrollment.end <- study.end - days(90)
 
 # Instantiate cohorts:
 table_stem <- tolower(table_stem)
@@ -46,7 +46,7 @@ info(logger, "Load study functions ")
 # source(here("functions.R"))
 
 # Database snapshot:
-readr::write_csv(export.cdm_reference(cdm), here(output_folder, paste0("cdm_snapshot_", cdmName(cdm), ".csv")))
+readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_snapshot_", cdmName(cdm), ".csv")))
 
 # subset cdm
 motherChildLinkage <- FALSE
@@ -55,11 +55,11 @@ child_table_name  <- "..."
 
 sql_mother <- paste0("SELECT * FROM ", mother_table_schema, ".", mother_table_name)
 
-cdm$mother_table <- tbl(db, sql(sql_mother))
+mother_table <- tbl(db, sql(sql_mother))
 if (motherChildLinkage) {
   cdm$child_table <- tbl(db, sql(child_table_name))
 }
-cdm <- CDMConnector::cdm_subset(cdm, cdm$mother_table %>% filter(pregnancy_end_date >= study.start) %>% distinct(person_id) %>% pull())
+# cdm <- CDMConnector::cdm_subset(cdm, mother_table %>% filter(pregnancy_end_date >= study.start) %>% distinct(person_id) %>% pull())
 
 
 info(logger, "STEP 1 INSTANTIATE COHORTS ----")

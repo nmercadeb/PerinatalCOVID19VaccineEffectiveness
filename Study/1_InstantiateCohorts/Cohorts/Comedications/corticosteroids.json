@@ -1,23 +1,64 @@
 {
-  "items": [
+  "ConceptSets": [
     {
-      "concept": {
-        "CONCEPT_CLASS_ID": "ATC 2nd",
-        "CONCEPT_CODE": "H02",
-        "CONCEPT_ID": 21602722,
-        "CONCEPT_NAME": "CORTICOSTEROIDS FOR SYSTEMIC USE",
-        "DOMAIN_ID": "Drug",
-        "INVALID_REASON": "V",
-        "INVALID_REASON_CAPTION": "Valid",
-        "STANDARD_CONCEPT": "C",
-        "STANDARD_CONCEPT_CAPTION": "Classification",
-        "VOCABULARY_ID": "ATC",
-        "VALID_START_DATE": "",
-        "VALID_END_DATE": ""
-      },
-      "isExcluded": false,
-      "includeDescendants": true,
-      "includeMapped": false
+      "id": 0,
+      "name": "\n\nCORTICOSTEROIDS",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_CLASS_ID": "ATC 2nd",
+              "CONCEPT_CODE": "H02",
+              "CONCEPT_ID": 21602722,
+              "CONCEPT_NAME": "CORTICOSTEROIDS FOR SYSTEMIC USE",
+              "DOMAIN_ID": "Drug",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "VOCABULARY_ID": "ATC"
+            },
+            "includeDescendants": true
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "DrugExposure": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "First"
+  },
+  "ExpressionLimit": {
+    "Type": "First"
+  },
+  "InclusionRules": [],
+  "EndStrategy": {
+    "CustomEra": {
+      "DrugCodesetId": 0,
+      "GapDays": 0,
+      "Offset": 0
+    }
+  },
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "cdmVersionRange": ">=5.0.0"
 }
