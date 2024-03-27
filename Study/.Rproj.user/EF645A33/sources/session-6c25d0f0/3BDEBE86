@@ -1,0 +1,26 @@
+{
+    "id": "3BDEBE86",
+    "path": "~/OngoingProjects/PregnantCOVID19VaccineUptake-study/PerinatalCOVID19VaccineEffectiveness/Study/1_InstantiateCohorts/instantiate_codelist.R",
+    "project_path": "1_InstantiateCohorts/instantiate_codelist.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1711402427795.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "42,0",
+        "scrollLine": "19"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1711487272,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1711487272516,
+    "read_only": false,
+    "read_only_alternatives": []
+}

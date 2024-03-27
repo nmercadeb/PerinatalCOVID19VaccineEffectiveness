@@ -16,17 +16,14 @@ cdm <- generateCohortSet(
 
 # Read condition cohorts
 info(logger, "  - Conditions")
-conditions_concept_list <- readConceptList(
-  cdm = cdm,
+conditions_cohort_set <- readCohortSet(
   path = here("1_InstantiateCohorts", "Cohorts", "Comorbidities")
 )
-
-cdm <-  DrugUtilisation::generateConceptCohortSet(
+cdm <- generateCohortSet(
   cdm = cdm,
+  cohortSet = conditions_cohort_set,
   name = conditions_table_name,
-  conceptSet = conditions_concept_list,
-  limit = "all",
-  end = "event_end_date",
+  computeAttrition = TRUE,
   overwrite = TRUE
 )
 
