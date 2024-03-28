@@ -1,15 +1,4 @@
-INFO  [2024-03-22 14:30:44] CREATE LOGGER
-INFO  [2024-03-22 14:30:44] STEP 0 INITIAL SETTINGS ----
-INFO  [2024-03-22 14:30:44] Load study parameters
-INFO  [2024-03-22 14:30:44] Load study functions 
-INFO  [2024-03-22 14:30:54]   - Other vaccines
-INFO  [2024-03-22 20:46:42]   - Conditions for prior vaccination
-INFO  [2024-03-23 12:53:21]   - Medications
-INFO  [2024-03-25 01:35:41]   - Conditions
-INFO  [2024-03-25 21:33:50] Instantiate codelists cohorts: 
-INFO  [2024-03-25 21:33:50]   - Generate NCO codelists
-INFO  [2024-03-25 21:33:52]   - Load codelists
-INFO  [2024-03-25 21:34:41]   - ATC
-INFO  [2024-03-26 21:06:12] Instantiate codelists cohorts: 
-INFO  [2024-03-26 21:06:13]   - Load codelists
-INFO  [2024-03-26 21:06:17]   - NCO
+INFO  [2024-03-28 14:03:00] CREATE LOGGER
+INFO  [2024-03-28 14:03:00] STEP 0 INITIAL SETTINGS ----
+INFO  [2024-03-28 14:03:00] Load study parameters
+INFO  [2024-03-28 14:03:00] Load study functions 

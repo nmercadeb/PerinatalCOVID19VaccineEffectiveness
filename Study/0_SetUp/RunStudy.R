@@ -20,7 +20,7 @@ info(logger, "STEP 0 INITIAL SETTINGS ----")
 info(logger, "Load study parameters")
 
 # Dates:
-# enrollment.end <- study.end - days(90)
+enrollment.end <- study.end - days(90)
 
 # Instantiate cohorts:
 table_stem <- tolower(table_stem)
@@ -64,6 +64,7 @@ if (motherChildLinkage) {
 info(logger, "STEP 1 INSTANTIATE COHORTS ----")
 if (runInstantiateCohorts) {
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
+  cdm[[vaccine_json_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", )))
   # source(here("1_InstantiateCohorts", "instantiate_covid_vaccines.R"))
   # source(here("1_InstantiateCohorts", "instantiate_codelist_cohorts.R"))
   # source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
@@ -74,17 +75,17 @@ if (runInstantiateCohorts) {
 #   if (! runInstantiateCohorts) {
 #     info(logger, "Load cohorts")
 #
-#     cdm <- cdmFromCon(
-#       con = db,
-#       cdmSchema = cdm_database_schema,
-#       writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
-#       cdmName = database_name,
-#       cohortTables = c(vaccine_json_table_name, medications_table_name,
-#                        conditions_table_name, other_vaccines_table_name,
-#                        covid_table_name, source_pregnant_table_name,
-#                        atc_table_name, icd_table_name, ps_covariates_table_name,
-#                        nco_table_name, outcomes_table_name)
-#     )
+    # cdm <- cdmFromCon(
+    #   con = db,
+    #   cdmSchema = cdm_database_schema,
+    #   writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
+    #   cdmName = database_name,
+    #   cohortTables = c(vaccine_json_table_name, medications_table_name,
+    #                    conditions_table_name, other_vaccines_table_name,
+    #                    covid_table_name, source_pregnant_table_name,
+    #                    atc_table_name, icd_table_name, ps_covariates_table_name,
+    #                    nco_table_name, outcomes_table_name)
+    # )
 #     cdm$mother_table <- tbl(db, sql(sql_mother))
 #     if (motherChildLinkage) {
 #       cdm$child_table <- tbl(db, sql(child_table_name))

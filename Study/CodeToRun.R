@@ -8,16 +8,13 @@ library(tidyr)
 library(readr)
 library(PatientProfiles)
 library(ggplot2)
-library(EmpiricalCalibration)
 library(readr)
 library(stringr)
 library(lubridate)
 library(glmnet)
 library(log4r)
 library(survival)
-library(Hmisc)
 library(bit64)
-library(DrugUtilisation)
 library(CodelistGenerator)
 library(MatchIt)
 library(CirceR)
@@ -42,7 +39,7 @@ db <- dbConnect(
   password = password
 )
 
-cdm_database_schema <- "public"
+cdm_database_schema <- "public_100k"
 results_database_schema <- "results"
 
 # cohort stem where cohorts will be instantiated
