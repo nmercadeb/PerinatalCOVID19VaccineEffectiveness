@@ -56,7 +56,7 @@ sql_mother <- paste0("SELECT * FROM ", mother_table_schema, ".", mother_table_na
 
 mother_table <- tbl(db, sql(sql_mother))
 if (motherChildLinkage) {
-  cdm$child_table <- tbl(db, sql(child_table_name))
+  child_table <- tbl(db, sql(child_table_name))
 }
 # cdm <- CDMConnector::cdm_subset(cdm, mother_table %>% filter(pregnancy_end_date >= study.start) %>% distinct(person_id) %>% pull())
 
@@ -64,7 +64,11 @@ if (motherChildLinkage) {
 info(logger, "STEP 1 INSTANTIATE COHORTS ----")
 if (runInstantiateCohorts) {
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
-  cdm[[vaccine_json_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", )))
+  cdm[[vaccine_json_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, vaccine_json_table_name)))
+  cdm[[medications_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, medications_table_name)))
+  cdm[[conditions_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, conditions_table_name)))
+  cdm[[other_vaccines_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, other_vaccines_table_name)))
+  cdm[[covid_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, covid_table_name)))
   # source(here("1_InstantiateCohorts", "instantiate_covid_vaccines.R"))
   # source(here("1_InstantiateCohorts", "instantiate_codelist_cohorts.R"))
   # source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
@@ -86,11 +90,11 @@ if (runInstantiateCohorts) {
     #                    atc_table_name, icd_table_name, ps_covariates_table_name,
     #                    nco_table_name, outcomes_table_name)
     # )
-#     cdm$mother_table <- tbl(db, sql(sql_mother))
+#     mother_table <- tbl(db, sql(sql_mother))
 #     if (motherChildLinkage) {
-#       cdm$child_table <- tbl(db, sql(child_table_name))
+#       child_table <- tbl(db, sql(child_table_name))
 #     }
-#     cdm$vaccine_schema <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, "vaccine_schema")))
+#     vaccine_schema <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, "vaccine_schema")))
 #     cdm <- CDMConnector::cdm_subset(cdm, cdm$source_pregnant %>% distinct(subject_id) %>% pull())
 #   }
 #
