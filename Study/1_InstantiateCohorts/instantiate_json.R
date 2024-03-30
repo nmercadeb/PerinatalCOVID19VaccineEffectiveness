@@ -85,7 +85,7 @@ cdm <- generateCohortSet(
 
 # export counts
 json_cohort_counts <- cdm[[medications_table_name]] %>%
-  cohort_set() %>%
+  settings() %>%
   select(cohort_definition_id, cohort_name) %>%
   inner_join(cdm[[medications_table_name]] %>%
                cohort_count() %>%
@@ -96,7 +96,7 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                )
   ) %>%
   union_all(cdm[[conditions_table_name]] %>%
-              cohort_set() %>%
+              settings() %>%
               select(cohort_definition_id, cohort_name) %>%
               inner_join(cdm[[conditions_table_name]] %>%
                            cohort_count() %>%
@@ -105,22 +105,22 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                              number_subjects = as.integer64(number_subjects),
                              cohort_group = "conditions"))) %>%
   union_all(cdm[[covid_table_name]] %>%
-              cohort_set() %>%
+              settings() %>%
               inner_join(cdm[[covid_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "covid"))) %>%
   union_all(cdm[[vaccine_json_table_name]] %>%
-              cohort_set() %>%
+              settings() %>%
               inner_join(cdm[[vaccine_json_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "covid_vaccines"))) %>%
   union_all(cdm[[other_vaccines_table_name]] %>%
-              cohort_set() %>%
+              settings() %>%
               inner_join(cdm[[other_vaccines_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "other_vaccines")))  %>%
   union_all(cdm[[ps_covariates_table_name]] %>%
-              cohort_set() %>%
+              settings() %>%
               inner_join(cdm[[ps_covariates_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "ps_covariates")))
