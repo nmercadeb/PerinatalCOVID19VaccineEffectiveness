@@ -93,7 +93,8 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                  number_records = as.integer64(number_records),
                  number_subjects = as.integer64(number_subjects),
                  cohort_group = "medications"
-               )
+               ),
+             by = "cohort_definition_id"
   ) %>%
   union_all(cdm[[conditions_table_name]] %>%
               settings() %>%
@@ -103,27 +104,26 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                            mutate(
                              number_records = as.integer64(number_records),
                              number_subjects = as.integer64(number_subjects),
-                             cohort_group = "conditions"))) %>%
-  union_all(cdm[[covid_table_name]] %>%
-              settings() %>%
-              inner_join(cdm[[covid_table_name]] %>%
-                           cohort_count() %>%
-                           mutate(cohort_group = "covid"))) %>%
+                             cohort_group = "conditions"),
+                         by = "cohort_definition_id")) %>%
   union_all(cdm[[vaccine_json_table_name]] %>%
               settings() %>%
               inner_join(cdm[[vaccine_json_table_name]] %>%
                            cohort_count() %>%
-                           mutate(cohort_group = "covid_vaccines"))) %>%
+                           mutate(cohort_group = "covid_vaccines"),
+                         by = "cohort_definition_id")) %>%
   union_all(cdm[[other_vaccines_table_name]] %>%
               settings() %>%
               inner_join(cdm[[other_vaccines_table_name]] %>%
                            cohort_count() %>%
-                           mutate(cohort_group = "other_vaccines")))  %>%
+                           mutate(cohort_group = "other_vaccines"),
+                         by = "cohort_definition_id"))  %>%
   union_all(cdm[[ps_covariates_table_name]] %>%
               settings() %>%
               inner_join(cdm[[ps_covariates_table_name]] %>%
                            cohort_count() %>%
-                           mutate(cohort_group = "ps_covariates")))
+                           mutate(cohort_group = "ps_covariates"),
+                         by = "cohort_definition_id"))
 
 write_csv(json_cohort_counts,
           here(output_folder, paste0("json_cohort_counts_", database_name, ".csv")))

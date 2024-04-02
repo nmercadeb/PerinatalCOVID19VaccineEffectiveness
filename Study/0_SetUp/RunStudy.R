@@ -30,51 +30,43 @@ conditions_table_name      <- "conditions"
 covid_table_name           <- "covid"
 other_vaccines_table_name  <- "other_vax"
 ps_covariates_table_name   <- "ps_covariates"
-uptake_outcome_table_name  <- "uptake_outcome"
 nco_table_name             <- "nco_cohort"
 source_pregnant_table_name <- "source_pregnant"
-uptake_strata_table_name   <- "uptake_strata"
-# characterise_table_name    <- "characterise"
-# atc_table_name             <- "atc_cohort"
-# icd_table_name             <- "icd_cohort"
-# matched_cohort_table_name  <- "matched"
-# outcomes_table_name        <- "outcomes"
+mother_table_name          <- "mother_table"
+outcomes_table_name        <- "outcomes"
+matched_cohort_table_name  <- "matched"
+
 
 # Load study functions
 info(logger, "Load study functions ")
-# source(here("functions.R"))
+source(here("0_SetUp", "functions.R"))
 
 # Database snapshot:
 readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_snapshot_", cdmName(cdm), ".csv")))
 
-# subset cdm
-motherChildLinkage <- FALSE
-# fill the variable "" if motherChildLinkage is true
-child_table_name  <- "..."
-
-sql_mother <- paste0("SELECT * FROM ", mother_table_schema, ".", mother_table_name)
-
-mother_table <- tbl(db, sql(sql_mother))
-if (motherChildLinkage) {
-  child_table <- tbl(db, sql(child_table_name))
-}
-# cdm <- CDMConnector::cdm_subset(cdm, mother_table %>% filter(pregnancy_end_date >= study.start) %>% distinct(person_id) %>% pull())
-
-
 info(logger, "STEP 1 INSTANTIATE COHORTS ----")
 if (runInstantiateCohorts) {
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
-  cdm[[vaccine_json_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, vaccine_json_table_name)))
-  cdm[[medications_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, medications_table_name)))
-  cdm[[conditions_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, conditions_table_name)))
-  cdm[[other_vaccines_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, other_vaccines_table_name)))
-  cdm[[covid_table_name]] <- tbl(db, sql(paste0("SELECT * FROM ", results_database_schema, ".", table_stem, covid_table_name)))
-  # source(here("1_InstantiateCohorts", "instantiate_covid_vaccines.R"))
-  # source(here("1_InstantiateCohorts", "instantiate_codelist_cohorts.R"))
-  # source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
+  source(here("1_InstantiateCohorts", "instantiate_nco.R"))
+  source(here("1_InstantiateCohorts", "instantiate_vaccination_table.R"))
+  source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
+  source(here("1_InstantiateCohorts", "instantiate_outcomes.R"))
+} else  {
+  cdm <- cdmFromCon(
+    con = db,
+    cdmSchema = cdm_database_schema,
+    writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
+    cdmName = database_name,
+    cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
+                     covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
+                     nco_table_name, source_pregnant_table_name, mother_table_name, outcomes_table_name)
+  )
 }
 
-# info(logger, "STEP 2 CONTROL FOR OBSERVED CONFOUNDING ----")
+info(logger, "STEP 2 MATCHING ----")
+if (runPSMathcing) {
+  source(here("2_PSMatching", "matching.R"))
+}
 # if (runPSMathcing) {
 #   if (! runInstantiateCohorts) {
 #     info(logger, "Load cohorts")

@@ -19,7 +19,7 @@ library(CodelistGenerator)
 library(MatchIt)
 library(CirceR)
 library(SqlRender)
-
+library(omopgenerics)
 
 database_name <- "CPRD" # "SIDIAP", "UiO", "CPRD
 
@@ -39,7 +39,7 @@ db <- dbConnect(
   password = password
 )
 
-cdm_database_schema <- "public_100k"
+cdm_database_schema <- "public"
 results_database_schema <- "results"
 
 # cohort stem where cohorts will be instantiated
@@ -63,18 +63,18 @@ minimum_counts <- 5
 results <- paste0("Results_", cdmName(cdm))
 
 # study dates
-study.start <- as.Date("2020-12-27") # date of initiation of the vaccination campaing
-study.end   <- as.Date("2022-06-20") # end of data availability
+study.start <- as.Date("2020-12-08") # date of initiation of the vaccination campaing
+study.end   <- as.Date("2022-06-20")
 
 # standard days between vaccine doses
-days.booster     <- 150
+days.booster     <- 90
 booster.janssen  <- 90
 days.moderna     <- 28
 days.astrazeneca <- 28
 days.pfizer      <- 21
 
 # Choose code to run
-runInstantiateCohorts <- TRUE
+runInstantiateCohorts <- FALSE
 runPSMathcing         <- TRUE
 runEvaluateCohorts    <- TRUE
 runOutcomeModel       <- TRUE

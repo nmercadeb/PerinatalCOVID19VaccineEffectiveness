@@ -1,11 +1,12 @@
 info(logger, "Create vaccine schema table: ")
-vaccine_schema <- cdm$vaccine_json %>%
+cdm$vaccine_schema <- cdm$vaccine_json %>%
   filter(cohort_definition_id == !!getId(cdm$vaccine_json, "any_covid_vaccine")) %>%
   select(-cohort_definition_id) %>%
   left_join(cdm$vaccine_json %>%
               filter(cohort_definition_id != !!getId(cdm$vaccine_json, "any_covid_vaccine")) %>%
               addCohortName() %>%
-              select(-cohort_definition_id)
+              select(-cohort_definition_id),
+            by = c("subject_id", "cohort_start_date", "cohort_end_date")
   ) %>%
   mutate(cohort_name = if_else(is.na(cohort_name), "unkown", cohort_name)) %>%
   select(subject_id, vaccine_date = cohort_start_date, vaccine_brand = cohort_name) %>%
@@ -31,5 +32,6 @@ vaccine_schema <- cdm$vaccine_json %>%
                              dose_id == 7 ~ "booster_5")
            )
   ) %>%
-  compute(name = "vaccine_schema", temporary = FALSE)
+  compute(name = "vaccine_schema", temporary = FALSE) %>%
+  newCdmTable()
 

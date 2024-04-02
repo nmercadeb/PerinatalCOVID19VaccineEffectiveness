@@ -1,4 +1,8 @@
-INFO  [2024-03-28 14:03:00] CREATE LOGGER
-INFO  [2024-03-28 14:03:00] STEP 0 INITIAL SETTINGS ----
-INFO  [2024-03-28 14:03:00] Load study parameters
-INFO  [2024-03-28 14:03:00] Load study functions 
+INFO  [2024-04-01 20:03:25] CREATE LOGGER
+INFO  [2024-04-01 20:03:25] STEP 0 INITIAL SETTINGS ----
+INFO  [2024-04-01 20:03:25] Load study parameters
+INFO  [2024-04-01 20:03:25] Load study functions 
+INFO  [2024-04-01 20:03:33] STEP 1 INSTANTIATE COHORTS ----
+INFO  [2024-04-01 20:24:32] Matching population: none_first. Covid definition: covid_diagnostic_test
+INFO  [2024-04-02 07:33:20] Matching population: none_first. Covid definition: covid_diagnostic_test
+INFO  [2024-04-02 08:37:41] Matching population: none_first. Covid definition: covid_test
