@@ -45,7 +45,8 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
       working.table <- matching_source %>%
         pregnantMatchingTable(
           covidId = covid_id, weekStart = week.k, weekEnd = week.k.end,
-          excludeControls = working.excludeControls
+          excludeControls = working.excludeControls, objective = source_id,
+          days.booster = days.booster
         ) %>%
         compute()
       # If less than 5 vaccinated: no matching
@@ -163,7 +164,9 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
 summary %>% bind_rows() %>% write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
 
 # instantiate matching cohort
-cdm <- insertTable(cdm, name = "matched", table = matched_cohorts %>% bind_rows(), overwrite = TRUE)
+matched_cohorts <- matched_cohorts %>% bind_rows()
+class(matched_cohorts) <- class(matched_cohorts)[!(matched_cohorts) %in% "matchdata"]
+cdm <- insertTable(cdm, name = "matched", table = matched_cohorts, overwrite = TRUE)
 cdm$matched <- cdm$matched %>%
   newCohortTable(cohortSetRef = cohort_set,
                  cohortAttritionRef = cohort_attrition,

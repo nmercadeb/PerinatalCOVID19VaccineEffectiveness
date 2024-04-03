@@ -64,7 +64,7 @@ results <- paste0("Results_", cdmName(cdm))
 
 # study dates
 study.start <- as.Date("2020-12-08") # date of initiation of the vaccination campaing
-study.end   <- as.Date("2022-06-20")
+study.end   <- as.Date("2023-06-23")
 
 # standard days between vaccine doses
 days.booster     <- 90

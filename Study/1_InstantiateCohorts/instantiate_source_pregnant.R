@@ -143,7 +143,7 @@ cdm$source_pregnant %>%
 # exclude/censor at vaccine irregularities:
 cdm$source_pregnant <- cdm$source_pregnant %>%
   select(-censor) %>%
-  filter(is.na(vaccine_censor_date) | vaccine_censor_date > pregnancy_start_date) %>%
+  filter(is.na(vaccine_censor_date) | vaccine_censor_date - days(1) >= pregnancy_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   recordCohortAttrition(reason = "No irregular vaccine records before pregnancy start date")
 
@@ -164,7 +164,9 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   mutate(cohort_start_date = if_else(.data$cohort_start_date < .env$study.start, .env$study.start, .data$cohort_start_date)) %>%
   # NO index vaccine before pregnancy start
   left_join(cdm$vaccine_schema %>%
-              select(cohort_definition_id = dose_id, subject_id, index_vaccine_date = vaccine_date, index_vaccine_brand = vaccine_brand),
+              filter(dose_id == 1 | schema_id == "booster_1") %>%
+              mutate(cohort_definition_id = if_else(dose_id == 1, 1, 2)) %>%
+              select(cohort_definition_id, subject_id, index_vaccine_date = vaccine_date, index_vaccine_brand = vaccine_brand),
             by = c("cohort_definition_id", "subject_id")) %>%
   filter(is.na(index_vaccine_date) | index_vaccine_date > cohort_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
@@ -175,9 +177,9 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
               mutate(cohort_definition_id = 2) %>%
               select(cohort_definition_id, subject_id, previous_vaccine_date = vaccine_date, previous_vaccine_brand = vaccine_brand),
             by = c("cohort_definition_id", "subject_id")) %>%
-  filter(is.na(previous_vaccine_date) | previous_vaccine_date < cohort_start_date) %>%
+  filter((previous_vaccine_date + days(90) <= pregnancy_end_date & !is.na(previous_vaccine_date)) | cohort_definition_id == 1) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "Complete vaccination schema before pregnancy start date", cohortId = 2)
+  recordCohortAttrition(reason = "Elegible for booster before pregnancy end date", cohortId = 2)
 
 # Set cohort dates and columns to keep:
 cdm$source_pregnant <- cdm$source_pregnant %>%
@@ -203,4 +205,5 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   select(cohort_definition_id, subject_id, cohort_start_date, cohort_end_date, pregnancy_id,
          pregnancy_start_date, pregnancy_end_date, age, index_vaccine_date, index_vaccine_brand,
          previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
-  compute(name = "source_pregnant", temporary = FALSE)
+  compute(name = "source_pregnant", temporary = FALSE) %>%
+  newCohortTable()

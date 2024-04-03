@@ -94,7 +94,7 @@ addRegion <- function(x, database_name) {
 
 }
 
-pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excludeControls) {
+pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excludeControls, objective_id, days.booster) {
   temp <- sourceTable %>%
     mutate(week_start = as.Date(weekStart), week_end = as.Date(weekEnd)) %>%
     # pregnant at week.k
@@ -139,6 +139,11 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
   temp <- temp %>%
     anti_join(temp %>% filter(covid_date_week < index_vaccine_date), by = colnames(temp)) %>%
     compute()
+  if (objective_id == 2) {
+    # check booster elegibility
+    temp <- temp %>%
+      filter(week_start - previous_vaccine_date >= days.booster)
+  }
   return(temp)
 }
 
@@ -195,7 +200,7 @@ matchItDataset <- function(x, objective_id) {
               index_vaccine_date, index_vaccine_brand))
   } else if (objective_id == 2) {
     x <- x %>%
-      mutate(days_previous_vaccine = week_start - previous_vaccine_date)
+      mutate(days_previous_vaccine = week_start - previous_vaccine_date) %>%
       select(-c(cohort_start_date, cohort_end_date, observation_period_start_date, covid_date_week,
                 week_start, week_end, previous_vaccine_date, index_vaccine_date, index_vaccine_brand))
   }

@@ -61,11 +61,13 @@ if (runInstantiateCohorts) {
                      covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
                      nco_table_name, source_pregnant_table_name, mother_table_name, outcomes_table_name)
   )
+  cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
+    compute()
 }
 
 info(logger, "STEP 2 MATCHING ----")
 if (runPSMathcing) {
-  source(here("2_PSMatching", "matching.R"))
+  source(here("2_Matching", "matching.R"))
 }
 # if (runPSMathcing) {
 #   if (! runInstantiateCohorts) {
