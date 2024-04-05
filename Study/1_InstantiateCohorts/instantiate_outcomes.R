@@ -1,3 +1,11 @@
+info(logger, "Covid outcome cohorts")
+cdm$temp_covid <- cdm$covid %>%
+  filter(cohort_definition_id != getId(cdm$covid, "any_covid_test")) %>%
+  compute(name = "temp_covid", temporary = FALSE) %>%
+  omopgenerics::newCohortTable(
+    cohortSetRef = settings(cdm$covid) %>% filter(cohort_definition_id != getId(cdm$covid, "any_covid_test")),
+    cohortAttritionRef = attrition(cdm$covid) %>% filter(cohort_definition_id != getId(cdm$covid, "any_covid_test")))
+
 info(logger, "Inpatient outcome cohorts")
 ip.codes <- c(9201, 262)
 ip.codes.w.desc <- cdm$concept_ancestor %>%
@@ -16,17 +24,17 @@ cdm <- generateVisitRelatedOutcomes(
 )
 
 info(logger, "Death outcome cohorts")
-cdm$temp_death <- cdm$covid %>%
+cdm$temp_death <- cdm$temp_covid %>%
   inner_join(cdm$death %>% select(subject_id = person_id, death_date), by = "subject_id") %>%
   mutate(diff_days = death_date - cohort_start_date) %>%
   filter(diff_days >= 0 & diff_days <= 28) %>%
   select(-death_date, -diff_days) %>%
   compute(name = "temp_death", temporary = FALSE) %>%
   recordCohortAttrition(reason = "COVID-19 related death") %>%
-  newCohortTable(cohortSetRef = settings(cdm$covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
+  newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
 
 # outcome cohort
-cdm <- omopgenerics::bind(cdm$covid,cdm$temp_inpatient, cdm$temp_inpatient_delivery,
+cdm <- omopgenerics::bind(cdm$temp_covid,cdm$temp_inpatient, cdm$temp_inpatient_delivery,
                           cdm$temp_icu, cdm$temp_icu_delivery, cdm$temp_death, name = "outcomes")
 
 # export counts

@@ -7,7 +7,7 @@ getId <- function(x, name) {
 
 generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
   # covid visit cohort
-  covid_visit <- cdm$covid %>%
+  covid_visit <- cdm$temp_covid %>%
     inner_join(
       cdm$visit_occurrence %>%
         filter(visit_concept_id %in% c(codes)) %>%
@@ -23,7 +23,8 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
     select(-visit_start_date, -diff_days) %>%
     compute(name = paste0("temp_", name), temporary = FALSE) %>%
     recordCohortAttrition(reason = attritionReason) %>%
-    newCohortTable(cohortSetRef = settings(cdm$covid) %>% mutate(cohort_name = paste0(name, "_", cohort_name)))
+    newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>%
+                     mutate(cohort_name = paste0(name, "_", cohort_name)))
   # covid visit cohort - delivery date
   cdm[[paste0("temp_", name, "_delivery")]] <- covid_visit %>%
     addCohortIntersectFlag(
@@ -36,7 +37,8 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
     select(-visit_start_date, -diff_days) %>%
     compute(name = paste0("temp_", name, "_delivery"), temporary = FALSE) %>%
     recordCohortAttrition(reason = paste0(attritionReason, " (not delivery)")) %>%
-    newCohortTable(cohortSetRef = settings(cdm$covid) %>% mutate(cohort_name = paste0(name, "_no_delivery_", cohort_name)))
+    newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>%
+                     mutate(cohort_name = paste0(name, "_no_delivery_", cohort_name)))
   return(cdm)
 }
 
