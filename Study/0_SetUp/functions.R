@@ -102,6 +102,11 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
       pregnancy_start_date <= week_start &  # start before the week
         pregnancy_end_date >= week_end      # end after the week
     ) %>%
+    # in observation at week.k
+    filter(
+      cohort_start_date <= week_start &  # start before the week
+        cohort_end_date >= week_end      # end after the week
+    ) %>%
     # no covid-19 in the last three months from week start date
     addCohortIntersectDate(
       targetCohortTable = "covid",
@@ -150,10 +155,9 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
 matchItDataset <- function(x, objective_id) {
   x <- x %>%
     mutate(gestational_age = cut(as.numeric(week_start - pregnancy_start_date), c(0, 90, 180, 330), include.lowest = TRUE)) %>%
-    addIntersect(
+    addTableIntersectCount(
       tableName = "visit_occurrence",
       indexDate = "week_start",
-      value = "count",
       window = list(c(-Inf, -31), c(-30, -1)),
       targetStartDate = "visit_start_date",
       targetEndDate = NULL,
@@ -191,18 +195,19 @@ matchItDataset <- function(x, objective_id) {
       nameStyle = "previous_pregnancies"
     ) %>%
     collect() %>%
-    mutate(previous_observation = week_start - observation_period_start_date)
+    mutate(previous_observation = as.numeric(week_start - observation_period_start_date))
 
   if (objective_id == 1) {
     x <- x %>%
       select(-c(cohort_start_date, cohort_end_date, observation_period_start_date, covid_date_week,
               week_start, week_end, previous_vaccine_date, previous_vaccine_brand,
-              index_vaccine_date, index_vaccine_brand))
+              index_vaccine_date, index_vaccine_brand, pregnancy_start_date, pregnancy_end_date))
   } else if (objective_id == 2) {
     x <- x %>%
-      mutate(days_previous_vaccine = week_start - previous_vaccine_date) %>%
+      mutate(days_previous_vaccine = as.numeric(week_start - previous_vaccine_date)) %>%
       select(-c(cohort_start_date, cohort_end_date, observation_period_start_date, covid_date_week,
-                week_start, week_end, previous_vaccine_date, index_vaccine_date, index_vaccine_brand))
+                week_start, week_end, previous_vaccine_date, index_vaccine_date, index_vaccine_brand,
+                pregnancy_start_date, pregnancy_end_date))
   }
 
 }
@@ -223,4 +228,16 @@ addAttritionReason <- function(attrition_table, reason, x) {
       )
     )
   return(new_attrition)
+}
+
+
+censorExposedPair <- function(x) {
+  x %>%
+    left_join(
+      x %>%
+        filter(control_censored) %>%
+        select(match_id, new_cohort_end_date = cohort_end_date)
+    ) %>%
+    mutate(cohort_end_date = if_else(is.na(new_cohort_end_date), cohort_end_date, new_cohort_end_date)) %>%
+    select(-new_cohort_end_date)
 }

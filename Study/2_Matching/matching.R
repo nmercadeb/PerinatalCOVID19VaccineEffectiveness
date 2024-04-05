@@ -71,22 +71,22 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         while (doMatching) {
           exactMatch = c("maternal_age", "gestational_age")
           exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
-          working.match <- matchit(exposed ~ .- subject_id, data = working.match_data,
+          working.match <- matchit(exposed ~ .- subject_id - pregnancy_id, data = working.match_data,
                                    method = "nearest", distance = "glm", caliper = 0.2,
                                    ratio = 1, std.caliper = FALSE,
                                    exact = formula(paste0(". ~", paste0(exactMatch, collapse = " + "))))
           # Save matched pairs
           working.matched.population <- match.data(working.match) %>%
             inner_join(working.table,
-                       by = c("subject_id", "pregnancy_id", "pregnancy_start_date", "pregnancy_end_date", "age", "maternal_age", "exposed"),
+                       by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed"),
                        copy = TRUE) %>%
             mutate(match_id = paste0(gsub("-", "", week.k), subclass))
           # Assign index dates
           working.matched.population <- working.matched.population %>%
-            select(-index_vaccine_date) %>%
+            select(-cohort_start_date) %>%
             inner_join(working.matched.population %>%
                          filter(exposed == 1) %>%
-                         select(match_id, index_vaccine_date),
+                         select(match_id, cohort_start_date = index_vaccine_date),
                        by = "match_id",
                        copy = TRUE) %>%
             compute()
@@ -140,9 +140,9 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
           "(90,180]" == gestational_age ~ "T2",
           "(180,330]" == gestational_age ~ "T3")
       ) %>%
-      select(cohort_definition_id,  subject_id, cohort_start_date = index_vaccine_date,
-             cohort_end_date, match_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
-             trimester = gestational_age, vaccine_brand = index_vaccine_brand, age)
+      select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
+             match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
+             trimester = gestational_age, index_vaccine_date, vaccine_brand = index_vaccine_brand, age)
     # cohort settings
     cohort_set <- cohort_set %>%
       union_all(
@@ -165,8 +165,27 @@ summary %>% bind_rows() %>% write_csv(file = here(output_folder, paste0("matchin
 
 # instantiate matching cohort
 matched_cohorts <- matched_cohorts %>% bind_rows()
-class(matched_cohorts) <- class(matched_cohorts)[!(matched_cohorts) %in% "matchdata"]
+class(matched_cohorts) <- class(matched_cohorts)[!class(matched_cohorts) %in% "matchdata"]
 cdm <- insertTable(cdm, name = "matched", table = matched_cohorts, overwrite = TRUE)
+cdm$matched <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "matched"))) %>%
+  compute()
+
+# "clean" cohort
+cdm$matched <- cdm$matched %>%
+  mutate(
+    # stop follow-up when control is exposed
+    cohort_end_date = if_else(
+      exposed == 0 & !is.na(index_vaccine_date),
+      as.Date(index_vaccine_date - days(1)),
+      cohort_end_date
+    ),
+    control_censored = if_else(exposed == 0 & !is.na(index_vaccine_date), TRUE, FALSE)
+  ) %>%
+  # stop exposed follow-up when control censored
+  censorExposedPair() %>%
+  select(-index_vaccine_date, -control_censored) %>%
+  compute(name = "matched", temporary = FALSE)
+
 cdm$matched <- cdm$matched %>%
   newCohortTable(cohortSetRef = cohort_set,
                  cohortAttritionRef = cohort_attrition,
