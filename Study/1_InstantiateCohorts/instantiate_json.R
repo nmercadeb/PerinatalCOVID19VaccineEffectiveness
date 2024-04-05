@@ -3,15 +3,13 @@ info(logger, "Instantiate characterisation cohorts: ")
 
 # Medications
 info(logger, "  - Medications")
-medications_cohort_set <- readCohortSet(
-  path = here("1_InstantiateCohorts", "Cohorts", "Comedications")
+medications_codelist <- CodelistGenerator::codesFromConceptSet(
+  path = here("1_InstantiateCohorts", "Cohorts", "Comedications"), cdm = cdm
 )
-cdm <- generateCohortSet(
+cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
   cdm = cdm,
-  cohortSet = medications_cohort_set,
   name = medications_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
+  conceptSet = medications_codelist,
 )
 
 # Read condition cohorts
