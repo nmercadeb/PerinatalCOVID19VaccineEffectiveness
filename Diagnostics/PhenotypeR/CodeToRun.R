@@ -20,7 +20,7 @@ library(SqlRender)
 
 # database metadata and connection details -----
 # The name/ acronym for the database
-db_name <- "CPRD GOLD"
+db_name <- "..."
 
 # Connection details
 server_dbi <- Sys.getenv("...")
