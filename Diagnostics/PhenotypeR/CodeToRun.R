@@ -1,6 +1,8 @@
-renv::restore()
+# renv::activate()
+# renv::restore()
+# .rs.restartR()
 
-# packages #####
+# packages 
 library(CDMConnector)
 library(DBI)
 library(dbplyr)
@@ -20,23 +22,32 @@ library(SqlRender)
 # The name/ acronym for the database
 db_name <- "CPRD GOLD"
 
-# Database connection details -----
-db <- dbConnect(RPostgres::Postgres(),
-                dbname = "cdm_gold_202307", 
-                port = Sys.getenv("DB_PORT"),
-                host = Sys.getenv("DB_HOST"),
-                user = Sys.getenv("DB_USER"),
-                password =  Sys.getenv("DB_PASSWORD"))
-cdm_schema <- "public_100k"
-write_schema <- "results"
-achilles_schema <- "results"
+# Connection details
+server_dbi <- Sys.getenv("...")
+user <- Sys.getenv("...")
+password <- Sys.getenv("...")
+port <- Sys.getenv("...")
+host <- Sys.getenv("...")
+
+db <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = server_dbi,
+  port = port,
+  host = host,
+  user = user,
+  password = password
+)
+
+cdm_schema <- "..."
+write_schema <- "..."
+achilles_schema <- "..."
 
 # Table prefix -----
 # any tables created in the database during the analysis will start with this prefix
 # we provide the default here but you can change it
 # note, any existing tables in your write schema starting with this prefix may
 # be dropped during running this analysis
-study_prefix <- "nmb_phR"
+study_prefix <- "..."
 
 # Run the study ------
 source(here("RunStudy.R"))
