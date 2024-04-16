@@ -21,6 +21,7 @@ library(MatchIt)
 library(CirceR)
 library(SqlRender)
 library(omopgenerics)
+library(visOmopResults)
 
 database_name <- "CPRD" # "SIDIAP", "UiO", "CPRD
 
@@ -76,8 +77,8 @@ days.pfizer      <- 21
 
 # Choose code to run
 runInstantiateCohorts <- FALSE
-runPSMathcing         <- TRUE
-runEvaluateCohorts    <- TRUE
+runPSMathcing         <- FALSE
+runCharacterisation   <- FALSE
 runOutcomeModel       <- TRUE
 
 source(here("0_SetUp/RunStudy.R"))

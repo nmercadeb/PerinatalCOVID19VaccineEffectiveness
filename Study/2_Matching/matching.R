@@ -37,6 +37,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
     # analysis id
     jj <- jj + 1
     info(logger, paste0("Matching population: ", source_name, ". Covid definition: ", covid_name))
+    paste0("Matching population: ", source_name, ". Covid definition: ", covid_name)
     for(kk in 1:length(trialWeeks)) {
       week.k <- trialWeeks[kk]
       week.k.end <- week.k + weeks(1) - days(1)
@@ -81,12 +82,12 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
                        by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed"),
                        copy = TRUE) %>%
             mutate(match_id = paste0(gsub("-", "", week.k), subclass))
-          # Assign index dates
+          # Assign index dates and vaccine brand
           working.matched.population <- working.matched.population %>%
-            select(-cohort_start_date) %>%
+            select(-cohort_start_date, -index_vaccine_brand) %>%
             inner_join(working.matched.population %>%
                          filter(exposed == 1) %>%
-                         select(match_id, cohort_start_date = index_vaccine_date),
+                         select(match_id, cohort_start_date = index_vaccine_date, vaccine_brand = index_vaccine_brand),
                        by = "match_id",
                        copy = TRUE) %>%
             compute()
@@ -142,7 +143,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
       ) %>%
       select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
              match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
-             trimester = gestational_age, index_vaccine_date, vaccine_brand = index_vaccine_brand, age)
+             trimester = gestational_age, index_vaccine_date, vaccine_brand, age, maternal_age)
     # cohort settings
     cohort_set <- cohort_set %>%
       union_all(

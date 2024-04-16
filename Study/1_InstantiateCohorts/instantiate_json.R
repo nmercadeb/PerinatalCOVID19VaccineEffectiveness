@@ -4,7 +4,8 @@ info(logger, "Instantiate characterisation cohorts: ")
 # Medications
 info(logger, "  - Medications")
 medications_codelist <- CodelistGenerator::codesFromConceptSet(
-  path = here("1_InstantiateCohorts", "Cohorts", "Comedications"), cdm = cdm
+  path = here("1_InstantiateCohorts", "Cohorts", "MedicationsConceptSet"),
+  cdm = cdm
 )
 cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
   cdm = cdm,

@@ -1,0 +1,27 @@
+cdm_name,log
+CPRD GOLD,"Settings and loading of Phoebe: 6.39 sec elapsed
+Connect to database: 1.98 sec elapsed
+Getting cdm snapshot: 0.86 sec elapsed
+Generate Cohort Set: 239.33 sec elapsed
+Cohort counts, attrition: 0.09 sec elapsed
+Calculate Overlap: 1.36 sec elapsed
+Index Event Breakdown: 22.5 sec elapsed
+Index Event Breakdown: 20.68 sec elapsed
+Index Event Breakdown: 19.41 sec elapsed
+Index Event Breakdown: 56.03 sec elapsed
+Index Event Breakdown: 32.7 sec elapsed
+Index Event Breakdown: 38.72 sec elapsed
+Index Event Breakdown: 16.31 sec elapsed
+Index Event Breakdown: 17.57 sec elapsed
+Index Event Breakdown: 19.45 sec elapsed
+Index Event Breakdown: 25.36 sec elapsed
+Orphan codes + markdown readable text for only first cohort: 675.58 sec elapsed
+Patient_profiles summary: 4.26 sec elapsed
+Generate 1K Sample and Matched sample: 3.85 sec elapsed
+LargeScaleChar matched: 352.65 sec elapsed
+LArgeScaleChar sample: 388.13 sec elapsed
+LArgeScaleChar difference: 0.45 sec elapsed
+Incidence Prevalence Sampling + Denominator: 25.86 sec elapsed
+Incidence by year, age, sex: 208.16 sec elapsed
+Prevalence by year, age, sex: 54.48 sec elapsed
+phenotypeR total time run: : 1963.43 sec elapsed"

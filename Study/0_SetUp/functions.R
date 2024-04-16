@@ -110,21 +110,22 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
         cohort_end_date >= week_end      # end after the week
     ) %>%
     # no covid-19 in the last three months from week start date
-    addCohortIntersectDate(
+    addCohortIntersectFlag(
       targetCohortTable = "covid",
       targetCohortId = covidId,
-      window = c(-Inf, -1),
-      order = "last",
+      window = c(-90, -1),
       indexDate = "week_start",
-      nameStyle = "covid_date"
+      nameStyle = "covid"
     ) %>%
-    filter(week_start - covid_date >= 90 | is.na(covid_date)) %>%
-    select(-covid_date) %>%
+    filter(covid == 0) %>%
+    select(-covid) %>%
     # classify exposed - unexposed
     mutate(exposed = if_else(index_vaccine_date >= week_start & index_vaccine_date <= week_end, 1, 0),
            exposed = if_else(is.na(exposed), 0, exposed)) %>%
     # exclude if not pfizer or moderna
     filter(!(exposed == 1 & index_vaccine_brand %in% c("janssen", "astrazeneca"))) %>%
+    # exclude if exposed before week start
+    filter(index_vaccine_date >= week_start | is.na(index_vaccine_date)) %>%
     # in observation at week end date
     filter(cohort_end_date >= week_end) %>%
     # covid during the week
@@ -238,8 +239,10 @@ censorExposedPair <- function(x) {
     left_join(
       x %>%
         filter(control_censored) %>%
-        select(match_id, new_cohort_end_date = cohort_end_date)
+        select(cohort_definition_id, match_id, new_cohort_end_date = cohort_end_date),
+      by = c("cohort_definition_id", "match_id")
     ) %>%
-    mutate(cohort_end_date = if_else(is.na(new_cohort_end_date), cohort_end_date, new_cohort_end_date)) %>%
+    mutate(cohort_end_date = if_else(is.na(new_cohort_end_date) | new_cohort_end_date > cohort_end_date,
+                                     cohort_end_date, new_cohort_end_date)) %>%
     select(-new_cohort_end_date)
 }

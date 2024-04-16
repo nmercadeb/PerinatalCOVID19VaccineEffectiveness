@@ -1,0 +1,191 @@
+cohort_definition_id,cohort_name,cohort,json,cohort_name_snakecase,markdown,cdm_name
+1,any_covid_test,,,any_covid_test,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. measurements of 'COVID test, excl antibody'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+2,any_covid_vaccine,,,any_covid_vaccine,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'Any COVID-19 vaccine'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+3,astrazeneca,,,astrazeneca,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'AstraZeneca vaccine'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+4,covid_diagnostic_test,,,covid_diagnostic_test,"### Cohort Entry Events
+
+People may enter the cohort when observing any of the following:
+
+1. condition occurrences of 'Covid diagnostic narrow'.
+
+2. observations of 'Covid diagnostic narrow'.
+
+3. measurements of 'COVID test, excl antibody', with value as concept: ""positive"", ""detected"", ""present"", ""detected"", ""positive"" or ""present"".
+
+4. observations of 'COVID test, excl antibody'.
+
+5. measurements of 'PCR+ CPRD' (including 'PCR+ CPRD' source concepts).
+
+### Inclusion Criteria
+
+#### 1. 6w washout
+
+Entry events with all of the following criteria:
+
+   1. having no condition occurrences of 'Covid diagnostic narrow', starting in the 42 days prior to cohort entry start date.
+   2. having no observations of 'Covid diagnostic narrow', starting in the 42 days prior to cohort entry start date.
+   3. having no measurements of 'COVID test, excl antibody', starting in the 42 days prior to cohort entry start date; with value as concept: ""present"", ""positive"", ""detected"", ""present"", ""detected"" or ""positive"".
+   4. having no observations of 'COVID test, excl antibody', starting in the 42 days prior to cohort entry start date.
+   5. having no measurements of 'PCR+ CPRD', starting in the 42 days prior to cohort entry start date.
+
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+5,covid_test,,,covid_test,"### Cohort Entry Events
+
+People may enter the cohort when observing any of the following:
+
+1. measurements of 'COVID test, excl antibody', with value as concept: ""positive"", ""detected"", ""present"", ""detected"", ""positive"" or ""present"".
+
+2. observations of 'COVID test, excl antibody'.
+
+3. measurements of 'PCR+ CPRD' (including 'PCR+ CPRD' source concepts).
+
+### Inclusion Criteria
+
+#### 1. 6w washout
+
+Entry events with all of the following criteria:
+
+   1. having no measurements of 'COVID test, excl antibody', starting in the 42 days prior to cohort entry start date; with value as concept: ""present"", ""positive"", ""detected"", ""present"", ""detected"" or ""positive"".
+   2. having no observations of 'COVID test, excl antibody', starting in the 42 days prior to cohort entry start date.
+   3. having no measurements of 'PCR+ CPRD', starting in the 42 days prior to cohort entry start date.
+
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+6,influenza,,,influenza,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'influenza_1'.
+
+2. drug exposures of 'influenza_2'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+7,janssen,,,janssen,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'Janssen vaccine'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+8,moderna,,,moderna,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'Moderna vaccine'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+9,pfizer,,,pfizer,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'Pfizer vaccine'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD
+10,tdap,,,tdap,"### Cohort Entry Events
+
+People enter the cohort when observing any of the following:
+
+1. drug exposures of 'Tdap'.
+
+2. procedure occurrences of 'Tdap'.
+
+### Cohort Exit
+
+The cohort end date will be offset from index event's start date plus 0 days.
+
+### Cohort Eras
+
+Remaining events will be combined into cohort eras if they are within 0 days of each other.
+
+",CPRD GOLD

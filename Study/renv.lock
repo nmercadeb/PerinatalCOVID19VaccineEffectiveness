@@ -176,9 +176,9 @@
     },
     "PatientProfiles": {
       "Package": "PatientProfiles",
-      "Version": "0.7.0",
+      "Version": "0.8.0",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "CDMConnector",
         "R",
@@ -195,7 +195,7 @@
         "tidyr",
         "visOmopResults"
       ],
-      "Hash": "5d83449a4bca47ebe62866c88d992b37"
+      "Hash": "4fe667d15c8ce4dfd0c2699753925b50"
     },
     "R6": {
       "Package": "R6",
