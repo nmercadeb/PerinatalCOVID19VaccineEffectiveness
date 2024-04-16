@@ -3,7 +3,7 @@
 ## Diagnostics
 In the folder **Diagnostics** there is code for running diagnostics and for deploying the shiny with the results.
 1) **PhenotypeR:** work through the `CodeToRun.R` script to execute the diagnostics. It will create a folder with the results, and a "zip" version of it.
-2) **Shiny:** paste the "zip" file in the "data" folder, and run the app (script `global.R`)
+2) **Shiny:** paste the "zip" file in the "data" folder, and run the app (script `global.R`).
 
 
 ## ! Note
