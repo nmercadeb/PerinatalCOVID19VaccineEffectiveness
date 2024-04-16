@@ -6,7 +6,7 @@ In the folder **Diagnostics** there is code for running diagnostics and for depl
 2) **Shiny:** paste the "zip" file in the "data" folder, and run the app (script `global.R`)
 
 
-#### !! Important
+## ! Note
 When opening an R project (for both phenotypeR and Shiny directories) follow this 3 steps:
 1. Execute `renv::activate()` --> this will activate the renv library.
 2. Execute `renv::restore()` --> this will load the relevant package with the target version.
