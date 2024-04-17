@@ -11,7 +11,7 @@ cdm$mother_table <- cdm$mother_table %>%
          cohort_end_date = pregnancy_end_date) %>%
   rename("subject_id" = "person_id") %>%
   compute(name = "mother_table", temporary = FALSE) %>%
-  newCohortTable()
+  newCohortTable(.softValidation = TRUE)
 
 ## In observation at pregnancy start date
 cdm$mother_table <- cdm$mother_table %>%
@@ -207,3 +207,4 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
          previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   newCohortTable()
+

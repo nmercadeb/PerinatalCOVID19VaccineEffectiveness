@@ -33,5 +33,5 @@ cdm$vaccine_schema <- cdm$vaccine_json %>%
            )
   ) %>%
   compute(name = "vaccine_schema", temporary = FALSE) %>%
-  newCdmTable()
+  newCdmTable(src = cdmSource(cdm), name = "vaccine_schema")
 

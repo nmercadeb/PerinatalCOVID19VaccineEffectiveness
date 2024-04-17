@@ -1,6 +1,6 @@
 info(logger, "Covid outcome cohorts")
 cdm$temp_covid <- cdm$covid %>%
-  filter(cohort_definition_id != getId(cdm$covid, "any_covid_test")) %>%
+  filter(cohort_definition_id != !!getId(cdm$covid, "any_covid_test")) %>%
   compute(name = "temp_covid", temporary = FALSE) %>%
   omopgenerics::newCohortTable(
     cohortSetRef = settings(cdm$covid) %>% filter(cohort_definition_id != getId(cdm$covid, "any_covid_test")),
