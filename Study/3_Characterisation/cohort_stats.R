@@ -25,6 +25,10 @@ recontributions <- lapply(
   rename("group_level" = "cohort_name") |>
   mutate(
     result_type = "recontributions",
+    estimate_name = "count",
+    estimate_type = "integer",
+    variable_name = "number subjects",
+    variable_level = NA,
     cdm_name = cdmName(cdm),
     estimate_value = as.character(estimate_value),
     group_name = "cohort_name",
@@ -48,6 +52,10 @@ index_date_bins <- lapply(
   mutate(
     result_type = "index_date",
     cdm_name = cdmName(cdm),
+    estimate_name = "count",
+    estimate_type = "integer",
+    variable_name = "number subjects",
+    variable_level = NA,
     estimate_value = as.character(estimate_value),
     group_name = "cohort_name",
     additional_name = "overall",
@@ -63,7 +71,7 @@ followup_cohort_end <- lapply(
   list("overall", "vaccine_brand", "trimester"),
   function(x) {
     cohort %>%
-      group_by(cohort_name, cohort_start_date, .data[[x]], exposed)%>%
+      group_by(cohort_name, .data[[x]], exposed)%>%
       mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
       summarise(
         mean = mean(time),
@@ -83,8 +91,12 @@ followup_cohort_end <- lapply(
   mutate(
     result_type = "followup_cohort_end",
     cdm_name = cdmName(cdm),
-    estimate_value = as.character(estimate_value)
+    estimate_type = "integer",
+    variable_name = "followup time",
+    variable_level = NA,
+    estimate_value = as.character(estimate_value),
     additional_name = "exposed",
+    additional_level = as.character(additional_level),
     group_name = "cohort_name"
   ) |>
   pivot_longer(cols = c("overall", "vaccine_brand", "trimester"),
@@ -95,8 +107,8 @@ followup_pregnancy_end <- lapply(
   list("overall", "vaccine_brand", "trimester"),
   function(x) {
     cohort %>%
-      group_by(cohort_name, cohort_start_date, .data[[x]], exposed)%>%
-      mutate(time = !!datediff("cohort_start_date", "cohort_pregnancy_date")) %>%
+      group_by(cohort_name, .data[[x]], exposed)%>%
+      mutate(time = !!datediff("cohort_start_date", "pregnancy_end_date")) %>%
       summarise(
         mean = mean(time),
         median = median(time),
@@ -115,8 +127,12 @@ followup_pregnancy_end <- lapply(
   mutate(
     result_type = "followup_pregnancy_end",
     cdm_name = cdmName(cdm),
-    estimate_value = as.character(estimate_value)
+    estimate_type = "integer",
+    variable_name = "followup time",
+    variable_level = NA,
+    estimate_value = as.character(estimate_value),
     additional_name = "exposed",
+    additional_level = as.character(additional_level),
     group_name = "cohort_name"
   ) |>
   pivot_longer(cols = c("overall", "vaccine_brand", "trimester"),
@@ -124,6 +140,10 @@ followup_pregnancy_end <- lapply(
   filter(!is.na(strata_level))
 
 write_csv(
-  bind_rows(index_date_bins, recontributions, followup_cohort_end, followup_pregnancy_end),
+  bind_rows(index_date_bins, recontributions, followup_cohort_end, followup_pregnancy_end) %>%
+    mutate(
+      package_name = "StudyCode",
+      package_version = "today()"
+    ),
   here(output_folder, paste0("cohort_stats", cdmName(cdm), ".csv"))
 )

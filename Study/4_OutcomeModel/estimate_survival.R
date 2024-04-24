@@ -84,7 +84,7 @@ survival_results <- results |> bind_rows() |>
   mutate(
     result_id = 1,
     package_name = "StudyCode",
-    package_version = "0.0.1"
+    package_version = "today()"
   )
 
 # write
