@@ -22,15 +22,16 @@ library(CirceR)
 library(SqlRender)
 library(omopgenerics)
 library(visOmopResults)
+library(CohortSurvival)
 
-database_name <- "CPRD" # "SIDIAP", "UiO", "CPRD
+database_name <- "..." # "SIDIAP", "UiO", "CPRD
 
 # Connection details
-server_dbi <- Sys.getenv("DB_SERVER_DBI_gd")
-user <- Sys.getenv("DB_USER")
-password <- Sys.getenv("DB_PASSWORD")
-port <- Sys.getenv("DB_PORT")
-host <- Sys.getenv("DB_HOST")
+server_dbi <- Sys.getenv("...")
+user <- Sys.getenv("...")
+password <- Sys.getenv("...")
+port <- Sys.getenv("...")
+host <- Sys.getenv("...")
 
 db <- dbConnect(
   RPostgres::Postgres(),
@@ -41,11 +42,11 @@ db <- dbConnect(
   password = password
 )
 
-cdm_database_schema <- "public"
-results_database_schema <- "results"
+cdm_database_schema <- "..."
+results_database_schema <- "..."
 
 # cohort stem where cohorts will be instantiated
-table_stem <- "nmb_vax"
+table_stem <- "..."
 
 cdm <- cdmFromCon(
   con = db,
@@ -56,7 +57,7 @@ cdm <- cdmFromCon(
 
 # Pregnancy tables details:
 mother_table_schema <- results_database_schema
-mother_table_name <- "pregnancy_episode"
+mother_table_name <- "..."
 
 # minimum counts to report
 minimum_counts <- 5
@@ -65,8 +66,8 @@ minimum_counts <- 5
 results <- paste0("Results_", cdmName(cdm))
 
 # study dates
-study.start <- as.Date("2020-12-08") # date of initiation of the vaccination campaing
-study.end   <- as.Date("2023-06-23")
+study.start <- as.Date("...") # date of initiation of the vaccination campaing
+study.end   <- as.Date("...") # end of data availability (data cut date)
 
 # standard days between vaccine doses
 days.booster     <- 90
@@ -76,9 +77,9 @@ days.astrazeneca <- 28
 days.pfizer      <- 21
 
 # Choose code to run
-runInstantiateCohorts <- FALSE
-runPSMathcing         <- FALSE
-runCharacterisation   <- FALSE
+runInstantiateCohorts <- TRUE
+runPSMathcing         <- TRUE
+runCharacterisation   <- TRUE
 runOutcomeModel       <- TRUE
 
 source(here("0_SetUp/RunStudy.R"))

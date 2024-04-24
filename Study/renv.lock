@@ -85,6 +85,33 @@
       ],
       "Hash": "cc4a1269780cdf216ea59c6ffcf69573"
     },
+    "CohortSurvival": {
+      "Package": "CohortSurvival",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "CDMConnector",
+        "DBI",
+        "PatientProfiles",
+        "broom",
+        "checkmate",
+        "cli",
+        "dbplyr",
+        "dplyr",
+        "lubridate",
+        "magrittr",
+        "omopgenerics",
+        "rlang",
+        "scales",
+        "stringr",
+        "survival",
+        "tibble",
+        "tidyr",
+        "visOmopResults"
+      ],
+      "Hash": "e255fb02817bd1264844cf5b07d0c61f"
+    },
     "DBI": {
       "Package": "DBI",
       "Version": "1.2.2",
@@ -335,6 +362,27 @@
       ],
       "Hash": "40415719b5a479b87949f3aa0aee737c"
     },
+    "broom": {
+      "Package": "broom",
+      "Version": "1.0.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "backports",
+        "dplyr",
+        "ellipsis",
+        "generics",
+        "glue",
+        "lifecycle",
+        "purrr",
+        "rlang",
+        "stringr",
+        "tibble",
+        "tidyr"
+      ],
+      "Hash": "fd25391c3c4f6ecf0fa95f1e6d15378c"
+    },
     "cellranger": {
       "Package": "cellranger",
       "Version": "1.1.0",
@@ -518,6 +566,17 @@
         "utils"
       ],
       "Hash": "93c078cf614d23bb15da5a947e1ad3fa"
+    },
+    "ellipsis": {
+      "Package": "ellipsis",
+      "Version": "0.3.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "rlang"
+      ],
+      "Hash": "bb0eec2fe32e88d9e2836c2f73ea2077"
     },
     "fansi": {
       "Package": "fansi",
@@ -1216,7 +1275,7 @@
     },
     "visOmopResults": {
       "Package": "visOmopResults",
-      "Version": "0.2.0",
+      "Version": "0.2.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1230,7 +1289,7 @@
         "stringr",
         "tidyr"
       ],
-      "Hash": "e10650fc06a8d1328afb9f2b3e5b17a0"
+      "Hash": "40379a1854e8ffe208bb16aec1b64156"
     },
     "vroom": {
       "Package": "vroom",

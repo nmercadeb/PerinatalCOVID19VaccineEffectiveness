@@ -34,6 +34,7 @@ nco_table_name             <- "nco_cohort"
 source_pregnant_table_name <- "source_pregnant"
 outcomes_table_name        <- "outcomes"
 matched_cohort_table_name  <- "matched"
+clean_mother_table_name    <- "mother_table"
 
 
 # Load study functions
@@ -62,7 +63,8 @@ if (runPSMathcing) {
       cdmName = database_name,
       cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
                        covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
-                       nco_table_name, source_pregnant_table_name, mother_table_name, outcomes_table_name)
+                       nco_table_name, source_pregnant_table_name, clean_mother_table_name,
+                       outcomes_table_name)
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
@@ -81,9 +83,10 @@ if (runCharacterisation) {
       cdmName = database_name,
       cohortTables = c(
         vaccine_json_table_name, medications_table_name, conditions_table_name,
-        covid_table_name, other_vaccines_table_name, mother_table_name,
-        nco_table_name, source_pregnant_table_name, outcomes_table_name,
-        matched_cohort_table_name, ps_covariates_table_name)
+        covid_table_name, other_vaccines_table_name, nco_table_name,
+        source_pregnant_table_name, outcomes_table_name,
+        matched_cohort_table_name, ps_covariates_table_name,
+        clean_mother_table_name)
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
