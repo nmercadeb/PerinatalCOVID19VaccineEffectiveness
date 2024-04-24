@@ -1,4 +1,4 @@
-# PerinatalCOVID19VaccineEffectiveness
+# Perinatal COVID-19 vaccine effectiveness
 
 ## Diagnostics
 In the folder **Diagnostics** there is code for running diagnostics and for deploying the shiny with the results.
