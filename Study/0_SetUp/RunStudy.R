@@ -4,7 +4,7 @@ if (!dir.exists(output_folder)) {
 }
 
 # create logger ----
-log_file <- here(results, "log.txt")
+log_file <- here(results, paste0("log", "_", gsub("-", "", today()), ".txt"))
 if (file.exists(log_file)) {
   unlink(log_file)
 }
@@ -79,17 +79,18 @@ if (runCharacterisation) {
       cdmSchema = cdm_database_schema,
       writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
       cdmName = database_name,
-      cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
-                       covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
-                       nco_table_name, source_pregnant_table_name, mother_table_name,
-                       outcomes_table_name, matched_cohort_table_name)
+      cohortTables = c(
+        vaccine_json_table_name, medications_table_name, conditions_table_name,
+        covid_table_name, other_vaccines_table_name, mother_table_name,
+        nco_table_name, source_pregnant_table_name, outcomes_table_name,
+        matched_cohort_table_name, ps_covariates_table_name)
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
   }
   info(logger, "STEP 3 EVALUATE COHORTS ----")
-  source(here("3_Characterisation", "evaluate_observed_confounding.R"))
   source(here("3_Characterisation", "characteristics.R"))
+  source(here("3_Characterisation", "cohort_stats.R"))
 }
 
 info(logger, "STEP 4 OUTCOME MODEL ----")
@@ -106,14 +107,15 @@ if (runOutcomeModel) {
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
   }
-  # source(here("4_OutcomeModel", "survival.R"))
+  source(here("4_OutcomeModel", "get_survival_data.R"))
+  source(here("4_OutcomeModel", "estimate_survival.R"))
 }
-#
-# info(logger, "STEP 4 ZIP RESULTS ----")
-# output_folder <- basename(output_folder)
-# zip(
-#   zipfile = paste0(output_folder, ".zip"),
-#   files = list.files(output_folder, full.names = TRUE)
-# )
-#
-# info(logger, " -- DONE! --")
+
+info(logger, "STEP 4 ZIP RESULTS ----")
+output_folder <- basename(output_folder)
+zip(
+  zipfile = paste0(output_folder, "_", gsub("-", "", today()), ".zip"),
+  files = list.files(output_folder, full.names = TRUE)
+)
+
+info(logger, " -- DONE! --")

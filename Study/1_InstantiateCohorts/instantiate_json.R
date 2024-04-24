@@ -10,7 +10,7 @@ medications_codelist <- CodelistGenerator::codesFromConceptSet(
 cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
   cdm = cdm,
   name = medications_table_name,
-  conceptSet = medications_codelist,
+  conceptSet = medications_codelist
 )
 
 # Read condition cohorts

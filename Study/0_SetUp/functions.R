@@ -197,8 +197,8 @@ matchItDataset <- function(x, objective_id) {
       window = list(c(-Inf, -1)),
       nameStyle = "previous_pregnancies"
     ) |>
-    collect() |>
-    mutate(previous_observation = as.numeric(week_start - observation_period_start_date))
+    collect() %>%
+    mutate(previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start")))
 
   if (objective_id == 1) {
     x <- x |>
@@ -251,26 +251,27 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
   if (analysis == "sensitivity") {
     # end data adjusted to sensitivity
     x <- x |>
-      mutate(!!endData := if_else(censor_date < .data[[endData]], censor_date, .data[[endData]]))
+      mutate(!!endData := if_else(censor_date < .data[[endData]] & !is.na(censor_date), censor_date, .data[[endData]]))
   }
   # set end date
   if (is.infinite(interval[2])) {
     x <- x |>
-      rename("end_date" := !!endData)
+      mutate("end_date" = .data[[endData]])
   } else {
-    x <- x |>
+    x <- x %>%
       mutate("end_date" = !!dateadd(date = "cohort_start_date", number = interval[2]))
   }
 
   # set start date
   x <- x |>
-    rename("end_data" := !!endData) |>
+    rename("end_data" := !!endData) %>%
     mutate(
-      "start_date" = !!dateadd(date = "cohort_start_date", number = interval[1])
+      "start_date" = !!dateadd(date = "cohort_start_date", number = interval[1]),
+      "start_date" = as.Date(start_date)
     ) |>
     select(all_of(c(
       "cohort_name", "subject_id", "match_id", "exposed", "trimester",
-      "vaccine_brand", "maternal_age","end_date", "start_date",
+      "vaccine_brand", "maternal_age","end_date", "start_date", "end_data",
       outcomes
     )))
 
@@ -283,8 +284,7 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
       by = c("cohort_name", "match_id")
     ) |>
     # reset end date
-    mutate(end_date = if_else(end_date > end_data, end_data, end_date)) |>
-    compute()
+    mutate(end_date = if_else(end_date > end_data, end_data, end_date))
   return(x)
 }
 
@@ -296,44 +296,59 @@ survivalFormat <- function(x, out) {
         filter(start_date > .data[[out]]) |> # outcome before
         distinct(cohort_name, match_id),
       by = c("cohort_name", "match_id")
-    ) |>
-    compute()
-
-  x <- x |>
+    )
+  x <- x %>%
     mutate(
       status = if_else(.data[[out]] > start_date & .data[[out]] < end_date, 1, 0),
-      time = if_else(status == 1, .data[[out]] - start_date, end_date - start_date)
+      status = if_else(is.na(status), 0, status),
+      time = if_else(status == 1, !!datediff("start_date", out), !!datediff("start_date", "end_date"))
     ) |>
+    select(all_of(c(
+      "cohort_name", "subject_id", "match_id", "exposed", "trimester", "vaccine_brand",
+      "status", "time"
+    ))) |>
     compute()
   return(x)
 }
 
-estimateSurvival <- function(data, asmd, group, strata,
-                             cox = TRUE, binomial = TRUE, kaplanMeier = TRUE) {
+estimateSurvival <- function(data, group, strata,
+                             cox = TRUE, binomial = TRUE) {
   results <- list()
+  groupLevel = unique(data |> pull(.data[[group]]))
   k <- 1
-  for (group.k in group) { # group level
+  for (group.k in groupLevel) { # group level
     for (strata.k in strata) { # strata name
       strataLevels <- unique(data |> pull(strata.k))
       for(strataLevel.k in strataLevels) { # strata level
-        # TODO mirar be com agafar estimates: agafar nom i window i fer intersect
-        covariates <- asmd |>
-          filter(group_level == group.k, strata_level == strataLevel.k, estimate_name == "smd") |>
-          splitAdditional() |>
-          filter(as.numeric(estimate_value) > 0.1 | as.numeric(estimate_value) < 0.1) |>
-          pull("concept_id")
+        # # for double robust estimation
+        # covariates <-  smd |>
+        #   filter(estimate_name == "smd", as.numeric(estimate_value) > 0.1 | as.numeric(estimate_value) < -0.1) |>
+        #   rename("concept_id" = "additional_level") |>
+        #   inner_join(cdm$concept, by = "concept_id", copy = TRUE) |>
+        #   filter(domain_id %in% c("Drug", "Condition")) |>
+        #   pull(concept_id) |>
+        #   unique()
+        # names(covariates) <- covariates
 
         # data
         data.k <- data |>
-          filter(cohort_name == group.k, .data[[strata.k]] == strataLevel.k)
+          filter(cohort_name == group.k, .data[[strata.k]] == strataLevel.k) |>
+          collect()
         # formula
-        if (length(covariates) == 0) {
-          covariates_formula <- "exposed"
-        } else {
-          # TODO add asmd to data.k
-          covariates_formula <- c("exposed", covariates)
-          covariates_formula <- paste0(covariates_formula, collapse = " + ")
-        }
+        # if (length(covariates) == 0) {
+        covariates_formula <- "exposed"
+        # # } else {
+        #
+        #   windowFlag <- unique(smd |> pull("variable_level"))
+        #   cdm$matched_asmd <- cdm$matched |>
+        #     addConceptIntersectFlag(
+        #       conceptSet = as.list(covariates),
+        #       window = gsub("i", "I", windowFlag) |> strsplit(" to ") |> lapply(as.numeric)
+        #     ) |>
+        #     compute(name = "matched_asmd", temporary = FALSE)
+        #   covariates_formula <- c("exposed", covariates)
+        #   covariates_formula <- paste0(covariates_formula, collapse = " + ")
+        # }
 
         # cox ----
         if (cox) {
@@ -346,7 +361,7 @@ estimateSurvival <- function(data, asmd, group, strata,
                 "variable", "coef", "exp_coef" = "exp(coef)",
                 "se_coef" = "se(coef)", "z", "p" = "Pr(>|z|)"
               ) |>
-              filter(variable == "exposedexposed") |>
+              filter(variable == "exposed") |>
               left_join(
                 summary(coxRegression)$conf.int |>
                   as_tibble(rownames = "variable") |>
@@ -357,7 +372,7 @@ estimateSurvival <- function(data, asmd, group, strata,
                 type = "cox", groupLevel = group.k,
                 strataName = strata.k, strataLevel = strataLevel.k
               ) |>
-              mutate(time = NA,  exposed = NA) # for KM and followup
+              mutate(exposed = NA) # for KM and followup
             k <- k + 1
           },
           error = function(e) {
@@ -372,7 +387,7 @@ estimateSurvival <- function(data, asmd, group, strata,
                        data = data.k, family = binomial(link = log))
             results[[k]] <- summary(log)$coefficients |>
               as_tibble(rownames = "variable") |>
-              filter(variable == "exposedexposed") |>
+              filter(variable == "exposed") |>
               rename("coef" = "Estimate", "se_coef" = "Std. Error",
                      "z" = "z value", "p" = "Pr(>|z|)") |>
               mutate("exp_coef" = exp(coef)) |>
@@ -386,38 +401,15 @@ estimateSurvival <- function(data, asmd, group, strata,
                 type = "binomial", groupLevel = group.k,
                 strataName = strata.k, strataLevel = strataLevel.k
               ) |>
-              mutate(time = NA,  exposed = NA) # for KM and followup
+              mutate(exposed = NA) # for KM and followup
             k <- k + 1
           },
           error = function(e) {
           })
         }
 
-        # kaplanMeier ----
-        if (kaplanMeier) {
-          tryCatch({
-          formula <- as.formula(Surv(time_pregnancy, status_pregnancy) ~ exposed)
-          km <- survfit(formula, data = x.k)
-          log_rank <- survdiff(formula, x.k)
-          kmResults <- as_tibble(
-            summary(km, times = c(seq(0, 1000, by = 1)))[c("strata", "time", "n.risk", "n.event", "surv", "std.err", "lower", "upper")]
-          ) |>
-            # mutate(log_rank = log_rank$pvalue) |>
-            rename("exposed" = "strata", "n_risk" = "n.risk", "n_event" = "n.event",
-                   "se" = "std.err", "surv_lower" = "lower", "sruv_upper" = "upper") |>
-            regressionToSummarised(
-              type = "kaplan-meier", groupLevel = group.k,
-              strataName = strata.k, strataLevel = strataLevel.k,
-              cols = c("n_risk", "n_event", "surv", "se", "surv_lower", "sruv_upper")
-            )
-          k <- k + 1
-          },
-          error = function(e) {
-          })
-        }
-
         # follow-up stats ----
-        result[[j]] <- data.k |>
+        results[[k]] <- data.k |>
           group_by(exposed) |>
           summarise(
             mean = mean(time),
@@ -437,8 +429,7 @@ estimateSurvival <- function(data, asmd, group, strata,
             num_control = sum(data.k$exposed == 0),
             num_exposed = sum(data.k$exposed == 1),
             num_events_control = sum(data.k$exposed == 0 & data.k$status == 1),
-            num_events_exposed = sum(data.k$exposed == 1 & data.k$status == 1),
-            time = NA
+            num_events_exposed = sum(data.k$exposed == 1 & data.k$status == 1)
           ) |>
           pivot_longer(
             cols = c("mean", "median", "q25", "q75", "min", "max", "num_control",
@@ -450,9 +441,12 @@ estimateSurvival <- function(data, asmd, group, strata,
       }
     }
   }
+  return(results |> bind_rows())
 }
 
-regressionToSummarised <- function(x, type, groupLevel, strataName, strataLevel, cols = c("coef", "se_coef", "z", "p")) {
+regressionToSummarised <- function(
+    x, type, groupLevel, strataName, strataLevel,
+    cols = c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci")) {
   x |>
     mutate(
       estimate_type = "numeric",
