@@ -13,8 +13,8 @@ cdm$vaccine_schema <- cdm$vaccine_json %>%
   group_by(subject_id) %>%
   window_order(vaccine_date) %>%
   mutate(dose_id = row_number()) %>%
+  mutate(first_janssen = if_else(any(vaccine_brand == "janssen" & dose_id == 1), TRUE, FALSE)) %>%
   ungroup() %>%
-  mutate(first_janssen = if_else(vaccine_brand == "janssen" & dose_id == 1, TRUE, FALSE)) %>%
   mutate(schema_id =
            if_else(first_janssen,
                    case_when(dose_id == 1 ~ "complete",
