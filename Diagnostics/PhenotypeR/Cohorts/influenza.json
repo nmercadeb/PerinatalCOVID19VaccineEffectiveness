@@ -84,9 +84,7 @@
               "INVALID_REASON_CAPTION": "Valid",
               "STANDARD_CONCEPT": "S",
               "STANDARD_CONCEPT_CAPTION": "Standard",
-              "VOCABULARY_ID": "CVX",
-              "VALID_START_DATE": "2008-12-01",
-              "VALID_END_DATE": "2099-12-31"
+              "VOCABULARY_ID": "CVX"
             },
             "includeDescendants": true
           },
@@ -101,9 +99,7 @@
               "INVALID_REASON_CAPTION": "Valid",
               "STANDARD_CONCEPT": "S",
               "STANDARD_CONCEPT_CAPTION": "Standard",
-              "VOCABULARY_ID": "CVX",
-              "VALID_START_DATE": "2017-07-06",
-              "VALID_END_DATE": "2099-12-31"
+              "VOCABULARY_ID": "CVX"
             },
             "includeDescendants": true
           },
@@ -118,9 +114,7 @@
               "INVALID_REASON_CAPTION": "Valid",
               "STANDARD_CONCEPT": "S",
               "STANDARD_CONCEPT_CAPTION": "Standard",
-              "VOCABULARY_ID": "CVX",
-              "VALID_START_DATE": "2017-07-06",
-              "VALID_END_DATE": "2099-12-31"
+              "VOCABULARY_ID": "CVX"
             },
             "includeDescendants": true
           },
@@ -135,11 +129,59 @@
               "INVALID_REASON_CAPTION": "Valid",
               "STANDARD_CONCEPT": "S",
               "STANDARD_CONCEPT_CAPTION": "Standard",
-              "VOCABULARY_ID": "CVX",
-              "VALID_START_DATE": "2013-09-26",
-              "VALID_END_DATE": "2099-12-31"
+              "VOCABULARY_ID": "CVX"
             },
             "includeDescendants": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "influenza_3\n\n",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_CLASS_ID": "CVX",
+              "CONCEPT_CODE": "16",
+              "CONCEPT_ID": 40213159,
+              "CONCEPT_NAME": "influenza virus vaccine, whole virus",
+              "DOMAIN_ID": "Drug",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "VOCABULARY_ID": "CVX"
+            }
+          },
+          {
+            "concept": {
+              "CONCEPT_CLASS_ID": "CVX",
+              "CONCEPT_CODE": "15",
+              "CONCEPT_ID": 40213156,
+              "CONCEPT_NAME": "influenza virus vaccine, split virus (incl. purified surface antigen)-retired CODE",
+              "DOMAIN_ID": "Drug",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "VOCABULARY_ID": "CVX"
+            }
+          },
+          {
+            "concept": {
+              "CONCEPT_CLASS_ID": "Vaccine Group",
+              "CONCEPT_CODE": "88",
+              "CONCEPT_ID": 40213158,
+              "CONCEPT_NAME": "influenza virus vaccine, unspecified formulation",
+              "DOMAIN_ID": "Drug",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "VOCABULARY_ID": "CVX"
+            }
           }
         ]
       }
@@ -155,6 +197,11 @@
       {
         "DrugExposure": {
           "CodesetId": 1
+        }
+      },
+      {
+        "DrugExposure": {
+          "CodesetId": 2
         }
       }
     ],
