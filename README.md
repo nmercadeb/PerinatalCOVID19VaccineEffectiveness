@@ -1,12 +1,12 @@
 # Perinatal COVID-19 vaccine effectiveness
-
+You can download this repository as a zip folder using Code -> Download ZIP, or you can clone it using GitHub Desktop.
 ## Diagnostics
 In the folder **Diagnostics** there is code for running diagnostics and for deploying the shiny with the results.
-1) **PhenotypeR:** work through the `CodeToRun.R` script to execute the diagnostics. It will create a folder with the results, and a "zip" version of it.
+1) **PhenotypeR:** work through the `CodeToRun.R` script to execute the diagnostics. After running you should then have zip file with the results.
 2) **Shiny:** paste the "zip" file in the "data" folder, and run the app (script `global.R`).
 
 ## Study
-The folder **Study** contains the analytical code for the study. Please open the script `CodeToRun.R` (this is the only script you should interact with) and fill the information about your database connection and database-specific study parametres. Once complete, you can execute this study to start the study analysis.
+The folder **Study** contains the analytical code for the study. Please open the script `CodeToRun.R` (this is the only script you should interact with) and fill the information about your database connection and database-specific study parametres. Once complete, you can execute this study to start the study analysis. After running you should then have zip file with the results.
 
 ## ! Note
 When opening an R project (for all projects in this repository*) follow this 3 steps:
