@@ -156,8 +156,12 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
 }
 
 matchItDataset <- function(x, objective_id) {
-  x <- x |>
-    mutate(gestational_age = cut(as.numeric(week_start - pregnancy_start_date), c(0, 90, 180, 330), include.lowest = TRUE)) |>
+  x <- x %>%
+    mutate(gestational_age = cut(
+      as.numeric(!!datediff("pregnancy_start_date", "week_start")),
+      c(0, 90, 180, 330),
+      include.lowest = TRUE)
+    ) |>
     addTableIntersectCount(
       tableName = "visit_occurrence",
       indexDate = "week_start",
@@ -196,9 +200,9 @@ matchItDataset <- function(x, objective_id) {
       indexDate = "week_start",
       window = list(c(-Inf, -1)),
       nameStyle = "previous_pregnancies"
-    ) |>
-    collect() %>%
-    mutate(previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start")))
+    ) %>%
+    mutate(previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start"))) |>
+    collect()
 
   if (objective_id == 1) {
     x <- x |>
