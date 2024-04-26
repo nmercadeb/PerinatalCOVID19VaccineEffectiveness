@@ -27,7 +27,7 @@ table_one <- summariseCharacteristics(
       targetCohortTable = "other_vax", value = "flag", window = c(-Inf, -1)
     ),
     "Number prior pregnancies" = list(
-      tableName = "mother_table", value = "count", window = c(-Inf, -1)
+      targetCohortTable = "mother_table", value = "count", window = c(-Inf, -1)
     )
   ),
   otherVariables = c("vaccine_brand", "trimester")
@@ -92,3 +92,4 @@ summarised_lsc |>
   select(-exposed) |>
   bind_rows(smd) |>
   write_csv(file = here(output_folder, paste0("large_scale_characteristics_", cdmName(cdm), ".csv")))
+
