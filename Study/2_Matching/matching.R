@@ -193,6 +193,6 @@ cdm$matched <- cdm$matched %>%
                  cohortCodelistRef = NULL)
 
 write_csv(
-  attrition(cdm$matched) |> inner_join(settings(cdm$matched)),
+  attrition(cdm$matched) |> inner_join(settings(cdm$matched)) |> mutate(cdm_name = cdmName(cdm)),
   file = here(output_folder, paste0("population_attrition_", cdmName(cdm), ".csv"))
 )
