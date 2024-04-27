@@ -191,3 +191,8 @@ cdm$matched <- cdm$matched %>%
   newCohortTable(cohortSetRef = cohort_set,
                  cohortAttritionRef = cohort_attrition,
                  cohortCodelistRef = NULL)
+
+write_csv(
+  cohort_attrition,
+  file = here(output_folder, paste0("population_attrition_", cdmName(cdm), ".csv"))
+)

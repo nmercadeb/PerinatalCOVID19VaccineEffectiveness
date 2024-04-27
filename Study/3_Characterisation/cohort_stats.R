@@ -145,5 +145,5 @@ write_csv(
       package_name = "StudyCode",
       package_version = "today()"
     ),
-  here(output_folder, paste0("cohort_stats", cdmName(cdm), ".csv"))
+  here(output_folder, paste0("cohort_stats_", cdmName(cdm), ".csv"))
 )

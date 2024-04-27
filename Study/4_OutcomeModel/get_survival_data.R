@@ -1,3 +1,4 @@
+info(logger, "Prepare data for survival")
 cdm$survival_raw <- cdm$matched |>
   addCohortName() |>
   mutate(id_censor = if_else(grepl("none", cohort_name), 1, 2)) |>
