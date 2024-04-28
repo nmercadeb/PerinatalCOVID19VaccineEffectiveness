@@ -1,5 +1,5 @@
 # Table One ----
-info(logger, "Summarise large scale characteristics")
+info(logger, "Characteristics")
 table_one <- summariseCharacteristics(
   cdm[[matched_cohort_table_name]],
   strata = list(c("vaccine_brand", "exposed"), c("trimester", "exposed"), "exposed"),

@@ -13,8 +13,7 @@ source(here("functions.R"))
 # Read results ----
 result_patterns <- c(
   "cdm_snapshot", "characteristics", "cohort_stats", "cohort_counts",
-  "large_scale_characteristics",  "attrition", "matching_summary", "survival",
-  "vaccine_records_censor"
+  "attrition", "matching_summary", "survival", "vaccine_records_censor"
 )
 pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
@@ -45,7 +44,8 @@ data$population_count <- pre_data$survival |>
   ) |>
   distinct() |>
   mutate(estimate_value = as.numeric(estimate_value)) |>
-  pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
+  pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+  uniteStrata(c = c("vaccine_brand", "trimester"))
 data$weekly_counts <- pre_data$matching_summary |>
   select("population", "covid_cohort", "week_start" = "matching_day",
          "exposed_pre", "unexposed_pre", "exposed_post", "unexposed_post") |>
@@ -61,18 +61,13 @@ data$index_date <- pre_data$cohort_stats |>
     "cdm_name", "cohort_name", "vaccine_brand", "trimester",
     "counts" = "estimate_value"
   ) |>
-  mutate(counts = as.numeric(counts))
+  mutate(counts = as.numeric(counts)) |>
+  uniteStrata(c = c("vaccine_brand", "trimester"))
 data$available_followup <- pre_data$cohort_stats |>
   filter(grepl("followup", result_type)) |>
-  splitAll() |>
-  mutate(followup_end = if_else(
-    result_type == "followup_cohort_end", "observation_end", "pregnancy_end"),
-    estimate_value = as.numeric(estimate_value)
-  ) |>
-  select(
-    "cdm_name", "cohort_name", "followup_end", "vaccine_brand", "trimester",
-    "counts" = "estimate_value"
-  )
+  select(-"cohort_name", -"cohort_start_date") |>
+  mutate(result_id = 1L) |>
+  newSummarisedResult()
 data$reenrollment <- pre_data$cohort_stats |>
   filter(result_type == "recontributions") |>
   splitAll() |>
@@ -80,9 +75,37 @@ data$reenrollment <- pre_data$cohort_stats |>
     "cdm_name", "cohort_name", "vaccine_brand", "trimester",
     "reenrollments" = "estimate_value"
   ) |>
+  uniteStrata(c = c("vaccine_brand", "trimester")) |>
   mutate(reenrollments = as.numeric(reenrollments)) |>
   left_join(
     data$population_count,
-    by = c("cdm_name", "cohort_name", "vaccine_brand", "trimester")
-  )
+    by = c("cdm_name", "cohort_name", "strata_name", "strata_level")
+  ) |>
+  mutate(
+    count = reenrollments,
+    percentage = reenrollments/(num_control + num_exposed - reenrollments) * 100
+  ) |>
+  select(!c("reenrollments", "num_control", "num_exposed"))
+data$baseline <- pre_data$characteristics |>
+  filter(!result_type %in% c("summarised_large_scale_characteristics", "large_scale_differences")) |>
+  splitStrata() |>
+  filter(exposed != "overall") |>
+  select(-starts_with("additional")) |>
+  uniteAdditional(cols = c("exposed")) |>
+  uniteStrata(cols = c("vaccine_brand", "trimester")) |>
+  newSummarisedResult()
+data$large_scale <- pre_data$characteristics |>
+  filter(result_type %in% c("summarised_large_scale_characteristics", "large_scale_differences")) |>
+  newSummarisedResult()
+data$survival_summary <- pre_data$survival |>
+  filter(result_type == "followup") |>
+  newSummarisedResult()
+data$survival <- pre_data$survival |>
+  filter(grepl("survival", result_type)) |>
+  newSummarisedResult()
+data$risk <-  pre_data$survival |>
+  filter(result_type %in% c("binomial", "cox")) |>
+  newSummarisedResult()
 
+# Save shiny data ----
+save(data, file = here("shinyData.Rdata"))

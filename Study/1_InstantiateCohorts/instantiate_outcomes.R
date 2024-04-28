@@ -41,4 +41,5 @@ read_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name,
                            cohort_count() %>%
                            mutate(cohort_group = "outcomes"),
                          by = "cohort_definition_id")) %>%
+  mutate(cdm_name = cdmName(cdm)) %>%
   write_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name, ".csv")))
