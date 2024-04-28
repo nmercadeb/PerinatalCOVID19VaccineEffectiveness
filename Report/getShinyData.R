@@ -21,7 +21,7 @@ pre_data <- readData(here("data")) |> mergeData(result_patterns)
 data <- list()
 data$snapshot <- pre_data$cdm_snapshot
 data$cohort_count <- pre_data$cohort_counts |>
-  select("cohort_group", "cohort_name", "number_records", "number_subjects") |>
+  select("cdm_name", "cohort_group", "cohort_name", "number_records", "number_subjects") |>
   mutate(across(starts_with("number"), ~as.numeric(.x)))
 data$population_attrition <- pre_data$attrition |>
   select(!"cohort_definition_id") |>

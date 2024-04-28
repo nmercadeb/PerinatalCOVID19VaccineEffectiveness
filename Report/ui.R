@@ -122,12 +122,32 @@ ui <- dashboardPage(
         ),
         DTOutput("cohort_count_table") %>% withSpinner()
       ),
-      ### matching ----
+      ### weekly counts ----
       tabItem(
-        tabName = "cdm_snapshot",
-        h3("Database details"),
-        p("See details of CDM snapshot for each database:"),
-        DTOutput("cdm_snapshot_table")
+        tabName = "weekly_counts",
+        h3("Weekly counts"),
+        p("Weekly enrollment counts during propensity score matching:"),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Summary",
+            h5(),
+            downloadButton("weekly_counts_summary_download", "Download table in word"),
+            DTOutput('weekly_counts_summary') %>% withSpinner()
+          ),
+          tabPanel(
+            "Table",
+            h5(),
+            downloadButton("weekly_counts_table_download", "Download table as csv"),
+            gt_output('weekly_counts_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Plot",
+            h5(),
+            downloadButton("weekly_counts_plot_download", "Download figure"),
+            gt_output('weekly_counts_plot') %>% withSpinner()
+          )
+        )
       ),
       ### baseline_characteristics ----
       tabItem(
