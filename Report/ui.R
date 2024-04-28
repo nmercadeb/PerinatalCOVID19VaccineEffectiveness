@@ -108,10 +108,10 @@ ui <- dashboardPage(
         tabName = "cohort_count",
         h3("Cohort counts"),
         p("Cohort counts for each cohort of the present study"),
-        selectors(data = data$counts, prefix = "cohort_count",
-                  columns = c("cdm_name", "cohort_table_name"), multiple = TRUE,
+        selectors(data = data$cohort_count, prefix = "cohort_count",
+                  columns = c("cdm_name", "cohort_group"), multiple = TRUE,
                   default = list("cdm_name" = data$counts$cdm_name[1],
-                                 "cohort_table_name" = data$counts$cohort_table_name[1])),
+                                 "cohort_group" = data$counts$cohort_group[1])),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("cohort_count_cohort_name_picker")
@@ -122,26 +122,12 @@ ui <- dashboardPage(
         ),
         DTOutput("cohort_count_table") %>% withSpinner()
       ),
-      ### cohort_attrition ----
+      ### matching ----
       tabItem(
-        tabName = "cohort_attrition",
-        h3("Cohort attrition"),
-        p("Cohort attrition for each cohort of the present study"),
-        selectors(data = data$attrition, prefix = "cohort_attrition",
-                  columns = c("cdm_name", "cohort_table_name"), multiple = TRUE,
-                  default = list("cdm_name" = data$attrition$cdm_name[1],
-                                 "cohort_table_name" = data$attrition$cohort_table_name[1])),
-        div(
-          style = "display: inline-block;vertical-align:top; width: 150px;",
-          uiOutput("cohort_attrition_cohort_name_picker")
-        ),
-        div(
-          style = "margin-bottom: 20px;",
-          downloadButton("cohort_attrition_download_table", "Download current attrition"),
-          downloadButton("cohort_attrition_download_figure", "Download current attrition figure")
-        ),
-        DTOutput("cohort_attrition_table") %>% withSpinner(),
-        grVizOutput("attrition_diagram", width = "400px", height = "100%")
+        tabName = "cdm_snapshot",
+        h3("Database details"),
+        p("See details of CDM snapshot for each database:"),
+        DTOutput("cdm_snapshot_table")
       ),
       ### baseline_characteristics ----
       tabItem(

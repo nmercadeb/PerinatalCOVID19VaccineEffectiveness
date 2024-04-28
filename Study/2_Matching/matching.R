@@ -162,7 +162,8 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
 }
 
 # export summary
-summary %>% bind_rows() %>% write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
+summary %>% bind_rows() %>% mutate(cdm_name = cdmName(cdm)) %>%
+  write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
 
 # instantiate matching cohort
 matched_cohorts <- matched_cohorts %>% bind_rows()

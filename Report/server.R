@@ -12,7 +12,7 @@ server <- function(input, output, session) {
   # cohort_count picker ----
   output$cohort_count_cohort_name_picker <-  reactiveSelectors(
     data = data$counts, prefix = "cohort_count", columns = "cohort_name",
-    restrictions = "cohort_table_name", input = input, multiple = TRUE
+    restrictions = "cohort_group", input = input, multiple = TRUE
   )
   # cohort_count -----
   getCohortCount <- reactive({
