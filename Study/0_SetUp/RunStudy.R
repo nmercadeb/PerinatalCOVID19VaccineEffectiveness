@@ -46,7 +46,7 @@ readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_sn
 
 if (runInstantiateCohorts) {
   cdm$condition_ocurrence <- cdm$condition_ocurrence %>%
-    filter(condition_start_date >= condition_end_date)
+    filter(condition_start_date <= condition_end_date)
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
   source(here("1_InstantiateCohorts", "instantiate_nco.R"))

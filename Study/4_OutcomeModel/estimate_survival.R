@@ -1,7 +1,6 @@
 info(logger, "Start survival analyses")
 info(logger, "1) Relative risk estimates")
 # For loop settings
-comparison_names <- settings(cdm$matched) |> pull("cohort_name")
 outcomes <- colnames(cdm$survival_raw)
 outcomes <- outcomes[grepl("nco_|study_", outcomes)]
 study_ends <- c("cohort_end_date", "pregnancy_end_date")

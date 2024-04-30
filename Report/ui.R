@@ -31,7 +31,7 @@ ui <- dashboardPage(
           tabName = "index_date"
         ),
         menuSubItem(
-          text = "Available follow-up",
+          text = "Future observation",
           tabName = "available_followup"
         ),
         menuSubItem(
@@ -176,11 +176,12 @@ ui <- dashboardPage(
         h3("Index date"),
         p("Distribution of index dates (patient follow-up start date)."),
         selectors(
-          data$index_date, prefix = "index_dates", columns = c("cdm_name", "cohort_name", "strata_name"),
+          data$index_date, prefix = "index_dates",
+          columns = c("cdm_name", "cohort_name", "strata_name"),
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
             "cohort_name" = data$index_date$cohort_name[1],
-            "strata_name" = "overall"
+            "strata_name" = data$index_date$strata_name[1]
           )
         ),
         div(
@@ -222,9 +223,44 @@ ui <- dashboardPage(
             plotlyOutput('index_date_plot') %>% withSpinner()
           )
         )
+      ),
+      ## future observation ----
+      tabItem(
+        tabName = "available_followup",
+        h3("Future observation"),
+        p("Future observation time in the database from index date."),
+        selectors(
+          data$available_followup, prefix = "future_obs",
+          columns = c("cdm_name", "group_level", "strata_name"),
+          default = list(
+            "cdm_name" = data$available_followup$cdm_name[1],
+            "group_level" = data$available_followup$group_level[1],
+            "strata_name" = data$available_followup$strata_name[1]
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("future_obs_strata_level")
+        ),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Summary",
+            h5(),
+            downloadButton("future_summary_download", "Download table in word"),
+            gt_output('future_summary') %>% withSpinner()
+          ),
+          tabPanel(
+            "Plot",
+            h5(),
+            plotSelectors(prefix = "plt_index", choices = c("cdm_name", "cohort_name", "strata_name", "strata_level"),
+                          default = list("color" = NULL, "facet_by" = "cdm_name")),
+            plotDownloadSelectors(prefix = "dwn_index"),
+            downloadButton("index_date_plot_download", "Download figure"),
+            plotlyOutput('index_date_plot') %>% withSpinner()
+          )
+        )
       )
-
-
 
 
       # ### baseline_characteristics ----

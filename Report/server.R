@@ -214,13 +214,13 @@ server <- function(input, output, session) {
   )
   ## index date ----
   output$index_date_strata_level <-  reactiveSelectors(
-    data = data$index_date, prefix = "index_date", columns = "strata_level",
-    restrictions = "strata_name", input = input, multiple = TRUE,
-    default = list("strata_level" = data$index_date$strata_level[data$index_date$strata_name %in% input$index_date_strata_name])
+    data = data$index_date, prefix = "index_dates", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+    # default = list("strata_level" = data$index_date$strata_level[data$index_date$strata_name %in% input$index_date_strata_name])
   )
   getIndexDate <- reactive({
     data$index_date %>%
-      filterData(prefix = "index_date", input = input) %>%
+      filterData(prefix = "index_dates", input = input) %>%
       arrange(.data$index_date) %>%
       {if (input$index_date_group == "years") {
         mutate(., index_date = lubridate::floor_date(index_date, unit = "years"))
@@ -239,6 +239,8 @@ server <- function(input, output, session) {
         index_date = as.character(index_date)
       ) |>
       niceChar() |>
+      rename("estimate_value" = "Counts") |>
+      formatHeader(header = c("Strata name", "Strata level"), includeHeaderName = FALSE) |>
       gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
   })
   output$index_date_summary_download <- downloadHandler(
@@ -309,7 +311,7 @@ server <- function(input, output, session) {
           y = "counts"
         ))
     }
-    p <- p + geom_line(size = 1) + geom_point()
+    p <- p + geom_line() + geom_point()
     if (!is.null(input$plt_index_facet_by)) {
       p <- p +
         facet_wrap(vars(facet_var), ncol = 2)

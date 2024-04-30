@@ -222,8 +222,14 @@ matchItDataset <- function(x, objective_id) {
 }
 
 addAttritionReason <- function(attrition_table, reason, x) {
-  n_records <- nrow(x)
-  n_subjects <-  nrow(x |> distinct(subject_id))
+  if (length(x) == 0) {
+    n_records <- 0
+    n_subjects <- 0
+  } else {
+    n_records <- nrow(x)
+    n_subjects <-  nrow(x |> distinct(subject_id))
+  }
+
   new_attrition <- attrition_table |>
     bind_rows(
       tibble(
