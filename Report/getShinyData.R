@@ -58,10 +58,10 @@ data$weekly_counts <- pre_data$matching_summary |>
   )
 data$index_date <- pre_data$cohort_stats |>
   filter(result_type == "index_date") |>
-  rename("index_date" = "cohort_start_date") |>
+  mutate("index_date" = as.Date(cohort_start_date)) |>
   splitAll() |>
   select(
-    "cdm_name", "cohort_name", "vaccine_brand", "trimester",
+    "cdm_name", "cohort_name", "vaccine_brand", "trimester", "index_date",
     "counts" = "estimate_value"
   ) |>
   mutate(counts = as.numeric(counts)) |>

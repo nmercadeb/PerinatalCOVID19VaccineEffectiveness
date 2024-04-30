@@ -45,23 +45,23 @@ server <- function(input, output, session) {
       arrange(.data$week_start)
   })
   output$weekly_counts_summary <- render_gt({
-      getWeeklyCounts() %>%
-        group_by(cdm_name, cohort) %>%
-        summarise(
-          "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
-          "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
-          .groups = "drop"
-        ) %>%
-        mutate(
-          "Not matched, N(%)" = paste0(
-            niceNum(`Exposed elegible` - `Matched, N(%)`), " (",
-            round((`Exposed elegible` - `Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
-          "Matched, N(%)" = paste0(
-            niceNum(`Matched, N(%)`), " (", round((`Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
-          "Exposed elegible" = niceNum(`Exposed elegible`)
-        ) |>
-        rename("Cohort" = "cohort") |>
-        gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE)
+    getWeeklyCounts() %>%
+      group_by(cdm_name, cohort) %>%
+      summarise(
+        "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
+        "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      mutate(
+        "Not matched, N(%)" = paste0(
+          niceNum(`Exposed elegible` - `Matched, N(%)`), " (",
+          round((`Exposed elegible` - `Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
+        "Matched, N(%)" = paste0(
+          niceNum(`Matched, N(%)`), " (", round((`Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
+        "Exposed elegible" = niceNum(`Exposed elegible`)
+      ) |>
+      rename("Cohort" = "cohort") |>
+      gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE)
   })
   output$weekly_counts_summary_download <- downloadHandler(
     filename = function() {
@@ -158,8 +158,6 @@ server <- function(input, output, session) {
           theme_bw()
       }
     }
-
-
     if(!is.null(input$plt_wcounts_color) ){
       if(is.null(input$plt_wcounts_facet_by) ){
         p <- table %>%
@@ -214,11 +212,116 @@ server <- function(input, output, session) {
              height = as.numeric(input$wcounts_height))
     }
   )
+  ## index date ----
+  output$index_date_strata_level <-  reactiveSelectors(
+    data = data$index_date, prefix = "index_date", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE,
+    default = list("strata_level" = data$index_date$strata_level[data$index_date$strata_name %in% input$index_date_strata_name])
+  )
+  getIndexDate <- reactive({
+    data$index_date %>%
+      filterData(prefix = "index_date", input = input) %>%
+      arrange(.data$index_date) %>%
+      {if (input$index_date_group == "years") {
+        mutate(., index_date = lubridate::floor_date(index_date, unit = "years"))
+      } else if (input$index_date_group == "weeks") {
+        mutate(., index_date = lubridate::floor_date(index_date, unit = "weeks"))
+      } else if (input$index_date_group == "months") {
+        mutate(., index_date = lubridate::floor_date(index_date, unit = "months"))
+      } else .} %>%
+      group_by(cdm_name, cohort_name, strata_name, strata_level, index_date) %>%
+      summarise(counts = sum(counts), .groups = "drop")
+  })
+  output$index_date_summary <- render_gt({
+    getIndexDate() %>%
+      mutate(
+        counts = if_else(counts>0 & counts<5, "<5", niceNum(counts)),
+        index_date = as.character(index_date)
+      ) |>
+      niceChar() |>
+      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
+  })
+  output$index_date_summary_download <- downloadHandler(
+    filename = function() {
+      "indexDateSummary.docx"
+    },
+    content = function(file) {
+      gtsave(data = getIndexDate() %>%
+               mutate(counts = if_else(counts>0 & counts<5, "<5", niceNum(counts))) |>
+               rename("Cohort" = "cohort") |>
+               gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE),
+             filename = file,
+             vwidth = 400,
+             vheight = 300)
+    },
+    contentType = "docx"
+  )
+  output$index_date_table <- renderDataTable({
+    datatable(
+      getIndexDate() %>%
+        mutate(counts = if_else(counts < 5 & counts > 0, NA, counts)) %>%
+        niceChar(),
+      rownames = FALSE,
+      extensions = "Buttons",
+      options = list(scrollX = TRUE, scrollCollapse = TRUE)
+    )
+  })
+  output$index_date_table_download <- downloadHandler(
+    filename = function() {
+      "indexDateCounts.csv"
+    },
+    content = function(file) {
+      write_csv(getIndexDate() %>%
+                  mutate(counts = if_else(counts < 5 & counts > 0, NA, counts)) %>%
+                  niceChar(),
+                file)
+    }
+  )
+  getIndexDatePlot <- reactive({
 
+    table <- getIndexDate() |>
+      mutate(counts = if_else(counts < 5 & counts > 0, NA, counts)) |>
+      filter(!is.na(counts))
 
+    validate(need(ncol(table)>1,
+                  "Results clouded (<5 subjects)"))
 
-
-
+    if (!is.null(input$plt_index_facet_by)) {
+      table <- table %>%
+        unite("facet_var",
+              c(all_of(input$plt_index_facet_by)), remove = FALSE, sep = "; ")
+    }
+    if (!is.null(input$plt_index_color)) {
+      table <- table %>%
+        unite("Group",
+              c(all_of(input$plt_index_color)), remove = FALSE, sep = "; ")
+      p <- table %>%
+        ggplot(aes_string(
+          x = "index_date",
+          y = "counts",
+          color = "Group",
+          fill = "Group"
+        ))
+    } else {
+      p <- table %>%
+        ggplot(aes_string(
+          x = "index_date",
+          y = "counts"
+        ))
+    }
+    p <- p + geom_line(size = 1) + geom_point()
+    if (!is.null(input$plt_index_facet_by)) {
+      p <- p +
+        facet_wrap(vars(facet_var), ncol = 2)
+    }
+    p + ylab("Counts") + xlab("Index date")
+  })
+  output$index_date_plot <- renderPlotly({
+    getIndexDatePlot()
+  })
+  output$index_date_plot_download <- reactive({
+    serverPlotDownload(prefix = "dwn_index", name = "indexDatePlot", plot = getIndexDatePlot())
+  })
 
 
 

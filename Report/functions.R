@@ -111,6 +111,7 @@ reactiveSelectors <- function(data, prefix, columns, restrictions, input,
     ))
   })
 }
+
 plotDownloadSelectors <- function(prefix,
                                   choices = list("device" = c("png", "jpeg", "tiff", "pdf"),
                                                  "width" = 1:50,
@@ -129,6 +130,19 @@ plotDownloadSelectors <- function(prefix,
   ))
 }
 
+serverPlotDownload <- function(prefix, name, plot) {
+  downloadHandler(
+    filename = function() {
+      paste0(name, ".", input[[paste0(prefix, "_device")]])
+    },
+    content = function(file) {
+      ggsave(file, plot,
+             width = as.numeric(input[[paste0(prefix, "_width")]]),
+             height = as.numeric(input[[paste0(prefix, "_height")]]))
+    }
+  )
+}
+
 filterData <- function(data, prefix, input) {
   cols <- colnames(data)
   cols <- cols[paste0(prefix, "_", cols) %in% names(input)]
@@ -140,7 +154,9 @@ filterData <- function(data, prefix, input) {
 }
 
 niceChar <- function(x, cols = everything()) {
-  x %>% rename_with(.fn = ~ stringr::str_to_sentence(gsub("_", " ", .x)), .cols = cols)
+  x %>%
+    rename_with(.fn = ~ stringr::str_to_sentence(gsub("_", " ", .x)), .cols = cols) %>%
+    rename("CDM name" = "Cdm name")
 }
 
 niceNum <- function(x, dec = 0) {

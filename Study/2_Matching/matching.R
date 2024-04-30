@@ -132,18 +132,24 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
     summary[[jj]] <- summary.matching %>%
       mutate(covid_cohort = covid_name, population = source_name)
     # save cohort
-    matched_cohorts[[jj]] <- matched.population %>%
-      bind_rows() %>%
-      mutate(
-        cohort_definition_id = jj,
-        gestational_age = case_when(
-          "[0,90]" == gestational_age ~ "T1",
-          "(90,180]" == gestational_age ~ "T2",
-          "(180,330]" == gestational_age ~ "T3")
-      ) %>%
-      select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
-             match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
-             trimester = gestational_age, index_vaccine_date, vaccine_brand, age, maternal_age)
+    if (length(matched.population %>% bind_rows()) > 0) {
+      matched_cohorts[[jj]] <- matched.population %>%
+        bind_rows() %>%
+        mutate(
+          cohort_definition_id = jj,
+          gestational_age = case_when(
+            "[0,90]" == gestational_age ~ "T1",
+            "(90,180]" == gestational_age ~ "T2",
+            "(180,330]" == gestational_age ~ "T3")
+        ) %>%
+        select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
+               match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
+               trimester = gestational_age, index_vaccine_date, vaccine_brand, age, maternal_age)
+    } else {
+      matched_cohorts[[jj]] <- matched.population %>%
+        bind_rows()
+    }
+
     # cohort settings
     cohort_set <- cohort_set %>%
       union_all(
@@ -189,9 +195,7 @@ cdm$matched <- cdm$matched %>%
   compute(name = "matched", temporary = FALSE)
 
 cdm$matched <- cdm$matched %>%
-  newCohortTable(cohortSetRef = cohort_set,
-                 cohortAttritionRef = cohort_attrition,
-                 cohortCodelistRef = NULL)
+  newCohortTable(cohortSetRef = cohort_set, cohortAttritionRef = cohort_attrition)
 
 write_csv(
   attrition(cdm$matched) |> inner_join(settings(cdm$matched)) |> mutate(cdm_name = cdmName(cdm)),

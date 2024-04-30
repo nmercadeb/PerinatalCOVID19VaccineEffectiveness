@@ -169,8 +169,60 @@ ui <- dashboardPage(
             plotlyOutput('weekly_counts_plot') %>% withSpinner()
           )
         )
+      ),
+      ## index date ----
+      tabItem(
+        tabName = "index_date",
+        h3("Index date"),
+        p("Distribution of index dates (patient follow-up start date)."),
+        selectors(
+          data$index_date, prefix = "index_dates", columns = c("cdm_name", "cohort_name", "strata_name"),
+          default = list(
+            "cdm_name" = data$index_date$cdm_name[1],
+            "cohort_name" = data$index_date$cohort_name[1],
+            "strata_name" = "overall"
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("index_date_strata_level")
+        ),
+        div(
+          pickerInput(
+            inputId = "index_date_group",
+            label = "Group by",
+            choices = c("days", "weeks", "months", "years"),
+            selected = c("weeks"),
+            options = list(`actions-box` = FALSE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = FALSE,
+            inline = TRUE
+          )
+        ),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Summary",
+            h5(),
+            downloadButton("index_date_summary_download", "Download table in word"),
+            gt_output('index_date_summary') %>% withSpinner()
+          ),
+          tabPanel(
+            "Table",
+            h5(),
+            downloadButton("index_date_table_download", "Download table as csv"),
+            DTOutput('index_date_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Plot",
+            h5(),
+            plotSelectors(prefix = "plt_index", choices = c("cdm_name", "cohort_name", "strata_name", "strata_level"),
+                          default = list("color" = NULL, "facet_by" = "cdm_name")),
+            plotDownloadSelectors(prefix = "dwn_index"),
+            downloadButton("index_date_plot_download", "Download figure"),
+            plotlyOutput('index_date_plot') %>% withSpinner()
+          )
+        )
       )
-
 
 
 
