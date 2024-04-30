@@ -47,8 +47,11 @@ data$population_count <- pre_data$survival |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
   uniteStrata(c = c("vaccine_brand", "trimester"))
 data$weekly_counts <- pre_data$matching_summary |>
-  select("population", "covid_cohort", "week_start" = "matching_day",
-         "exposed_pre", "unexposed_pre", "exposed_post", "unexposed_post") |>
+  mutate(cohort = paste0(.data$population, "_", .data$covid_cohort)) |>
+  select(
+    "cdm_name", "cohort", "week_start" = "matching_day", "exposed_pre",
+    "unexposed_pre", "exposed_post", "unexposed_post"
+  ) |>
   mutate(
     across(contains("exposed"), ~ as.numeric(.x)),
     week_start = as.Date(week_start)

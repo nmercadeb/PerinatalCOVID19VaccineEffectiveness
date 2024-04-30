@@ -11,15 +11,15 @@ server <- function(input, output, session) {
   })
   # cohort_count picker ----
   output$cohort_count_cohort_name_picker <-  reactiveSelectors(
-    data = data$counts, prefix = "cohort_count", columns = "cohort_name",
+    data = data$cohort_count, prefix = "cohort_count", columns = "cohort_name",
     restrictions = "cohort_group", input = input, multiple = TRUE
   )
   # cohort_count -----
   getCohortCount <- reactive({
     return(
-      data$counts |>
+      data$cohort_count |>
         filterData(prefix = "cohort_count", input = input) %>%
-        formatColumnNames()
+        niceChar()
     )
   })
   output$cohort_count_table <- renderDataTable({
@@ -38,6 +38,200 @@ server <- function(input, output, session) {
       write_csv(getCohortCount(), file)
     }
   )
+  ## Weekly counts ----
+  getWeeklyCounts <- reactive({
+    data$weekly_counts %>%
+      filterData(prefix = "weekly_cnts", input = input) %>%
+      arrange(.data$week_start)
+  })
+  output$weekly_counts_summary <- render_gt({
+      getWeeklyCounts() %>%
+        group_by(cdm_name, cohort) %>%
+        summarise(
+          "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
+          "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
+          .groups = "drop"
+        ) %>%
+        mutate(
+          "Not matched, N(%)" = paste0(
+            niceNum(`Exposed elegible` - `Matched, N(%)`), " (",
+            round((`Exposed elegible` - `Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
+          "Matched, N(%)" = paste0(
+            niceNum(`Matched, N(%)`), " (", round((`Matched, N(%)`)/`Exposed elegible` * 100, 2), " %)"),
+          "Exposed elegible" = niceNum(`Exposed elegible`)
+        ) |>
+        rename("Cohort" = "cohort") |>
+        gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE)
+  })
+  output$weekly_counts_summary_download <- downloadHandler(
+    filename = function() {
+      "weeklyCountsSummary.docx"
+    },
+    content = function(file) {
+      gtsave(data = getWeeklyCounts() %>%
+               group_by(cdm_name, cohort) %>%
+               summarise(
+                 "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
+                 "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
+                 .groups = "drop"
+               ) %>%
+               mutate(
+                 "Matched, N(%)" = paste0(
+                   `Matched`, " (", round((`Matched`)/`Exposed elegible`, 3), " %)"),
+                 "Not matched, N(%)" = paste0(
+                   `Exposed elegible` - `Matched`, " (",
+                   round((`Exposed elegible` - `Matched`)/`Exposed elegible`, 3), " %)")
+               ) %>%
+               rename("Cohort" = "cohort") %>%
+               gtTable(groupNameCol = "cdm_name"),
+             filename = file,
+             vwidth = 400,
+             vheight = 300)
+    },
+    contentType = "docx"
+  )
+  output$weekly_counts_table <- renderDataTable({
+    datatable(
+      getWeeklyCounts() %>%
+        mutate(
+          across(contains("exposed"), ~ if_else(.x < 5 & .x > 0, NA, .x))
+        ) %>%
+        select("CDM name" = "cdm_name",
+               "Cohort" = "cohort",
+               "Week start" = "week_start",
+               "Exposed PRE" = "exposed_pre",
+               "Unexposed PRE" = "unexposed_pre",
+               "Exposed POST" = "exposed_post",
+               "Unexposed POST" = "unexposed_post"),
+      rownames = FALSE,
+      extensions = "Buttons",
+      options = list(scrollX = TRUE, scrollCollapse = TRUE)
+    )
+  })
+  output$weekly_counts_table_download <- downloadHandler(
+    filename = function() {
+      "weeklyCounts.csv"
+    },
+    content = function(file) {
+      write_csv(getWeeklyCounts() %>%
+                  mutate(
+                    across(contains("exposed"), ~ if_else(.x < 5 & .x > 0, NA, .x))
+                  ) %>%
+                  select("CDM name" = "cdm_name",
+                         "Cohort" = "cohort",
+                         "Week start" = "week_start",
+                         "Exposed PRE" = "exposed_pre",
+                         "Unexposed PRE" = "unexposed_pre",
+                         "Exposed POST" = "exposed_post",
+                         "Unexposed POST" = "unexposed_post"),
+                file)
+    }
+  )
+  getWeeklyCountsPlot <- reactive({
+    table <- getWeeklyCounts() %>%
+      select(-"unexposed_pre", -"unexposed_post") %>%
+      pivot_longer(cols = c("exposed_pre", "exposed_post"), names_to = "matching_status", values_to = "n") |>
+      mutate(n = if_else(n<5 & n>0, NA, n))
+
+    validate(need(ncol(table)>1,
+                  "No results for selected inputs"))
+
+    if(is.null(input$plt_wcounts_color)){
+      if(!is.null(input$plt_wcounts_facet_by)){
+        p<-table %>%
+          filter(!is.na(n)) %>%
+          unite("facet_var",
+                c(all_of(input$plt_wcounts_facet_by)), remove = FALSE, sep = "; ") %>%
+          ggplot(aes_string(x = "week_start", y = "n")) +
+          geom_point() +
+          geom_line() +
+          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
+          facet_wrap(vars(facet_var),nrow = 2) +
+          theme_bw()
+      } else{
+        p <- table %>%
+          filter(!is.na(n)) %>%
+          ggplot(aes_string(x = "week_start", y = "n")) +
+          geom_point() +
+          geom_line() +
+          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
+          theme_bw()
+      }
+    }
+
+
+    if(!is.null(input$plt_wcounts_color) ){
+      if(is.null(input$plt_wcounts_facet_by) ){
+        p <- table %>%
+          filter(!is.na(n)) %>%
+          unite("Group",
+                c(all_of(input$plt_wcounts_color)), remove = FALSE, sep = "; ") %>%
+          ggplot(aes_string(x = "week_start", y = "n",
+                            group = "Group",
+                            fill = "Group",
+                            colour = "Group")) +
+          geom_point() +
+          geom_line() +
+          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
+          theme_bw()
+      }
+
+      if(!is.null(input$plt_wcounts_facet_by) ){
+        if(!is.null(input$plt_wcounts_color) ){
+          p<-table %>%
+            filter(!is.na(n)) %>%
+            unite("Group",
+                  c(all_of(input$plt_wcounts_color)), remove = FALSE, sep = "; ") %>%
+            unite("facet_var",
+                  c(all_of(input$plt_wcounts_facet_by)), remove = FALSE, sep = "; ") %>%
+            ggplot(aes_string(x = "week_start", y = "n",
+                              group = "Group",
+                              fill = "Group",
+                              colour = "Group")) +
+            geom_point() +
+            geom_line() +
+            scale_x_date(date_breaks = "months", date_labels = "%b%y") +
+            facet_wrap(vars(facet_var),ncol = 2)+
+            theme_bw()
+        }
+      }
+    }
+
+    p +
+      xlab("Week start") +
+      ylab("N")
+  })
+  output$weekly_counts_plot <- renderPlotly({
+    getWeeklyCountsPlot()
+  })
+  output$weekly_counts_plot_download <- downloadHandler(
+    filename = function() {
+      paste0("weeklyCountsPlot.", input$wcounts_device)
+    },
+    content = function(file) {
+      ggsave(file, getWeeklyCountsPlot(),
+             width = as.numeric(input$wcounts_width),
+             height = as.numeric(input$wcounts_height))
+    }
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ## cohort_attrition picker ----
   output$cohort_attrition_cohort_name_picker <- reactiveSelectors(
     data = data$attrition, prefix = "cohort_attrition", columns = "cohort_name",
@@ -56,7 +250,7 @@ server <- function(input, output, session) {
   output$cohort_attrition_table <- renderDataTable({
     datatable(
       getAttrition() %>%
-        formatColumnNames() %>%
+        niceChar() %>%
         select(c("Cdm name", "Cohort table name", "Cohort name", "Reason", -"Reason id", "Number records", "Number subjects", "Excluded records", "Excluded subjects")),
       rownames = FALSE,
       extensions = "Buttons",
@@ -205,7 +399,7 @@ server <- function(input, output, session) {
       pivot_wider(names_from = estimate_name, values_from = estimate_value) %>%
       select(c("cdm_name", "cohort_name", "strata_name", "strata_level", "window",
                "concept_domain", "concept", "concept_name", input$large_table_estimate_name)) %>%
-      formatColumnNames()
+      niceChar()
   })
   output$ls_characterisation_table <- renderDataTable({
     datatable(
@@ -269,7 +463,7 @@ server <- function(input, output, session) {
                estimate_comparator = paste0(count_comparator, " (", percentage_comparator, "%)")) %>%
         select(c("cdm_name", "cohort_name_reference", "strata_level_reference", "cohort_name_comparator", "strata_level_comparator",
                  "window", "concept_domain", "concept", "concept_name", "estimate_reference", "estimate_comparator", "smd")) ,
-      # formatColumnNames(),
+      # niceChar(),
       rownames = FALSE,
       extensions = "Buttons",
       options = list(scrollX = TRUE, scrollCollapse = TRUE)
@@ -446,128 +640,5 @@ server <- function(input, output, session) {
              height = as.numeric(input$plsc_height))
     }
   )
-  #  weekly counts table  ----
-  output$wcounts_strata_level_picker <-  reactiveSelectors(
-    data = data$large_scale_characteristics, prefix = "weekly_counts", columns = "strata_level",
-    restrictions = "strata_name", input = input, multiple = TRUE
-  )
-  getWeeklyCounts <- reactive({
-    data$weekly_counts %>%
-      filterData(prefix = "weekly_counts", input = input) %>%
-      filter(.data$week_start >= input$date_wcounts_start) %>%
-      filter(.data$week_start <= input$date_wcounts_end) %>%
-      arrange(.data$week_start)
-  })
-  output$weekly_counts_table <- renderDataTable({
-    datatable(
-      getWeeklyCounts() %>%
-        mutate(n = if_else(is.na(n), "<5", as.character(n))) %>%
-        select("CDM name" = "cdm_name",
-               "Cohort name" = "cohort_name",
-               "Week start" = "week_start",
-               "N" = "n"),
-      rownames = FALSE,
-      extensions = "Buttons",
-      options = list(scrollX = TRUE, scrollCollapse = TRUE)
-    )
-  })
-  output$wcounts_table_download <- downloadHandler(
-    filename = function() {
-      "weeklyCounts.csv"
-    },
-    content = function(file) {
-      write_csv(getWeeklyCounts() %>%
-                  select("CDM name" = "cdm_name",
-                         "Cohort name" = "cohort_name",
-                         "Week start" = "week_start",
-                         "N" = "n"),
-                file)
-    }
-  )
-  # weekly counts plot ----
-  getWeeklyCountsPlot <- reactive({
-    table <- getWeeklyCounts()
 
-    validate(need(ncol(table)>1,
-                  "No results for selected inputs"))
-
-    if(is.null(input$plt_wcounts_color)){
-      if(!is.null(input$plt_wcounts_facet_by)){
-        p<-table %>%
-          filter(!is.na(n)) %>%
-          unite("facet_var",
-                c(all_of(input$plt_wcounts_facet_by)), remove = FALSE, sep = "; ") %>%
-          ggplot(aes_string(x= "week_start", y = "n"
-          )) +
-          geom_point() +
-          geom_line() +
-          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
-          facet_wrap(vars(facet_var),nrow = 2) +
-          theme_bw()
-      } else{
-        p<-table %>%
-          filter(!is.na(n)) %>%
-          ggplot(aes_string(x= "week_start", y="n")) +
-          geom_point() +
-          geom_line() +
-          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
-          theme_bw()
-      }
-    }
-
-
-    if(!is.null(input$plt_wcounts_color) ){
-      if(is.null(input$plt_wcounts_facet_by) ){
-        p<-table %>%
-          filter(!is.na(n)) %>%
-          unite("Group",
-                c(all_of(input$plt_wcounts_color)), remove = FALSE, sep = "; ") %>%
-          ggplot(aes_string(x= "week_start", y="n",
-                            group="Group",
-                            fill = "Group",
-                            colour="Group")) +
-          geom_point() +
-          geom_line() +
-          scale_x_date(date_breaks = "months", date_labels = "%b%y") +
-          theme_bw()
-      }
-
-      if(!is.null(input$plt_wcounts_facet_by) ){
-        if(!is.null(input$plt_wcounts_color) ){
-          p<-table %>%
-            filter(!is.na(n)) %>%
-            unite("Group",
-                  c(all_of(input$plt_wcounts_color)), remove = FALSE, sep = "; ") %>%
-            unite("facet_var",
-                  c(all_of(input$plt_wcounts_facet_by)), remove = FALSE, sep = "; ") %>%
-            ggplot(aes_string(x= "week_start", y="n",
-                              group="Group",
-                              fill = "Group",
-                              colour="Group")) +
-            geom_point() +
-            geom_line() +
-            scale_x_date(date_breaks = "months", date_labels = "%b%y") +
-            facet_wrap(vars(facet_var),ncol = 2)+
-            theme_bw()
-        }
-      }
-    }
-
-    p +
-      xlab("Week start") +
-      ylab("N")
-  })
-  output$plot_weekly_counts <- renderPlotly({
-    getWeeklyCountsPlot()
-  })
-  output$plot_weekly_counts_download <- downloadHandler(
-    filename = function() {
-      paste0("weeklyCountsPlot.", input$wcounts_device)
-    },
-    content = function(file) {
-      ggsave(file, getWeeklyCountsPlot(),
-             width = as.numeric(input$wcounts_width),
-             height = as.numeric(input$wcounts_height))
-    }
-  )
 }

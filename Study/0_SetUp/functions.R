@@ -21,6 +21,7 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
     compute()
   cdm[[paste0("temp_", name)]] <- covid_visit |>
     select(-visit_start_date, -diff_days) |>
+    distinct() |>
     compute(name = paste0("temp_", name), temporary = FALSE) |>
     recordCohortAttrition(reason = attritionReason) |>
     newCohortTable(cohortSetRef = settings(cdm$temp_covid) |>
@@ -35,6 +36,7 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
       nameStyle = "is_delivery_date") |>
     filter(is_delivery_date == 0) |>
     select(-visit_start_date, -diff_days) |>
+    distinct() |>
     compute(name = paste0("temp_", name, "_delivery"), temporary = FALSE) |>
     recordCohortAttrition(reason = paste0(attritionReason, " (not delivery)")) |>
     newCohortTable(cohortSetRef = settings(cdm$temp_covid) |>

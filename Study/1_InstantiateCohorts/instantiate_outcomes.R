@@ -25,6 +25,8 @@ cdm$temp_death <- cdm$temp_covid %>%
   mutate(diff_days = death_date - cohort_start_date) %>%
   filter(diff_days >= 0 & diff_days <= 28) %>%
   select(-death_date, -diff_days) %>%
+
+  distinct() %>%
   compute(name = "temp_death", temporary = FALSE) %>%
   recordCohortAttrition(reason = "COVID-19 related death") %>%
   newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
