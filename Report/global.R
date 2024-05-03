@@ -23,6 +23,7 @@ library(DiagrammeRsvg)
 library(rsvg)
 library(glue)
 library(stats)
+library(PatientProfiles)
 
 
 # load functions

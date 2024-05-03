@@ -1,6 +1,6 @@
 # server shiny ----
 server <- function(input, output, session) {
-  ## cdm_snapshot ----
+  # cdm_snapshot ----
   output$cdm_snapshot_table <- renderDataTable({
     datatable(
       data$snapshot,
@@ -38,7 +38,7 @@ server <- function(input, output, session) {
       write_csv(getCohortCount(), file)
     }
   )
-  ## Weekly counts ----
+  # Weekly counts ----
   getWeeklyCounts <- reactive({
     data$weekly_counts %>%
       filterData(prefix = "weekly_cnts", input = input) %>%
@@ -212,7 +212,7 @@ server <- function(input, output, session) {
              height = as.numeric(input$wcounts_height))
     }
   )
-  ## index date ----
+  # index date ----
   output$index_date_strata_level <-  reactiveSelectors(
     data = data$index_date, prefix = "index_dates", columns = "strata_level",
     restrictions = "strata_name", input = input, multiple = TRUE
@@ -249,9 +249,14 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       gtsave(data = getIndexDate() %>%
-               mutate(counts = if_else(counts>0 & counts<5, "<5", niceNum(counts))) |>
-               rename("Cohort" = "cohort") |>
-               gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE),
+               mutate(
+                 counts = if_else(counts>0 & counts<5, "<5", niceNum(counts)),
+                 index_date = as.character(index_date)
+               ) |>
+               niceChar() |>
+               rename("estimate_value" = "Counts") |>
+               formatHeader(header = c("Strata name", "Strata level"), includeHeaderName = FALSE) |>
+               gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE),
              filename = file,
              vwidth = 400,
              vheight = 300)
@@ -280,13 +285,11 @@ server <- function(input, output, session) {
     }
   )
   getIndexDatePlot <- reactive({
-
     table <- getIndexDate() |>
       mutate(counts = if_else(counts < 5 & counts > 0, NA, counts)) |>
       filter(!is.na(counts))
 
-    validate(need(ncol(table)>1,
-                  "Results clouded (<5 subjects)"))
+    validate(need(ncol(table)>1, "Provide a valid table"))
 
     if (!is.null(input$plt_index_facet_by)) {
       table <- table %>%
@@ -321,429 +324,562 @@ server <- function(input, output, session) {
   output$index_date_plot <- renderPlotly({
     getIndexDatePlot()
   })
-  output$index_date_plot_download <- reactive({
-    serverPlotDownload(prefix = "dwn_index", name = "indexDatePlot", plot = getIndexDatePlot())
-  })
-
-
-
-
-
-
-
-
-
-
-
-
-
-  ## cohort_attrition picker ----
-  output$cohort_attrition_cohort_name_picker <- reactiveSelectors(
-    data = data$attrition, prefix = "cohort_attrition", columns = "cohort_name",
-    restrictions = "cohort_table_name", input = input, multiple = TRUE,
-    default = list("cohort_name" = data$attrition$cohort_name[data$attrition$cohort_table_name == input$cohort_attrition_cohort_table_name][1])
+  output$index_date_plot_download <- serverPlotDownload(
+    prefix = "dwn_index", name = "indexDatePlot", plot = getIndexDatePlot(), input = input
   )
-  # cohort_attrition table -----
-  getAttrition <- reactive({
-    data$attrition |>
-      filterData("cohort_attrition", input) |>
-      mutate(reason_id = as.numeric(reason_id)) |>
-      group_by(cdm_name, cohort_table_name, cohort_name) |>
-      arrange(reason_id) |>
-      ungroup()
+  # future observation ----
+  # output$future_obs_strata_level <- reactiveSelectors(
+  #   data = data$index_date, prefix = "index_dates", columns = "strata_level",
+  #   restrictions = "strata_name", input = input, multiple = TRUE
+  # )
+  # getGTFutureObs <- reactive({
+  #   data$available_followup |>
+  #     filterData(prefix = "future_obs", input = input) |>
+  #     formatEstimateName(
+  #       estimateNameFormat = c(
+  #         "Median [Q25 - Q75]" = "<median> [<q25> - <q75>]",
+  #         "[min - max]" = "<min> - <max>"
+  #       ),
+  #       keepNotFormatted = FALSE
+  #     ) |>
+  #     formatHeader(
+  #       header = c("strata_name", "strata_level", "additional_name", "additional_level"),
+  #       includeHeaderName = FALSE
+  #     ) |>
+  #     splitGroup() |>
+  #     select(
+  #       !c("result_id", "result_type", "package_name", "package_version", "estimate_type",
+  #          "variable_name", "variable_level")
+  #     ) |>
+  #     arrange(cohort_name) |>
+  #     gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
+  # })
+  # output$future_obs_summary <- render_gt({
+  #   getGTFutureObs()
+  # })
+  # output$future_obs_summary_download <- serverGTDownload(
+  #   name = "futureObservation", gt = getGTFutureObs()
+  # )
+  # getPlotFutureObs <- reactive({
+  #   table <- data$available_followup |>
+  #     filterData(prefix = "future_obs", input = input) |>
+  #     dplyr::filter(.data$estimate_name %in% c("q25", "median", "q75", "min", "max")) |>
+  #     splitGroup() |>
+  #     splitAdditional()
+  #
+  #   validate(need(ncol(table)>1, "Provide a valid table"))
+  #
+  #   if (!is.null(input$plt_future_facet_by)) {
+  #     table <- table %>%
+  #       unite("facet_var",
+  #             c(all_of(input$plt_future_facet_by)), remove = FALSE, sep = "; ")
+  #   }
+  #   if (!is.null(input$plt_future_color)) {
+  #     table <- table %>%
+  #       unite("Group",
+  #             c(all_of(input$plt_future_color)), remove = FALSE, sep = "; ")
+  #     p <- table %>%
+  #       ggplot(aes(
+  #         lower = q25,
+  #         upper = q75,
+  #         middle = median,
+  #         ymin = min,
+  #         ymax = max,
+  #         color = Group,
+  #         fill = Group
+  #       ))
+  #   } else {
+  #     p <- table %>%
+  #       ggplot(aes(
+  #         lower = q25,
+  #         upper = q75,
+  #         middle = median,
+  #         ymin = min,
+  #         ymax = max
+  #       ))
+  #   }
+  #   p <- p + geom_boxplot(stat = "identity")
+  #   if (!is.null(input$plt_future_facet_by)) {
+  #     p <- p +
+  #       facet_wrap(vars(facet_var), ncol = 2)
+  #   }
+  #   p + ylab("Days") + xlab(" ")
+  # })
+  # output$future_obs_plot <- renderPlotly({
+  #   getPlotFutureObs()
+  # })
+  # output$future_obs_plot_download <- serverPlotDownload(
+  #   prefix = "dwn_future", name = "futureFollowUp", plot = getPlotFutureObs(), input = input
+  # )
+  # re-enrollment ----
+  output$reenrolment_strata_level <-  reactiveSelectors(
+    data = data$reenrollment, prefix = "reenrolment", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+    # default = list("strata_level" = data$index_date$strata_level[data$index_date$strata_name %in% input$index_date_strata_name])
+  )
+  getReenrollment <- reactive({
+    data$reenrollment %>%
+      filterData(prefix = "reenrolment", input = input) %>%
+      splitStrata()
   })
-  output$cohort_attrition_table <- renderDataTable({
+  output$reenrolment_table <- renderDataTable({
     datatable(
-      getAttrition() %>%
-        niceChar() %>%
-        select(c("Cdm name", "Cohort table name", "Cohort name", "Reason", -"Reason id", "Number records", "Number subjects", "Excluded records", "Excluded subjects")),
+      getReenrollment(),
       rownames = FALSE,
       extensions = "Buttons",
       options = list(scrollX = TRUE, scrollCollapse = TRUE)
     )
   })
-  output$cohort_attrition_download_table <- downloadHandler(
-    filename = function() {
-      "attritionTable.csv"
-    },
-    content = function(file) {
-      write_csv(getAttrition() %>%
-                  rename_with(~stringr::str_to_sentence(gsub("_", " ", .x, fixed = TRUE))) %>%
-                  select(c("Cdm name", "Cohort group", "Cohort name", "Reason", -"Reason id", input$cohort_attrition_count)),
-                file)
-    }
-  )
-  # cohort attrition chart ----
-  output$attrition_diagram <- renderGrViz({
-    render_graph(attritionChart(getAttrition()))
-  })
-  output$cohort_attrition_download_figure <- downloadHandler(
-    filename = function() {
-      paste0("cohort_attrition_", input$cohort_attrition_cohort_name, ".png")
-    },
-    content = function(file) {
-      table <- getAttrition()
-      export_graph(
-        graph = attritionChart(table),
-        file_name = file,
-        file_type = "png",
-        width = 800
+  output$reenrolment_table_download <- serverCSVDownload("reenrollments", getReenrollment())
+  getReenrollmentGT <- reactive({
+    data$reenrollment %>%
+      filterData(prefix = "reenrolment", input = input) %>%
+      mutate(
+        estimate_name = "N (%)",
+        estimate_value = paste0(count, " (", round(percentage, 2), " %)")
+      ) %>%
+      select(-c("count", "percentage")) %>%
+      formatHeader(
+        header = c("strata_name", "strata_level"),
+        includeHeaderName = FALSE
+      ) |>
+      gtTable(
+        groupNameCol = "cdm_name",
+        groupNameAsColumn = TRUE,
+        colsToMergeRows = "all_columns"
       )
-    }
+  })
+  output$reenrolment_summary <- render_gt({
+    getReenrollmentGT()
+  })
+  output$reenrolment_summary_download <- serverGTDownload(
+    name = "reenrollemnts", gt = getReenrollmentGT()
   )
-  # baseline strata levels  ----
-  output$baseline_strata_level <- renderUI({
-    pickerInput(
-      inputId = "baseline_strata_level",
-      label = "Strata level",
-      choices = unique(data$characteristics$strata_level[data$characteristics$strata_name == input$baseline_strata_name]),
-      selected = unique(data$characteristics$strata_level[data$characteristics$strata_name == input$baseline_strata_name]),
-      options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
-      multiple = TRUE
-    )
+  # attrition ----
+  getAttrition <- reactive({
+    data$population_attrition |>
+      filterData(prefix = "attrition", input = input) |>
+      select(!"cdm_name", !"cohort_name") |>
+      arrange(reason_id)
   })
-  # baseline tidy table ----
-  getBaselineTidy <- reactive({
-    return(
-      filterData(data$characteristics, "baseline", input) |>
-        formatEstimateName(
-          estimateNameFormat = c(
-            "N (%)" = "<count> (<percentage>%)",
-            "N" = "<count>",
-            "<median> [<q25> - <q75>]",
-            "<mean> (<sd>)",
-            "[<min> - <max>]",
-            "[<q05> - <q95>]"
-          )) |>
-        splitStrata()
-    )
-  })
-  output$baseline_characteristics_tidy <- renderDataTable({
+  output$attrition_table <- renderDataTable({
     datatable(
-      getBaselineTidy(),
+      getAttrition(),
+      rownames = FALSE,
+      extensions = "Scroller"
+    )
+  })
+  output$attrition_table_download <-  serverCSVDownload(
+    name = "populationAttrition", getAttrition()
+  )
+  # count ----
+  getCount <- reactive({
+    data$population_count |>
+      filterData(prefix = "pop_count", input = input)
+  })
+  output$population_count_strata_level <- reactiveSelectors(
+    data = data$population_count, prefix = "pop_count", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  output$population_count_table <- renderDataTable({
+    datatable(
+      getCount(),
       rownames = FALSE,
       extensions = "Buttons",
       options = list(scrollX = TRUE, scrollCollapse = TRUE)
     )
   })
-  output$baseline_characteristics_tidy_download <- downloadHandler(
-    filename = function() {
-      "baselineCharacteristicsTable.csv"
-    },
-    content = function(file) {
-      write_csv(getBaselineTidy(), file)
-    }
+  output$population_count_table_download <-  serverCSVDownload(
+    name = "populationCount", getCount()
   )
-  # baseline formatted table ----
-  getBaselineFormatted <- reactive({
-    # row order
-    row_order <- c("Number records", "Number subjects", "Age", "Age group",
-                   "Age groups", "Sex", "Region",  "Prior observation",
-                   "Future observation",  "Cohort start date", "Cohort end date",
-                   "Followup", "Stop followup", "Prior vaccine days",
-                   "Immunocompromised", "Calendar time", "Brand", "Adapted",
-                   "Visit_occurrence count from -365 to -1",
-                   "Conditions flag from -365 to -1",
-                   "Conditions flag from -30 to -1",
-                   "Conditions flag from -inf to -1",
-                   "Medications flag from -183 to -1",
-                   "Medications flag from -30 to -1")
-    # prepare for and convert to gt
-    out <- filterData(data$characteristics, "baseline", input) |>
+  getCountGT <- reactive({
+    getCount() |>
+      select(!starts_with("num")) |>
+      mutate(estimate_name = "Number individuals") |>
+      rename("estimate_value" = "total") |>
+      formatHeader(
+        header = c("strata_name", "strata_level"),
+        includeHeaderName = FALSE
+      ) |>
+      gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE)
+  })
+  output$population_count_summary <- render_gt({
+    getCountGT()
+  })
+  output$population_count_summary_download <- serverGTDownload(
+    name = "populationCount", gt = getCountGT()
+  )
+  # baseline ----
+  output$baseline_strata_level <- reactiveSelectors(
+    data = data$baseline, prefix = "baseline", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  getBaseline <- reactive({
+    data$baseline |>
+      filterData(prefix = "baseline", input = input) |>
+      tableCharacteristics(
+        header = c("group", "additional"),
+        excludeColumns = c(
+          "result_id", "result_type", "package_name","package_version", "estimate_type"
+        )
+      )
+  })
+  output$baseline_table <- render_gt({
+    getBaseline()
+  })
+  output$baseline_table_download <- serverGTDownload(
+    name = "baseline", gt = getBaseline()
+  )
+  # large scale ----
+  output$large_scale_strata_level <- reactiveSelectors(
+    data = data$large_scale, prefix = "large", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  getLargeScale <- reactive({
+    data$large_scale |>
+      filterData(prefix = "large", input = input) |>
+      pivot_wider(
+        names_from = c("estimate_name", "exposed"),
+        values_from = "estimate_value"
+      )
+  })
+  output$large_scale_table <- renderDataTable({
+    datatable(getLargeScale())
+  })
+  output$large_scale_download_table <- serverCSVDownload(
+    name = "largeScale", table = getLargeScale()
+  )
+  # SMD ----
+  output$smd_strata_level <- reactiveSelectors(
+    data = data$smd, prefix = "smd", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  getSMD <- reactive({
+    data$smd |>
+      filterData(prefix = "smd", input = input)
+  })
+  output$smd_table <- renderDataTable({
+    datatable(getSMD())
+  })
+  output$smd_download_table <- serverCSVDownload(
+    name = "SMD", table = getSMD()
+  )
+  # NCO ----
+  output$nco_summary_strata_level <- reactiveSelectors(
+    data = data$survival_summary |> filter(variable_name == "nco"),
+    prefix = "nco_summ", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  getNCOSummaryRaw <- reactive({
+    data$survival_summary |>
+      filterData(prefix = "nco_summ", input = input) |>
+      filter(variable_name == "nco") |>
+      select(!"estimate_type") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      select(!c("variable_name", "window", "analysis"))
+  })
+  output$nco_summary_raw <- renderDataTable({
+    datatable(getNCOSummaryRaw(),
+              rownames = FALSE,
+              extensions = "Buttons",
+              options = list(scrollX = TRUE, scrollCollapse = TRUE))
+  })
+  output$nco_summary_download_raw <- serverCSVDownload(
+    name = "summaryNCO", table = getNCOSummaryRaw()
+  )
+  getGTNCOSummary <- reactive({
+    data$survival_summary |>
+      filterData(prefix = "nco_summ", input = input) |>
+      filter(variable_name == "nco") |>
+      formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c(
-          "N (%)" = "<count> (<percentage>%)",
-          "N" = "<count>",
-          "Median [Q25-Q75]" = "<median> [<q25> - <q75>]",
-          "Mean (SD)" = "<mean> (<sd>)",
-          "[Min. - Max.]" = "[<min> - <max>]",
-          "[Q05-Q95]" = "[<q05> - <q95>]"
-        )) |>
-      mutate(across(c("strata_name", "strata_level"), ~ stringr::str_to_sentence(gsub("_", " ", .x)))) |>
-      formatHeader(header = c("Cohort name", "cohort_name", "Study strata",
-                              "strata_name", "strata_level"),
-                   includeHeaderName = FALSE) |>
-      select(-c("estimate_type")) |>
-      mutate(variable_name = factor(variable_name, levels = row_order)) |>
-      arrange(variable_name) |>
-      mutate(variable_name = as.character(variable_name)) |>
-      rename("Variable name" = "variable_name",
-             "Variable level" = "variable_level",
-             "Estimate name" = "estimate_name") |>
-      gtTable(groupNameCol = "cdm_name",
-              colsToMergeRows = c("Variable name", "Variable level"))
-    return(out)
+          "Subjects (N)" = "<count>",
+          "Events (N)" = "<count_events>",
+          "Follow-up, Median [Q25-Q75]"  = "<median> [<q25>-<q75>]",
+          "Follow-up, [Min-Max]"  = "[<min>-<max>]"
+        ),
+        keepNotFormatted = FALSE
+      ) |>
+      formatHeader(
+        header = c("strata_name", "strata_level", "exposed"),
+        includeHeaderName = FALSE,
+      ) |>
+      arrange(cdm_name, cohort_name) |>
+      select(!c("estimate_type", "variable_name")) |>
+      relocate(c("window", "analysis", "study_end"), .before = "outcome") |>
+      gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
-  output$baseline_characteristics_formatted <- render_gt ({
-    getBaselineFormatted() %>%
-      tab_options(column_labels.padding = px(5)) %>%
-      sub_missing() %>%
-      cols_width(everything() ~ px(200), `Variable name` ~ 250, `Variable level` ~ 250, `Estimate name` ~ 250)
+  output$nco_summary_table <- render_gt({
+    getGTNCOSummary()
   })
-  output$baseline_characteristics_formatted_download <- downloadHandler(
-    filename = function() {
-      "baselineCharacteristicsTable.docx"
-    },
-    content = function(file) {
-      gtsave(data = getBaselineFormatted(),
-             filename = file,
-             vwidth = 400,
-             vheight = 300)
-    },
-    contentType = "docx"
+  output$nco_summary_download_table <- serverGTDownload(name = "summaryNCO", gt = getGTNCOSummary())
+  # STUDY ----
+  output$study_summary_strata_level <- reactiveSelectors(
+    data = data$survival_summary |> filter(variable_name == "study"),
+    prefix = "study_summ", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
   )
-  # ls characterisation ----
-  output$large_table_strata_level_picker <-  reactiveSelectors(
-    data = data$large_scale_characteristics, prefix = "large_table", columns = "strata_level",
-    restrictions = "strata_name", input = input, multiple = TRUE,
-    default = list("strata_level" = data$large_scale_characteristics$strata_level[data$large_scale_characteristics$strata_name %in% input$large_table_strata_name])
+  getOutcomesSummaryRaw <- reactive({
+    data$survival_summary |>
+      filterData(prefix = "study_summ", input = input) |>
+      filter(variable_name == "study") |>
+      select(!c("estimate_type")) |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      dplyr::select(!c("variable_name", "window", "analysis"))
+  })
+  output$study_summary_raw <- renderDataTable({
+    datatable(getOutcomesSummaryRaw(),
+              rownames = FALSE,
+              extensions = "Buttons",
+              options = list(scrollX = TRUE, scrollCollapse = TRUE))
+  })
+  output$study_summary_download_raw <- serverCSVDownload(
+    name = "summaryOutcomes", table = getOutcomesSummaryRaw()
   )
-  getLSCharacteristicsTidy <- reactive({
-    filterData(data$large_scale_characteristics, "large", input) %>%
-      filterData("large_table", input) %>%
-      pivot_wider(names_from = estimate_name, values_from = estimate_value) %>%
-      select(c("cdm_name", "cohort_name", "strata_name", "strata_level", "window",
-               "concept_domain", "concept", "concept_name", input$large_table_estimate_name)) %>%
-      niceChar()
+  getGTOutcomesSummary <- reactive({
+    data$survival_summary |>
+      filterData(prefix = "study_summ", input = input) |>
+      filter(variable_name == "study") |>
+      formatEstimateValue() |>
+      formatEstimateName(
+        estimateNameFormat = c(
+          "Subjects (N)" = "<count>",
+          "Events (N)" = "<count_events>",
+          "Follow-up, Median [Q25-Q75]"  = "<median> [<q25>-<q75>]",
+          "Follow-up, [Min-Max]"  = "[<min>-<max>]"
+        ),
+        keepNotFormatted = FALSE
+      ) |>
+      formatHeader(
+        header = c("strata_name", "strata_level", "exposed"),
+        includeHeaderName = FALSE,
+      ) |>
+      arrange(cdm_name, cohort_name) |>
+      select(!estimate_type) |>
+      relocate(c("window", "analysis", "study_end"), .before = "outcome") |>
+      gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
-  output$ls_characterisation_table <- renderDataTable({
-    datatable(
-      getLSCharacteristicsTidy(),
-      rownames = FALSE,
-      extensions = "Buttons",
-      options = list(scrollX = TRUE, scrollCollapse = TRUE)
-    )
+  output$study_summary_table <- render_gt({
+    getGTOutcomesSummary()
   })
-  output$large_download_table <- downloadHandler(
-    filename = function() {
-      "largeScaleCharacteristics.csv"
-    },
-    content = function(file) {
-      write_csv(getLSCharacteristicsTidy(), file)
-    }
+  output$study_summary_download_table <- serverGTDownload(name = "summaryOutcomes", gt = getGTOutcomesSummary())
+  # NCO FOREST ----
+  output$nco_risk_strata_level <- reactiveSelectors(
+    data = data$risk |> filter(variable_name == "nco"),
+    prefix = "nco_risk", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
   )
-  # lsc + smd table ----
-  output$comp_large_strata_level_reference_picker <-  renderUI({
-    pickerInput(
-      inputId = "comp_large_strata_level_reference",
-      label = "Strata level",
-      choices = unique(data$large_scale_characteristics$strata_level[data$large_scale_characteristics$strata_name == input$comp_large_strata_name_reference]),
-      selected = unique(data$large_scale_characteristics$strata_level[data$large_scale_characteristics$strata_name == input$comp_large_strata_name_reference])[1],
-      options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
-      multiple = FALSE
-    )
+  getNCOForestRaw <- reactive({
+    data$risk |>
+      filterData(prefix = "nco_risk", input = input) |>
+      filter(variable_name == "nco") |>
+      select(!"estimate_type") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      select(!c("variable_name"))
   })
-  output$comp_large_strata_level_comparator_picker <-  renderUI({
-    pickerInput(
-      inputId = "comp_large_strata_level_comparator",
-      label = "Strata level",
-      choices = unique(data$large_scale_characteristics$strata_level[data$large_scale_characteristics$strata_name == input$comp_large_strata_name_comparator]),
-      selected = unique(data$large_scale_characteristics$strata_level[data$large_scale_characteristics$strata_name == input$comp_large_strata_name_comparator])[1],
-      options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
-      multiple = FALSE
-    )
+  output$nco_risk_raw <- renderDataTable({
+    datatable(getNCOForestRaw(),
+              rownames = FALSE,
+              extensions = "Buttons",
+              options = list(scrollX = TRUE, scrollCollapse = TRUE))
   })
-  getLargeComparisonTable <- reactive({
-    filterData(data = data$large_scale_characteristics, prefix = "large", input = input) %>%
-      rename_with(.fn = ~ paste0(., "_reference"), .cols = c("cohort_name", "strata_name", "strata_level")) %>%
-      mutate(estimate_name = paste0(estimate_name, "_reference"),
-             estimate_value = as.numeric(gsub(",", "", estimate_value))) %>%
-      filterData(prefix = "comp_large", input = input) %>%
-      pivot_wider(names_from = estimate_name, values_from = estimate_value) %>%
-      left_join(
-        filterData(data = data$large_scale_characteristics, prefix = "large", input = input) %>%
-          rename_with(.fn = ~ paste0(., "_comparator"), .cols = c("cohort_name", "strata_name", "strata_level")) %>%
-          mutate(estimate_name = paste0(estimate_name, "_comparator"),
-                 estimate_value = as.numeric(gsub(",", "", estimate_value))) %>%
-          filterData(prefix = "comp_large", input = input) %>%
-          pivot_wider(names_from = estimate_name, values_from = estimate_value)
-      ) %>%
-      mutate(smd = (percentage_comparator/100 - percentage_reference/100) / sqrt((percentage_comparator/100*(1-percentage_comparator/100) + percentage_reference/100*(1-percentage_reference/100))/2),
-             smd = round(smd, 3))
-  })
-  output$lsc_smd_tidy <- renderDataTable({
-    datatable(
-      getLargeComparisonTable() %>%
-        mutate(estimate_reference = paste0(count_reference, " (", percentage_reference, "%)"),
-               estimate_comparator = paste0(count_comparator, " (", percentage_comparator, "%)")) %>%
-        select(c("cdm_name", "cohort_name_reference", "strata_level_reference", "cohort_name_comparator", "strata_level_comparator",
-                 "window", "concept_domain", "concept", "concept_name", "estimate_reference", "estimate_comparator", "smd")) ,
-      # niceChar(),
-      rownames = FALSE,
-      extensions = "Buttons",
-      options = list(scrollX = TRUE, scrollCollapse = TRUE)
-    )
-  })
-  output$lsc_smd_tidy_download <- downloadHandler(
-    filename = function() {
-      "largeScaleComparison.csv"
-    },
-    content = function(file) {
-      write_csv(getLargeComparisonTable(), file)
-    }
+  output$nco_risk_download_raw <- serverCSVDownload(
+    name = "estimatesNCO", table = getNCOForestRaw()
   )
-  # lsc + smd pot ----
-  getLargeComparisonPlot <- reactive({
-    table <- getLargeComparisonTable()
-    thr <- 0.1
+  getNCOForestTable <- reactive({
+    data$risk |>
+      filterData(prefix = "nco_risk", input = input) |>
+      filter(variable_name == "nco") |>
+      formatEstimateValue() |>
+      formatEstimateName(
+        estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
+        keepNotFormatted = FALSE
+      ) |>
+      formatHeader(
+        header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
+        includeHeaderName = FALSE,
+      ) |>
+      arrange(cohort_name) |>
+      select(!c("estimate_type", "variable_name")) |>
+      gtTable(colsToMergeRows = "all_columns")
+  })
+  output$nco_risk_table <- render_gt({
+    getNCOForestTable()
+  })
+  output$nco_risk_download_table <- serverGTDownload(name = "summaryNCO", gt = getNCOForestTable())
+  getNCOForestPlot <- reactive({
+    # format <- c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression", "analysis", "study_end", "window", "outcome")
+    # format <- format[!format %in% input$plt_nco_risk_facet_by]
 
-    balance_area <- expand_grid(
-      cohort_reference = input$comp_large_cohort_name_reference,
-      cohort_comparator = input$comp_large_cohort_name_comparator,
-      cdm_name = input$large_cdm_name,
-      concept_domain = input$large_concept_domain,
-      window = input$large_window,
-      concept = NA,
-      concept_name = NA,
-      count_reference = NA,
-      percentage_reference = NA,
-      count_comparator = NA,
-      percentage_comparator = NA
-    ) %>%
-      cross_join(
-        tibble(p_reference = seq(0, 1, by = 0.01)) %>%
-          mutate(
-            a = 1 + thr^2/2,
-            b = -2*p_reference - thr^2/2,
-            c = p_reference*p_reference - (thr^2/2 * (p_reference - p_reference*p_reference)),
-            p_comparator_pos = (-b + sqrt(b^2 - 4*a*c))/(2*a) * 100,
-            p_comparator_neg = (-b - sqrt(b^2 - 4*a*c))/(2*a) * 100,
-            p_reference = p_reference * 100,
-            p_comparator = p_reference
-          )
+    table <- data$risk |>
+      filterData(prefix = "nco_risk", input = input) |>
+      filter(variable_name == "nco") |>
+      select(!"estimate_type") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      mutate(
+        outcome_plot = outcome, #glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
+        association = case_when(
+          lower_ci > 1 ~ "positive association",
+          upper_ci < 1 ~ "negative association",
+          lower_ci <= 1 & upper_ci >= 1 ~ "no association",
+          .default = "no association"
+        )
+      ) |>
+      left_join(
+        data$survival_summary |>
+          filter(grepl("count", estimate_name)) |>
+          pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
       )
 
-    validate(need(ncol(table)>1,
-                  "No results for selected inputs"))
+    if (!is.null(input[[paste0("plt_nco_risk_facet_by")]])) {
+      table <- table %>%
+        unite("facet_var",
+              c(all_of(input[[paste0("plt_nco_risk_facet_by")]])), remove = FALSE, sep = "; ")
+    }
 
-    if(is.null(input$plot_lsc_color)) {
-      if(!is.null(input$plot_lsc_facet_by)){
-        p <- table %>%
-          unite("facet_var",
-                c(all_of(input$plot_lsc_facet_by)), remove = FALSE, sep = "; ") %>%
-          ggplot(aes_string(x = "percentage_reference", y = "percentage_comparator",
-                            label = "concept_domain",
-                            label1 = "concept_name",
-                            label2 = "concept",
-                            label3 = "window",
-                            label4 = "count_reference",
-                            label5 = "count_comparator"
-          )) +
-          geom_ribbon(data = balance_area %>%
-                        unite("facet_var",
-                              c(all_of(input$plot_lsc_facet_by)), remove = FALSE, sep = "; "),
-                      mapping = aes(x = p_reference,
-                                    y = p_comparator,
-                                    ymin = p_comparator_pos,
-                                    ymax = p_comparator_neg),
-                      alpha = 0.4,
-                      color = "#a3b18a",
-                      fill = "#a3b18a") +
-          geom_point() +
-          geom_abline(intercept = 0, slope = 1) +
-          facet_wrap(vars(facet_var),nrow = 2) +
-          theme_bw() +
-          theme(legend.position = "none")
-      } else {
-        p <- table %>%
-          ggplot(aes_string(x = "percentage_reference", y = "percentage_comparator",
-                            label = "concept_domain",
-                            label1 = "concept_name",
-                            label2 = "concept",
-                            label3 = "window",
-                            label4 = "count_reference",
-                            label5 = "count_comparator")) +
-          geom_ribbon(data = balance_area,
-                      mapping = aes(x = p_reference,
-                                    y = p_comparator,
-                                    ymin = p_comparator_pos,
-                                    ymax = p_comparator_neg),
-                      alpha = 0.4,
-                      color = "#a3b18a",
-                      fill = "#a3b18a") +
-          geom_point() +
-          geom_abline(intercept = 0, slope = 1) +
-          theme_bw() +
-          theme(legend.position = "none")
-      }
+    if (!is.null(input[[paste0("plt_nco_risk_color")]])) {
+      table <- table %>%
+        unite("Group",
+              c(all_of(input[[paste0("plt_nco_risk_color")]])), remove = FALSE, sep = "; ")
+      p <- table %>%
+        ggplot(aes(x = exp_coef, y = outcome_plot, color = Group, label1 = lower_ci, label2 = upper_ci,
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
     } else {
-      if(!is.null(input$plot_lsc_facet_by)){
-        p <- table %>%
-          unite("facet_var",
-                c(all_of(input$plot_lsc_facet_by)), remove = FALSE, sep = "; ") %>%
-          unite("color_var",
-                c(all_of(input$plot_lsc_color)), remove = FALSE, sep = "; ") %>%
-          ggplot(aes_string(x = "percentage_reference", y = "percentage_comparator",
-                            color = "color_var",
-                            label = "concept_domain",
-                            label1 = "concept_name",
-                            label2 = "concept",
-                            label3 = "window",
-                            label4 = "count_reference",
-                            label5 = "count_comparator"
-          )) +
-          geom_ribbon(data = balance_area %>%
-                        unite("facet_var",
-                              c(all_of(input$plot_lsc_facet_by)), remove = FALSE, sep = "; ") %>%
-                        unite("color_var",
-                              c(all_of(input$plot_lsc_color)), remove = FALSE, sep = "; "),
-                      mapping = aes(x = p_reference,
-                                    y = p_comparator,
-                                    ymin = p_comparator_pos,
-                                    ymax = p_comparator_neg),
-                      alpha = 0.4,
-                      color = "#a3b18a",
-                      fill = "#a3b18a") +
-          geom_point() +
-          geom_abline(intercept = 0, slope = 1) +
-          facet_wrap(vars(facet_var),nrow = 2) +
-          theme_bw() +
-          theme(legend.position = "none")
-      } else{
-        p <- table %>%
-          unite("color_var",
-                c(all_of(input$plot_lsc_color)), remove = FALSE, sep = "; ") %>%
-          ggplot(aes_string(x = "percentage_reference", y = "percentage_comparator",
-                            color = "color_var",
-                            label = "concept_domain",
-                            label1 = "concept_name",
-                            label2 = "concept",
-                            label3 = "window",
-                            label4 = "count_reference",
-                            label5 = "count_comparator")) +
-          geom_ribbon(data = balance_area %>%
-                        unite("color_var",
-                              c(all_of(input$plot_lsc_color)), remove = FALSE, sep = "; "),
-                      mapping = aes(x = p_reference,
-                                    y = p_comparator,
-                                    ymin = p_comparator_pos,
-                                    ymax = p_comparator_neg),
-                      alpha = 0.4,
-                      color = "#a3b18a",
-                      fill = "#a3b18a") +
-          geom_point() +
-          geom_abline(intercept = 0, slope = 1) +
-          theme_bw() +
-          theme(legend.position = "none")
-      }
+      p <- table %>%
+        ggplot(aes(x = exp_coef, y = outcome_plot, label1 = lower_ci, label2 = upper_ci,
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
     }
+    p <- p +
+      geom_vline(xintercept = 1) +
+      geom_point() +
+      geom_linerange(aes(xmin = lower_ci, xmax = upper_ci), linewidth = 0.8) +
+      scale_x_continuous(breaks = c(0.1, 0.25, 0.5, 1, 2, 4),
+                         labels = c(0.1, 0.25, 0.5, 1, 2, 4),
+                         limits = c(0.1, 4),
+                         trans = "log10",
+                         oob = scales::rescale_none) +
+      ylab("") +
+      xlab("")
 
-    p +
-      xlab("Reference") +
-      ylab("Comparator")
-  })
-  output$lsc_smd_plot <- renderPlotly({
-    getLargeComparisonPlot()
-  })
-  output$lsc_smd_plot_download <- downloadHandler(
-    filename = function() {
-      paste0("largeComparisonPlot.", input$plsc_device)
-    },
-    content = function(file) {
-      ggsave(file, getLargeComparisonPlot(),
-             width = as.numeric(input$plsc_width),
-             height = as.numeric(input$plsc_height))
+    if (!is.null(input[[paste0("plt_nco_risk_facet_by")]])) {
+      p <- p + facet_wrap(vars(facet_var), ncol = 2)
     }
+    p
+  })
+  output$nco_risk_plot <- renderPlotly({
+    getNCOForestPlot()
+  })
+  output$nco_risk_download_plot <- serverPlotDownload(
+    prefix = "dwn_nco_risk", name = "forestNCO", plot = getNCOForestPlot(), input = input
   )
+  # STUDY FOREST ----
+  output$study_risk_strata_level <- reactiveSelectors(
+    data = data$risk |> filter(variable_name == "study"),
+    prefix = "study_risk", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  getStudyForestRaw <- reactive({
+    data$risk |>
+      filterData(prefix = "study_risk", input = input) |>
+      filter(variable_name == "study") |>
+      select(!"estimate_type") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      select(!c("variable_name"))
+  })
+  output$study_risk_raw <- renderDataTable({
+    datatable(getStudyForestRaw(),
+              rownames = FALSE,
+              extensions = "Buttons",
+              options = list(scrollX = TRUE, scrollCollapse = TRUE))
+  })
+  output$study_risk_download_raw <- serverCSVDownload(
+    name = "estimatesStudy", table = getStudyForestRaw()
+  )
+  getStudyForestTable <- reactive({
+    data$risk |>
+      filterData(prefix = "study_risk", input = input) |>
+      filter(variable_name == "study") |>
+      formatEstimateValue() |>
+      formatEstimateName(
+        estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
+        keepNotFormatted = FALSE
+      ) |>
+      formatHeader(
+        header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
+        includeHeaderName = FALSE,
+      ) |>
+      arrange(cohort_name) |>
+      select(!c("estimate_type", "variable_name")) |>
+      gtTable(colsToMergeRows = "all_columns")
+  })
+  output$study_risk_table <- render_gt({
+    getStudyForestTable()
+  })
+  output$study_risk_download_table <- serverGTDownload(name = "summaryStudy", gt = getStudyForestTable())
+  getStudyForestPlot <- reactive({
+    # format <- c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression", "analysis", "study_end", "window", "outcome")
+    # format <- format[!format %in% input$plt_study_risk_facet_by]
 
+    table <- data$risk |>
+      filterData(prefix = "study_risk", input = input) |>
+      filter(variable_name == "study") |>
+      select(!"estimate_type") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      mutate(
+        outcome_plot = outcome, #glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
+        association = case_when(
+          lower_ci > 1 ~ "positive association",
+          upper_ci < 1 ~ "negative association",
+          lower_ci <= 1 & upper_ci >= 1 ~ "no association",
+          .default = "no association"
+        )
+      ) |>
+      left_join(
+        data$survival_summary |>
+          filter(grepl("count", estimate_name)) |>
+          pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
+      )
+
+    if (!is.null(input[[paste0("plt_study_risk_facet_by")]])) {
+      table <- table %>%
+        unite("facet_var",
+              c(all_of(input[[paste0("plt_study_risk_facet_by")]])), remove = FALSE, sep = "; ")
+    }
+
+    if (!is.null(input[[paste0("plt_study_risk_color")]])) {
+      table <- table %>%
+        unite("Group",
+              c(all_of(input[[paste0("plt_study_risk_color")]])), remove = FALSE, sep = "; ")
+      p <- table %>%
+        ggplot(aes(x = exp_coef, y = outcome_plot, color = Group, label1 = lower_ci, label2 = upper_ci,
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
+    } else {
+      p <- table %>%
+        ggplot(aes(x = exp_coef, y = outcome_plot, label1 = lower_ci, label2 = upper_ci,
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
+    }
+    p <- p +
+      geom_vline(xintercept = 1) +
+      geom_point() +
+      geom_linerange(aes(xmin = lower_ci, xmax = upper_ci), linewidth = 0.8) +
+      scale_x_continuous(breaks = c(0.1, 0.25, 0.5, 1, 2),
+                         labels = c(0.1, 0.25, 0.5, 1, 2),
+                         limits = c(0.1, 2),
+                         trans = "log10",
+                         oob = scales::rescale_none) +
+      ylab("") +
+      xlab("")
+
+    if (!is.null(input[[paste0("plt_study_risk_facet_by")]])) {
+      p <- p + facet_wrap(vars(facet_var), ncol = 2)
+    }
+    p
+  })
+  output$study_risk_plot <- renderPlotly({
+    getStudyForestPlot()
+  })
+  output$study_risk_download_plot <- serverPlotDownload(
+    prefix = "dwn_study_risk", name = "forestStudy", plot = getStudyForestPlot(), input = input
+  )
 }

@@ -68,9 +68,7 @@ data$index_date <- pre_data$cohort_stats |>
   uniteStrata(c = c("vaccine_brand", "trimester"))
 data$available_followup <- pre_data$cohort_stats |>
   filter(grepl("followup", result_type)) |>
-  select(-"cohort_name", -"cohort_start_date") |>
-  mutate(result_id = 1L) |>
-  newSummarisedResult()
+  select(-"cohort_name", -"cohort_start_date")
 data$reenrollment <- pre_data$cohort_stats |>
   filter(result_type == "recontributions") |>
   splitAll() |>
@@ -95,20 +93,69 @@ data$baseline <- pre_data$characteristics |>
   filter(exposed != "overall") |>
   select(-starts_with("additional")) |>
   uniteAdditional(cols = c("exposed")) |>
-  uniteStrata(cols = c("vaccine_brand", "trimester")) |>
-  newSummarisedResult()
+  uniteStrata(cols = c("vaccine_brand", "trimester"))
 data$large_scale <- pre_data$characteristics |>
-  filter(result_type %in% c("summarised_large_scale_characteristics", "large_scale_differences")) |>
-  newSummarisedResult()
+  filter(result_type %in% c("summarised_large_scale_characteristics")) |>
+  splitGroup() |>
+  splitAdditional() |>
+  select(!c("result_id", "result_type", "package_name", "package_version",
+            "estimate_type")) |>
+  rename("window" = "variable_level", "concept_name" = "variable_name") |>
+  mutate(
+    estimate_value = as.numeric(estimate_value),
+    exposed = case_when(
+      exposed == "0" ~ "unexposed",
+      exposed == "1" ~ "exposed",
+      .default = exposed
+    )
+  )
+data$smd <- pre_data$characteristics |>
+  filter(result_type %in% c("large_scale_differences")) |>
+  splitGroup() |>
+  splitAdditional() |>
+  mutate(smd = as.numeric(estimate_value), asmd = abs(smd)) |>
+  rename("window" = "variable_level", "concept_name" = "variable_name") |>
+  select(!c("result_id", "result_type", "package_name", "package_version",
+            "estimate_type", "estimate_name", "estimate_value"))
 data$survival_summary <- pre_data$survival |>
   filter(result_type == "followup") |>
-  newSummarisedResult()
+  newSummarisedResult() |>
+  mutate(estimate_name = gsub("num", "count", estimate_name)) |>
+  # suppress() |>
+  splitGroup() |>
+  splitAdditional() |>
+  filter(!(grepl("control", estimate_name) & exposed == 1)) |>
+  filter(!(grepl("exposed", estimate_name) & exposed == 0)) |>
+  mutate(estimate_type = if_else(grepl("count", estimate_name), "integer", estimate_type)) |>
+  mutate(
+    estimate_name = gsub("_control|_exposed", "", estimate_name),
+    exposed = if_else(exposed == "1", "exposed", "unexposed")
+  ) |>
+  select(!c("result_id")) |>
+  rename("outcome" = "variable_level") |>
+  filter(estimate_name != "mean") |>
+  mutate(estimate_value = as.numeric(estimate_value)) |>
+  group_by(cdm_name, cohort_name, strata_name, strata_level, variable_name, outcome, window, analysis, study_end, exposed) |>
+  mutate(suppress = if_else(any(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0), TRUE, FALSE)) |>
+  ungroup() |>
+  mutate(estimate_value = if_else(suppress, NA, estimate_value)) |>
+  select(!suppress)
 data$survival <- pre_data$survival |>
-  filter(grepl("survival", result_type)) |>
-  newSummarisedResult()
-data$risk <-  pre_data$survival |>
+  filter(grepl("survival", result_type))
+data$risk <- pre_data$survival |>
   filter(result_type %in% c("binomial", "cox")) |>
-  newSummarisedResult()
+  splitGroup() |>
+  splitAdditional() |>
+  rename("outcome" = "variable_level", "regression" = "result_type") |>
+  select(!c("package_name", "package_version", "result_id")) |>
+  mutate(estimate_value = as.numeric(estimate_value)) |>
+  select(
+    c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression",
+      "analysis", "study_end", "window", "outcome", "variable_name",
+      "estimate_type", "estimate_name", "estimate_value")
+  )
+data$population_count <- data$population_count |>
+  mutate(total = num_control + num_exposed)
 
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

@@ -130,7 +130,7 @@ plotDownloadSelectors <- function(prefix,
   ))
 }
 
-serverPlotDownload <- function(prefix, name, plot) {
+serverPlotDownload <- function(prefix, name, plot, input) {
   downloadHandler(
     filename = function() {
       paste0(name, ".", input[[paste0(prefix, "_device")]])
@@ -139,6 +139,32 @@ serverPlotDownload <- function(prefix, name, plot) {
       ggsave(file, plot,
              width = as.numeric(input[[paste0(prefix, "_width")]]),
              height = as.numeric(input[[paste0(prefix, "_height")]]))
+    }
+  )
+}
+
+serverGTDownload <- function(name, gt) {
+  downloadHandler(
+    filename = function() {
+      paste0(name, ".docx")
+    },
+    content = function(file) {
+      gtsave(data = gt,
+             filename = file,
+             vwidth = 400,
+             vheight = 300)
+    },
+    contentType = "docx"
+  )
+}
+
+serverCSVDownload <- function(name, table) {
+  downloadHandler(
+    filename = function() {
+      paste0(name, ".csv")
+    },
+    content = function(file) {
+      write_csv(table, file)
     }
   )
 }
@@ -162,3 +188,4 @@ niceChar <- function(x, cols = everything()) {
 niceNum <- function(x, dec = 0) {
   trimws(format(round(as.numeric(x), dec), big.mark = ",", nsmall = dec, scientific = FALSE))
 }
+

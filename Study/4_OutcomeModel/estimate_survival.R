@@ -9,7 +9,6 @@ analyses <- c("main", "sensitivity")
 
 results <- list()
 k <- 1
-### for compariosn_names
 for (analysis in analyses) {
   info(logger, paste0(" - analysis: ", analysis))
   for (studyEnd in study_ends) {
