@@ -20,6 +20,13 @@ cdm$mother_table <- cdm$mother_table %>%
   compute(name = "mother_table", temporary = FALSE) %>%
   recordCohortAttrition(reason = "In observation at pregnancy start date")
 
+## In observation at pregnancy end date
+cdm$mother_table <- cdm$mother_table %>%
+  addInObservation(indexDate = "cohort_end_date") %>%
+  filter(in_observation == 1) %>%
+  compute(name = "mother_table", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "In observation at pregnancy end date")
+
 ## end date > start_date
 cdm$mother_table <- cdm$mother_table %>%
   filter(pregnancy_start_date < pregnancy_end_date) %>%
