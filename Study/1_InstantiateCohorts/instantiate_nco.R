@@ -13,7 +13,7 @@ cdm <- CDMConnector::generateConceptCohortSet(
   name = nco_table_name,
   limit = "all",
   requiredObservation = c(0, 0),
-  end = "event_end_date",
+  end = 0,
   overwrite = TRUE
 )
 

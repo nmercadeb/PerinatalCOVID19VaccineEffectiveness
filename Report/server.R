@@ -709,8 +709,8 @@ server <- function(input, output, session) {
   })
   output$nco_risk_download_table <- serverGTDownload(name = "summaryNCO", gt = getNCOForestTable())
   getNCOForestPlot <- reactive({
-    # format <- c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression", "analysis", "study_end", "window", "outcome")
-    # format <- format[!format %in% input$plt_nco_risk_facet_by]
+    format <- c("cohort_name", "strata_level", "regression", "window", "outcome")
+    format <- format[!format %in% input$plt_nco_risk_facet_by]
 
     table <- data$risk |>
       filterData(prefix = "nco_risk", input = input) |>
@@ -718,7 +718,7 @@ server <- function(input, output, session) {
       select(!"estimate_type") |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       mutate(
-        outcome_plot = outcome, #glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
+        outcome_plot = glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
         association = case_when(
           lower_ci > 1 ~ "positive association",
           upper_ci < 1 ~ "negative association",
@@ -818,8 +818,8 @@ server <- function(input, output, session) {
   })
   output$study_risk_download_table <- serverGTDownload(name = "summaryStudy", gt = getStudyForestTable())
   getStudyForestPlot <- reactive({
-    # format <- c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression", "analysis", "study_end", "window", "outcome")
-    # format <- format[!format %in% input$plt_study_risk_facet_by]
+    format <- c("cohort_name", "strata_level", "regression", "window", "outcome")
+    format <- format[!format %in% input$plt_study_risk_facet_by]
 
     table <- data$risk |>
       filterData(prefix = "study_risk", input = input) |>
@@ -827,7 +827,7 @@ server <- function(input, output, session) {
       select(!"estimate_type") |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       mutate(
-        outcome_plot = outcome, #glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
+        outcome_plot = glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
         association = case_when(
           lower_ci > 1 ~ "positive association",
           upper_ci < 1 ~ "negative association",

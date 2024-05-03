@@ -45,10 +45,27 @@ source(here("0_SetUp", "functions.R"))
 readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_snapshot_", cdmName(cdm), ".csv")))
 
 if (runInstantiateCohorts) {
-  cdm$condition_ocurrence <- cdm$condition_ocurrence %>%
-    filter(condition_start_date <= condition_end_date)
+  if (cdmName(cdm) != "CPRD") {
+    cdm$condition_occurrence <- cdm$condition_occurrence %>%
+      filter(condition_start_date <= condition_end_date) %>%
+      left_join(
+        cdm$observation_period |>
+          select(person_id, observation_period_start_date, observation_period_end_date),
+        by = "person_id"
+      ) |>
+      filter(condition_start_date >= observation_period_start_date) |>
+      filter(condition_start_date <= observation_period_end_date)
+  }
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
-  source(here("1_InstantiateCohorts", "instantiate_json.R"))
+  # source(here("1_InstantiateCohorts", "instantiate_json.R"))
+  cdm <- cdmFromCon(
+    con = db,
+    cdmSchema = cdm_database_schema,
+    writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
+    cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
+                     covid_table_name, other_vaccines_table_name, ps_covariates_table_name),
+    cdmName = database_name
+  )
   source(here("1_InstantiateCohorts", "instantiate_nco.R"))
   source(here("1_InstantiateCohorts", "instantiate_vaccination_table.R"))
   source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
