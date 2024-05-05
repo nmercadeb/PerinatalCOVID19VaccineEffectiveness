@@ -42,7 +42,7 @@ dataFolder <- "data"
 source(here("functions_shiny.R"))
 
 # Data
- source(here("prepare_data.R"))
+source(here("prepare_data.R"))
 
 
 # Shiny theme ----
