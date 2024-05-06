@@ -48,17 +48,8 @@ if (runInstantiateCohorts) {
   cdm$condition_occurrence <- cdm$condition_occurrence %>%
     filter(condition_start_date <= condition_end_date)
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
-  # source(here("1_InstantiateCohorts", "instantiate_json.R"))
-  # source(here("1_InstantiateCohorts", "instantiate_nco.R"))
-  cdm <- cdmFromCon(
-    con = db,
-    cdmSchema = cdm_database_schema,
-    writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
-    cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
-                     covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
-                     nco_table_name),
-    cdmName = database_name
-  )
+  source(here("1_InstantiateCohorts", "instantiate_json.R"))
+  source(here("1_InstantiateCohorts", "instantiate_nco.R"))
   source(here("1_InstantiateCohorts", "instantiate_vaccination_table.R"))
   source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
   source(here("1_InstantiateCohorts", "instantiate_outcomes.R"))
