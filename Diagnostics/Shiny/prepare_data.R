@@ -110,53 +110,56 @@ data$time_distribution <- tibble(covariate = c("age", "prior_observation", "futu
   select(cdm_name, cohort_name, sex, covariate, estimate_type, estimate_value)
 }
 
-if (!is.null(data$lsc_matched)) {
-process_columns <- function(df) {
-  df %>%
-    splitAdditional() %>%
-    distinct() %>%
-    mutate(
-      estimate_name = paste0("matched_", estimate_name),
-      estimate = as.numeric(estimate_value)
-    ) %>%
-    select(-estimate_value, -estimate_name, -estimate, -estimate_type) %>%
-    summarise(across(everything(), ~n_distinct(.) > 1)) %>%
-    select(where(~.)) %>%
-    names()
-}
-
-non_numeric_cols <- process_columns(data$lsc_matched)
-non_numeric_cols_sample <- process_columns(data$lsc_sample)
-
-data$lsc_table <- data$lsc_matched %>% 
-  splitAdditional() %>%
-  distinct() %>%
-  mutate(
-    estimate_name = paste0("matched_", estimate_name),
-    estimate = as.numeric(estimate_value)
-  ) %>% 
-  pivot_wider(id_cols = dplyr::all_of(c(non_numeric_cols,"cdm_name")),
-    names_from = estimate_name, values_from = estimate) %>% 
-  left_join(
-    data$lsc_sample %>% 
-      splitAdditional() %>%
-      distinct() %>%
-      mutate(
-        estimate_name = paste0("sample_", estimate_name),
-        estimate = as.numeric(estimate_value)
-      ) %>% 
-      pivot_wider(id_cols = dplyr::all_of(c(non_numeric_cols_sample,"cdm_name")),
-                  names_from = estimate_name, values_from = estimate)) %>% 
-  mutate(
-    difference_count = (sample_count - matched_count)/matched_count,
-    difference_percentage = (sample_percentage - matched_percentage)/matched_percentage
-  ) %>% 
-  select(
-    cdm_name, cohort_name = group_level, concept_name = variable_name, table_name, concept,
-    window = variable_level, matched_count, matched_percentage, sample_count, sample_percentage, 
-    difference_count, difference_percentage
-  )
-}
+# if (!is.null(data$lsc_matched)) {
+# process_columns <- function(df) {
+#   df %>%
+#     splitAdditional() %>%
+#     distinct() %>%
+#     mutate(
+#       estimate_name = paste0("matched_", estimate_name),
+#       estimate = as.numeric(estimate_value)
+#     ) %>%
+#     select(-estimate_value, -estimate_name, -estimate, -estimate_type) %>%
+#     summarise(across(everything(), ~n_distinct(.) > 1)) %>%
+#     select(where(~.)) %>%
+#     names()
+# }
+# 
+# non_numeric_cols <- process_columns(data$lsc_matched)
+# non_numeric_cols_sample <- process_columns(data$lsc_sample)
+# 
+# data$lsc_table <- data$lsc_matched %>% 
+#   splitStrata() %>% 
+#   splitAdditional() %>%
+#   distinct() %>%
+#   mutate(
+#     estimate_name = paste0("matched_", estimate_name),
+#     estimate_value = as.numeric(estimate_value)
+#   ) %>% 
+#   select(!estimate_type) %>% 
+#   pivot_wider(id_cols = dplyr::all_of(c(non_numeric_cols,"cdm_name")),
+#     names_from = estimate_name, values_from = estimate_value) %>% 
+#   left_join(
+#     data$lsc_sample %>% 
+#       splitStrata() %>% 
+#       splitAdditional() %>%
+#       distinct() %>%
+#       mutate(
+#         estimate_name = paste0("sample_", estimate_name),
+#         estimate_value = as.numeric(estimate_value)
+#       ) %>% 
+#       pivot_wider(id_cols = dplyr::all_of(c(non_numeric_cols_sample,"cdm_name")),
+#                   names_from = estimate_name, values_from = estimate_value)) %>% 
+#   mutate(
+#     difference_count = (sample_count - matched_count)/matched_count,
+#     difference_percentage = (sample_percentage - matched_percentage)/matched_percentage
+#   ) %>% 
+#   select(
+#     cdm_name, cohort_name = group_level, concept_name = variable_name, table_name, concept,
+#     window = variable_level, matched_count, matched_percentage, sample_count, sample_percentage, 
+#     difference_count, difference_percentage
+#   )
+# }
 
 if (!is.null(data$prevalence)) {
   data$prevalence <- data$prevalence %>% 

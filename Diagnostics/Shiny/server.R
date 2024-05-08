@@ -35,7 +35,8 @@ server <- function(input, output, session) {
     datatable(
       filterData(data$cohort_count, "counts", input) %>% 
         select(cdm_name, cohort_name, number_records, number_subjects) %>% 
-        niceColumnNames(),
+        niceColumnNames() %>% 
+        distinct(),
       rownames = FALSE,
       extensions = "Buttons",
       options = list(scrollX = TRUE, scrollCollapse = TRUE)
