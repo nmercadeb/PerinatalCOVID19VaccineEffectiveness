@@ -517,8 +517,9 @@ server <- function(input, output, session) {
   getBaseline <- reactive({
     data$baseline |>
       filterData(prefix = "baseline", input = input) |>
+      filter(variable_name != "Number subjects") |>
       tableCharacteristics(
-        header = c("group", "additional"),
+        header = c("cdm_name", "additional"),
         excludeColumns = c(
           "result_id", "result_type", "package_name","package_version", "estimate_type"
         )
@@ -576,7 +577,7 @@ server <- function(input, output, session) {
       filter(variable_name == "nco") |>
       select(!"estimate_type") |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
-      select(!c("variable_name", "window", "analysis"))
+      select(!c("variable_name", "window", "analysis", "result_type", "package_name", "package_version"))
   })
   output$nco_summary_raw <- renderDataTable({
     datatable(getNCOSummaryRaw(),
@@ -608,6 +609,7 @@ server <- function(input, output, session) {
       arrange(cdm_name, cohort_name) |>
       select(!c("estimate_type", "variable_name")) |>
       relocate(c("window", "analysis", "study_end"), .before = "outcome") |>
+      select(!c("variable_name", "window", "analysis", "result_type", "package_name", "package_version"))
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$nco_summary_table <- render_gt({
@@ -626,7 +628,7 @@ server <- function(input, output, session) {
       filter(variable_name == "study") |>
       select(!c("estimate_type")) |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
-      dplyr::select(!c("variable_name", "window", "analysis"))
+      select(!c("variable_name", "window", "analysis", "result_type", "package_name", "package_version"))
   })
   output$study_summary_raw <- renderDataTable({
     datatable(getOutcomesSummaryRaw(),
@@ -658,6 +660,7 @@ server <- function(input, output, session) {
       arrange(cdm_name, cohort_name) |>
       select(!estimate_type) |>
       relocate(c("window", "analysis", "study_end"), .before = "outcome") |>
+      select(!c("variable_name", "window", "analysis", "result_type", "package_name", "package_version")) |>
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$study_summary_table <- render_gt({
@@ -709,7 +712,7 @@ server <- function(input, output, session) {
   })
   output$nco_risk_download_table <- serverGTDownload(name = "summaryNCO", gt = getNCOForestTable())
   getNCOForestPlot <- reactive({
-    format <- c("cohort_name", "strata_level", "regression", "window", "outcome")
+    format <- c("cdm_name", "strata_level", "regression", "window", "outcome")
     format <- format[!format %in% input$plt_nco_risk_facet_by]
 
     table <- data$risk |>
@@ -818,7 +821,7 @@ server <- function(input, output, session) {
   })
   output$study_risk_download_table <- serverGTDownload(name = "summaryStudy", gt = getStudyForestTable())
   getStudyForestPlot <- reactive({
-    format <- c("cohort_name", "strata_level", "regression", "window", "outcome")
+    format <- c("cdm_name", "strata_level", "regression", "window", "outcome")
     format <- format[!format %in% input$plt_study_risk_facet_by]
 
     table <- data$risk |>

@@ -372,42 +372,42 @@ ui <- dashboardPage(
         )
       ),
       # large_scale_characterisation ----
-      tabItem(
-        tabName = "large_scale_characterisation",
-        selectors(data$lsc_table, "lsc", c("cdm_name", "cohort_name", "table_name", "window")),
-        tabsetPanel(
-          type = "tabs",
-          tabPanel(
-            "Table",
-            h4(),
-            pickerInput(
-              inputId = "select_lsc_columns",
-              label = "Columns to display",
-              choices = c("Cdm name", "Cohort name", "Table name", "Concept", "Concept name",
-                          "Window", "Matched count", "Matched percentage", "Sample count", 
-                          "Sample percentage", "Difference count", "Difference percentage"),
-              selected = c("Cdm name", "Cohort name", "Table name", "Concept", "Concept name",
-                           "Window", "Matched count", "Matched percentage", "Sample count", 
-                           "Sample percentage", "Difference count", "Difference percentage"),
-              options = list(
-                `actions-box` = TRUE,
-                size = 10,
-                `selected-text-format` = "count > 3"
-              ),
-              multiple = TRUE
-            ),
-            DTOutput("lsc_table")
-          ),
-          tabPanel(
-            "Plot",
-            h4(),
-            plotSelectors("plsc_facet", 
-                          c("cohort_name", "cdm_name", "table_name", "window"),
-                          type = "facet_by"),
-            plotlyOutput('lsc_plot', height = "800px") %>% withSpinner()
-          )
-        )
-      ),
+      # tabItem(
+      #   tabName = "large_scale_characterisation",
+      #   selectors(data$lsc_table, "lsc", c("cdm_name", "cohort_name", "table_name", "window")),
+      #   tabsetPanel(
+      #     type = "tabs",
+      #     tabPanel(
+      #       "Table",
+      #       h4(),
+      #       pickerInput(
+      #         inputId = "select_lsc_columns",
+      #         label = "Columns to display",
+      #         choices = c("Cdm name", "Cohort name", "Table name", "Concept", "Concept name",
+      #                     "Window", "Matched count", "Matched percentage", "Sample count", 
+      #                     "Sample percentage", "Difference count", "Difference percentage"),
+      #         selected = c("Cdm name", "Cohort name", "Table name", "Concept", "Concept name",
+      #                      "Window", "Matched count", "Matched percentage", "Sample count", 
+      #                      "Sample percentage", "Difference count", "Difference percentage"),
+      #         options = list(
+      #           `actions-box` = TRUE,
+      #           size = 10,
+      #           `selected-text-format` = "count > 3"
+      #         ),
+      #         multiple = TRUE
+      #       ),
+      #       DTOutput("lsc_table")
+      #     ),
+      #     tabPanel(
+      #       "Plot",
+      #       h4(),
+      #       plotSelectors("plsc_facet", 
+      #                     c("cohort_name", "cdm_name", "table_name", "window"),
+      #                     type = "facet_by"),
+      #       plotlyOutput('lsc_plot', height = "800px") %>% withSpinner()
+      #     )
+      #   )
+      # ),
       # log ----
       tabItem(
         tabName = "log",
