@@ -16,7 +16,7 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
         distinct(),
       by = "subject_id"
     ) |>
-    mutate(diff_days = visit_start_date - cohort_start_date) |>
+    mutate(diff_days = !!datediff("cohort_start_date", "visit_start_date") |>
     filter(diff_days >= !!window[1] & diff_days <= !!window[2]) |>
     compute()
   cdm[[paste0("temp_", name)]] <- covid_visit |>
@@ -152,7 +152,7 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
   if (objective_id == 2) {
     # check booster elegibility
     temp <- temp |>
-      filter(week_start - previous_vaccine_date >= days.booster)
+      filter(!!datediff("previous_vaccine_date", "week_start") -  >= days.booster)
   }
   return(temp)
 }

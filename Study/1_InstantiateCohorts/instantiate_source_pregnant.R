@@ -140,17 +140,19 @@ cdm$source_pregnant %>%
   tally() %>%
   mutate(population = "pregnant") %>%
   ungroup() %>%
-  union_all(censor_vaccination %>%
-              group_by(censor) %>%
-              tally() %>%
-              mutate(population = "general") %>%
-              ungroup()) %>%
+  union_all(
+    censor_vaccination %>%
+      group_by(censor) %>%
+      tally() %>%
+      mutate(population = "general") %>%
+      ungroup()
+  ) %>%
   collect() %>%
   write_csv(file = here(output_folder, paste0("vaccine_records_censor_", database_name, ".csv")))
 # exclude/censor at vaccine irregularities:
 cdm$source_pregnant <- cdm$source_pregnant %>%
   select(-censor) %>%
-  filter(is.na(vaccine_censor_date) | vaccine_censor_date - days(1) >= pregnancy_start_date) %>%
+  filter(is.na(vaccine_censor_date) | !!dateadd("vaccine_censor_date", -1)) >= pregnancy_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   recordCohortAttrition(reason = "No irregular vaccine records before pregnancy start date")
 
@@ -194,10 +196,10 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   left_join(cdm$observation_period %>%
               select(subject_id = person_id, cohort_end_date = observation_period_end_date, observation_period_start_date),
             by = "subject_id") %>%
-  mutate(
-    cohort_end_date = if_else(!is.na(vaccine_censor_date) & vaccine_censor_date <= cohort_end_date,
-                              !!dateadd("vaccine_censor_date", -1), cohort_end_date)
-    ) %>%
+  # mutate(
+  #   cohort_end_date = if_else(!is.na(vaccine_censor_date) & vaccine_censor_date <= cohort_end_date,
+  #                             !!dateadd("vaccine_censor_date", -1), cohort_end_date)
+  # ) %>%
   addCohortIntersectDate(
     targetCohortTable = "mother_table",
     indexDate = "pregnancy_end_date",
@@ -205,8 +207,9 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
     nameStyle = "next_pregnancy_date"
   ) %>%
   mutate(
-    cohort_end_date = if_else(!is.na(next_pregnancy_date) & next_pregnancy_date <= cohort_end_date,
-                              !!dateadd("next_pregnancy_date", -1), cohort_end_date),
+    cohort_end_date = if_else(
+      !is.na(next_pregnancy_date) & next_pregnancy_date <= cohort_end_date,
+      !!dateadd("next_pregnancy_date", -1), cohort_end_date),
     cohort_end_date = as.Date(cohort_end_date)
   ) %>%
   select(cohort_definition_id, subject_id, cohort_start_date, cohort_end_date, pregnancy_id,
