@@ -30,7 +30,7 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
   cdm[[paste0("temp_", name, "_delivery")]] <- covid_visit |>
     addCohortIntersectFlag(
       targetCohortTable = "mother_table",
-      window = c(-1,1),
+      window = c(-2,2),
       indexDate = "visit_start_date",
       targetStartDate = "cohort_end_date",
       nameStyle = "is_delivery_date") |>
