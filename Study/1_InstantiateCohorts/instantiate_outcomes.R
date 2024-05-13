@@ -35,6 +35,8 @@ cdm$temp_death <- cdm$temp_covid %>%
 cdm <- omopgenerics::bind(cdm$temp_covid,cdm$temp_inpatient, cdm$temp_inpatient_delivery,
                           cdm$temp_icu, cdm$temp_icu_delivery, cdm$temp_death, name = "outcomes")
 
+cdm <- omopgenerics::dropTable(cdm, starts_with("temp"))
+
 # export counts
 read_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name, ".csv"))) %>%
   union_all(cdm$outcomes %>%
