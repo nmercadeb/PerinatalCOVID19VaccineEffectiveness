@@ -4,7 +4,7 @@ info(logger, "1) Relative risk estimates")
 outcomes <- colnames(cdm$survival_raw)
 outcomes <- outcomes[grepl("nco_|study_", outcomes)]
 study_ends <- c("cohort_end_date", "pregnancy_end_date")
-windows <- list(c(0, Inf), c(0, 10), c(11, 27), c(28, 88), c(89, 147), c(148, Inf), c(11,88), c(89, Inf))
+windows <- list(c(0, Inf), c(0, 10), c(11, 27), c(28, 90), c(91, 150), c(150, Inf), c(11,90), c(91, Inf))
 analyses <- c("main", "sensitivity")
 
 results <- list()
