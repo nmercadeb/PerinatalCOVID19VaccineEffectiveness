@@ -1,7 +1,7 @@
 # Table One ----
 info(logger, "Characteristics")
 table_one <- summariseCharacteristics(
-  cdm[[matched_cohort_table_name]],
+  cdm[[matched_cohort_table_name]] |> addRegion(database_name = cdmName(cdm)),
   strata = list(c("vaccine_brand", "exposed"), c("trimester", "exposed"), "exposed"),
   demographics = TRUE,
   ageGroup = list(c(12,24), c(25,39), c(40,55)),
@@ -30,7 +30,7 @@ table_one <- summariseCharacteristics(
       targetCohortTable = "mother_table", value = "count", window = c(-Inf, -1)
     )
   ),
-  otherVariables = c("vaccine_brand", "trimester")
+  otherVariables = c("vaccine_brand", "trimester", "region")
 )
 
 table_one |>
@@ -42,7 +42,7 @@ summarised_lsc <- summariseLargeScaleCharacteristics(
   cdm[[matched_cohort_table_name]],
   strata = list(c("vaccine_brand", "exposed"), c("trimester", "exposed"), "exposed"),
   window = list(c(-365, -181), c(-180, -31), c(-30, -1), c(0, 0), c(1, 30), c(31, 180), c(181, 365)),
-  eventInWindow = "condition_occurrence",
+  eventInWindow = c("condition_occurrence", "visit_occurrence"),
   episodeInWindow = "drug_exposure",
   indexDate = "cohort_start_date",
   minimumFrequency = 0.005
@@ -92,4 +92,3 @@ summarised_lsc |>
   select(-exposed) |>
   bind_rows(smd) |>
   write_csv(file = here(output_folder, paste0("large_scale_characteristics_", cdmName(cdm), ".csv")))
-

@@ -66,7 +66,8 @@ if (runPSMathcing) {
       cohortTables = c(vaccine_json_table_name, medications_table_name, conditions_table_name,
                        covid_table_name, other_vaccines_table_name, ps_covariates_table_name,
                        nco_table_name, source_pregnant_table_name, clean_mother_table_name,
-                       outcomes_table_name)
+                       outcomes_table_name),
+      .softValidation = TRUE
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
@@ -88,7 +89,8 @@ if (runCharacterisation) {
         covid_table_name, other_vaccines_table_name, nco_table_name,
         source_pregnant_table_name, outcomes_table_name,
         matched_cohort_table_name, ps_covariates_table_name,
-        clean_mother_table_name)
+        clean_mother_table_name),
+      .softValidation = TRUE
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute()
@@ -122,5 +124,7 @@ zip(
   zipfile = paste0(output_folder, "_", gsub("-", "", today()), ".zip"),
   files = list.files(output_folder, full.names = TRUE)
 )
+
+dbDisconnect(db)
 
 info(logger, " -- DONE! --")

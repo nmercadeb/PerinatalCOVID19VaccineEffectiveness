@@ -67,16 +67,29 @@ for (analysis in analyses) {
 
 info(logger, "2) Survival estimates")
 # results survival
-km_results <- estimateSingleEventSurvival(
+km_results_obs <- estimateSingleEventSurvival(
   cdm = cdm,
   targetCohortTable = "matched",
   outcomeCohortTable = "outcomes",
   outcomeDateVariable = "cohort_start_date",
   outcomeWashout = 1,
   censorOnCohortExit = TRUE,
-  censorOnDate = "pregnancy_end_date",
   strata = list(c("vaccine_brand", "exposed"), c("trimester", "exposed"), "exposed"),
 )
+
+cdm$matched_preg <- cdm$matched %>%
+  mutate(cohort_end_date = pregnancy_end_date) %>%
+  compute(name = "matched_preg")
+km_results_pregnancy <- estimateSingleEventSurvival(
+  cdm = cdm,
+  targetCohortTable = "matched_preg",
+  outcomeCohortTable = "outcomes",
+  outcomeDateVariable = "cohort_start_date",
+  outcomeWashout = 1,
+  censorOnCohortExit = TRUE,
+  strata = list(c("vaccine_brand", "exposed"), c("trimester", "exposed"), "exposed"),
+) %>%
+  mutate(result_id = 2)
 
 # export results ----
 survival_results <- results |> bind_rows() |>
@@ -84,12 +97,17 @@ survival_results <- results |> bind_rows() |>
   mutate(
     result_id = 1,
     package_name = "StudyCode",
-    package_version = "today()"
+    package_version = today()
   )
 
 # write
 write_csv(
-  survival_results |> bind_rows(km_results),
-  file = here(output_folder, paste0("survival_", cdmName(cdm), ".csv"))
+  survival_results,
+  file = here(output_folder, paste0("relative_risk_", cdmName(cdm), ".csv"))
 )
 
+# write
+write_csv(
+  km_results_obs %>% bind_rows(km_results_pregnancy),
+  file = here(output_folder, paste0("kaplan_meier_", cdmName(cdm), ".csv"))
+)
