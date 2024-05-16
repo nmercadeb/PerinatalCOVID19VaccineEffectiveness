@@ -216,7 +216,7 @@ server <- function(input, output, session) {
           unite("facet_var", 
                 c(all_of(input$plot_prevalence_facet_by)), remove = FALSE, sep = "; ") %>% 
           ggplot(aes_string(x= "prevalence_start_date", y="prevalence")) +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           geom_line() +
           facet_wrap(vars(facet_var),nrow = 2)+
           scale_y_continuous(
@@ -227,7 +227,7 @@ server <- function(input, output, session) {
         p<-table %>% 
           ggplot(aes_string(x= "prevalence_start_date", y="prevalence")) +
           geom_line() +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           scale_y_continuous(
             limits = c(0, NA), labels = scales::percent
           ) +
@@ -244,7 +244,7 @@ server <- function(input, output, session) {
           ggplot(aes_string(x= "prevalence_start_date", y="prevalence",
                             group="Group",
                             colour="Group")) +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           geom_line() +
           theme_bw()
       }
@@ -259,7 +259,7 @@ server <- function(input, output, session) {
             ggplot(aes_string(x= "prevalence_start_date", y="prevalence",
                               group="Group",
                               colour="Group")) +
-            geom_point(position=position_dodge(width=1))+
+            geom_point()+
             geom_line() +
             facet_wrap(vars(facet_var),ncol = 2)+  
             scale_y_continuous(
@@ -304,7 +304,7 @@ server <- function(input, output, session) {
           unite("facet_var", 
                 c(all_of(input$plot_incidence_facet_by)), remove = FALSE, sep = "; ") %>% 
           ggplot(aes_string(x= "incidence_start_date", y="incidence_100000_pys")) +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           geom_line() +
           facet_wrap(vars(facet_var),nrow = 2)+
           scale_y_continuous(
@@ -314,7 +314,7 @@ server <- function(input, output, session) {
       } else{
         p<-table %>% 
           ggplot(aes_string(x= "incidence_start_date", y="incidence_100000_pys")) +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           geom_line() +
           scale_y_continuous(
             limits = c(0, NA)
@@ -333,7 +333,7 @@ server <- function(input, output, session) {
           ggplot(aes_string(x= "incidence_start_date", y="incidence_100000_pys",
                             group="Group",
                             colour="Group")) +
-          geom_point(position=position_dodge(width=1))+
+          geom_point()+
           geom_line() +
           theme_bw()
       }
@@ -348,7 +348,7 @@ server <- function(input, output, session) {
             ggplot(aes_string(x= "incidence_start_date", y="incidence_100000_pys",
                               group="Group",
                               colour="Group")) +
-            geom_point(position=position_dodge(width=1))+
+            geom_point()+
             geom_line() +
             facet_wrap(vars(facet_var),ncol = 2)+  
             scale_y_continuous(
@@ -361,50 +361,6 @@ server <- function(input, output, session) {
     }
     
     p
-  })
-  # LSC  ----
-  output$lsc_table <- renderDataTable({
-    filterData(data$lsc_table, "lsc", input) %>% 
-      mutate(sample_percentage = sample_percentage/100, matched_percentage = matched_percentage/100) %>%
-      niceColumnNames() %>% 
-      select(input$select_lsc_columns) %>% datatable() %>% formatPercentage(c('Matched percentage','Sample percentage',
-                                                                              'Difference percentage', 'Difference count'), 1)
-  }) 
-  
-  output$lsc_plot <- renderPlotly({
-    table <- filterData(data$lsc_table, "lsc", input) %>% 
-      mutate(label = paste0(concept_name, "; ", window))
-    
-    if(!is.null(input$plsc_facet)){
-      p <- table %>%
-        unite("facet_var",
-              c(all_of(input$plsc_facet)), remove = FALSE, sep = "; ") %>%
-        ggplot(aes_string(x = "sample_percentage", y = "matched_percentage",
-                          group= "label",
-                          fill = "label",
-                          color = "label"
-        )) +
-        geom_point() +
-        geom_abline(intercept = 0, slope = 1) +
-        facet_wrap(vars(facet_var),nrow = 2) +
-        theme_bw() +
-        theme(legend.position = "none")
-    } else{
-      p <- table %>%
-        ggplot(aes_string(x = "sample_percentage", y = "matched_percentage",
-                          group= "label",
-                          fill = "label",
-                          color = "label")) +
-        geom_point() +
-        geom_abline(intercept = 0, slope = 1) +
-        theme_bw() +
-        theme(legend.position = "none")
-    }
-    
-    p + xlab("Sample") + ylab("Matched") +
-      scale_x_continuous(limits = c(0, 100)) +
-      scale_y_continuous(limits = c(0, 100))
-    
   })
   # log ----
   output$log <- renderUI({

@@ -77,15 +77,15 @@ ui <- dashboardPage(
       menuItem(
         text = "Population incidence",
         tabName = "incidence"
-      ),
-      menuItem(
-        text = "Large scale characterisation",
-        tabName = "large_scale_characterisation"
-      ),
-      menuItem(
-        text = "Execution log",
-        tabName = "log"
       )
+      # menuItem(
+      #   text = "Large scale characterisation",
+      #   tabName = "large_scale_characterisation"
+      # ),
+      # menuItem(
+      #   text = "Execution log",
+      #   tabName = "log"
+      # )
     )
   ),
   
