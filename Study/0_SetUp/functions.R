@@ -15,8 +15,8 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
         select(subject_id = person_id, visit_start_date) |>
         distinct(),
       by = "subject_id"
-    ) |>
-    mutate(diff_days = visit_start_date - cohort_start_date) |>
+    ) %>%
+    mutate(diff_days = !!datediff("cohort_start_date", "visit_start_date")) |>
     filter(diff_days >= !!window[1] & diff_days <= !!window[2]) |>
     compute()
   cdm[[paste0("temp_", name)]] <- covid_visit |>
@@ -30,7 +30,7 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
   cdm[[paste0("temp_", name, "_delivery")]] <- covid_visit |>
     addCohortIntersectFlag(
       targetCohortTable = "mother_table",
-      window = c(-1,1),
+      window = c(-2,2),
       indexDate = "visit_start_date",
       targetStartDate = "cohort_end_date",
       nameStyle = "is_delivery_date") |>
@@ -147,30 +147,45 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
     compute()
   # exclude covid before exposure
   temp <- temp |>
-    anti_join(temp |> filter(covid_date_week < index_vaccine_date), by = colnames(temp)) |>
+    anti_join(temp |> filter(exposed == 1, covid_date_week < index_vaccine_date), by = colnames(temp)) |>
     compute()
-  if (objective_id == 2) {
-    # check booster elegibility
-    temp <- temp |>
-      filter(week_start - previous_vaccine_date >= days.booster)
-  }
+  # if (objective_id == 2) {
+  #   # check booster elegibility
+  #   temp <- temp %>%
+  #     filter(!!datediff("previous_vaccine_date", "week_start") >= days.booster)
+  # }
   return(temp)
 }
 
 matchItDataset <- function(x, objective_id) {
   x <- x %>%
-    mutate(gestational_age = cut(
-      as.numeric(!!datediff("pregnancy_start_date", "week_start")),
-      c(0, 90, 180, 330),
-      include.lowest = TRUE)
+    mutate(
+      trimester = cut(
+        as.numeric(!!datediff("pregnancy_start_date", "week_start")),
+        c(0, 90, 180, 330),
+        include.lowest = TRUE
+        ),
+      gestational_age = cut(
+        as.numeric(!!datediff("pregnancy_start_date", "week_start")),
+        !!c(seq(0, 293, 7*6), 303),
+        include.lowest = TRUE)
     ) |>
     addTableIntersectCount(
       tableName = "visit_occurrence",
       indexDate = "week_start",
-      window = list(c(-Inf, -31), c(-30, -1)),
+      window = list(c(-365, -181), c(-180, -31), c(-30, -1)),
       targetStartDate = "visit_start_date",
       targetEndDate = NULL,
       nameStyle = "visits_{window_name}"
+    ) |>
+    addTableIntersectCount(
+      tableName = "visit_occurrence",
+      indexDate = "week_start",
+      window = list(c(-Inf, -1)),
+      targetStartDate = "visit_start_date",
+      targetEndDate = NULL,
+      censorDate = "pregnancy_start_date",
+      nameStyle = "pregnant_visits"
     ) |>
     addCohortIntersectCount(
       targetCohortTable = "covid",
@@ -178,7 +193,7 @@ matchItDataset <- function(x, objective_id) {
       indexDate = "week_start",
       targetStartDate = "cohort_start_date",
       targetEndDate = "cohort_end_date",
-      window = list(c(-Inf, -1)),
+      window = list(c(-365, -1)),
       nameStyle = "{cohort_name}"
     ) |>
     addCohortIntersectCount(
@@ -186,7 +201,7 @@ matchItDataset <- function(x, objective_id) {
       indexDate = "week_start",
       targetStartDate = "cohort_start_date",
       targetEndDate = "cohort_end_date",
-      window = list(c(-Inf, -1)),
+      window = list(c(-365, -1)),
       nameStyle = "{cohort_name}"
     ) |>
     addCohortIntersectFlag(
@@ -199,7 +214,7 @@ matchItDataset <- function(x, objective_id) {
     ) |>
     addCohortIntersectCount(
       targetCohortTable = "mother_table",
-      indexDate = "week_start",
+      indexDate = "pregnancy_start_date",
       window = list(c(-Inf, -1)),
       nameStyle = "previous_pregnancies"
     ) %>%

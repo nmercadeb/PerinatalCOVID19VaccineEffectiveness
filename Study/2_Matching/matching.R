@@ -137,14 +137,14 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         bind_rows() %>%
         mutate(
           cohort_definition_id = jj,
-          gestational_age = case_when(
-            "[0,90]" == gestational_age ~ "T1",
-            "(90,180]" == gestational_age ~ "T2",
-            "(180,330]" == gestational_age ~ "T3")
+          trimester = case_when(
+            "[0,90]" == trimester ~ "T1",
+            "(90,180]" == trimester ~ "T2",
+            "(180,330]" == trimester ~ "T3")
         ) %>%
         select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
                match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
-               trimester = gestational_age, index_vaccine_date, vaccine_brand, age, maternal_age)
+               trimester, index_vaccine_date, vaccine_brand, age, maternal_age)
     } else {
       matched_cohorts[[jj]] <- matched.population %>%
         bind_rows()
