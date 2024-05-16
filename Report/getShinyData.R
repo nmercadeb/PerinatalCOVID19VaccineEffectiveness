@@ -13,7 +13,7 @@ source(here("functions.R"))
 # Read results ----
 result_patterns <- c(
   "cdm_snapshot", "characteristics", "cohort_stats", "cohort_counts",
-  "attrition", "matching_summary", "survival", "vaccine_records_censor"
+  "attrition", "matching_summary", "relative_risk", "vaccine_records_censor"
 )
 pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
@@ -31,7 +31,7 @@ data$population_attrition <- pre_data$attrition |>
     across(starts_with("number"), ~niceNum(.x)),
     across(starts_with("excluded"), ~niceNum(.x))
   )
-data$population_count <- pre_data$survival |>
+data$population_count <- pre_data$relative_risk |>
   filter(
     result_type == "followup",
     estimate_name %in% c("num_control", "num_exposed")
@@ -58,17 +58,14 @@ data$weekly_counts <- pre_data$matching_summary |>
   )
 data$index_date <- pre_data$cohort_stats |>
   filter(result_type == "index_date") |>
-  mutate("index_date" = as.Date(cohort_start_date)) |>
-  splitStrata() |>
+  mutate("index_date" = as.Date(variable_level)) |>
+  splitAll() |>
   select(
     "cdm_name", "cohort_name", "vaccine_brand", "trimester", "index_date",
     "counts" = "estimate_value"
   ) |>
   mutate(counts = as.numeric(counts)) |>
   uniteStrata(c = c("vaccine_brand", "trimester"))
-data$available_followup <- pre_data$cohort_stats |>
-  filter(grepl("followup", result_type)) |>
-  select(-"cohort_name", -"cohort_start_date")
 data$reenrollment <- pre_data$cohort_stats |>
   filter(result_type == "recontributions") |>
   splitAll() |>
@@ -117,11 +114,10 @@ data$smd <- pre_data$characteristics |>
   rename("window" = "variable_level", "concept_name" = "variable_name") |>
   select(!c("result_id", "result_type", "package_name", "package_version",
             "estimate_type", "estimate_name", "estimate_value"))
-data$survival_summary <- pre_data$survival |>
+data$survival_summary <- pre_data$relative_risk |>
   filter(result_type == "followup") |>
   newSummarisedResult() |>
   mutate(estimate_name = gsub("num", "count", estimate_name)) |>
-  # suppress() |>
   splitGroup() |>
   splitAdditional() |>
   filter(!(grepl("control", estimate_name) & exposed == 1)) |>
@@ -140,9 +136,7 @@ data$survival_summary <- pre_data$survival |>
   ungroup() |>
   mutate(estimate_value = if_else(suppress, NA, estimate_value)) |>
   select(!suppress)
-data$survival <- pre_data$survival |>
-  filter(grepl("survival", result_type))
-data$risk <- pre_data$survival |>
+data$risk <- pre_data$relative_risk |>
   filter(result_type %in% c("binomial", "cox")) |>
   splitGroup() |>
   splitAdditional() |>
