@@ -13,7 +13,8 @@ source(here("functions.R"))
 # Read results ----
 result_patterns <- c(
   "cdm_snapshot", "characteristics", "cohort_stats", "cohort_counts",
-  "attrition", "matching_summary", "relative_risk", "vaccine_records_censor"
+  "attrition", "matching_summary", "relative_risk", "vaccine_records_censor",
+  "kaplan_meier"
 )
 pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
@@ -30,7 +31,8 @@ data$population_attrition <- pre_data$attrition |>
     reason_id = as.numeric(reason_id),
     across(starts_with("number"), ~niceNum(.x)),
     across(starts_with("excluded"), ~niceNum(.x))
-  )
+  ) |>
+  niceCohortName()
 data$population_count <- pre_data$relative_risk |>
   filter(
     result_type == "followup",
@@ -45,17 +47,19 @@ data$population_count <- pre_data$relative_risk |>
   distinct() |>
   mutate(estimate_value = as.numeric(estimate_value)) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
-  uniteStrata(c = c("vaccine_brand", "trimester"))
+  uniteStrata(c = c("vaccine_brand", "trimester")) |>
+  niceCohortName()
 data$weekly_counts <- pre_data$matching_summary |>
   mutate(cohort = paste0(.data$population, "_", .data$covid_cohort)) |>
   select(
-    "cdm_name", "cohort", "week_start" = "matching_day", "exposed_pre",
+    "cdm_name", "cohort_name" = "cohort", "week_start" = "matching_day", "exposed_pre",
     "unexposed_pre", "exposed_post", "unexposed_post"
   ) |>
   mutate(
     across(contains("exposed"), ~ as.numeric(.x)),
     week_start = as.Date(week_start)
-  )
+  ) |>
+  niceCohortName()
 data$index_date <- pre_data$cohort_stats |>
   filter(result_type == "index_date") |>
   mutate("index_date" = as.Date(variable_level)) |>
@@ -65,7 +69,8 @@ data$index_date <- pre_data$cohort_stats |>
     "counts" = "estimate_value"
   ) |>
   mutate(counts = as.numeric(counts)) |>
-  uniteStrata(c = c("vaccine_brand", "trimester"))
+  uniteStrata(c = c("vaccine_brand", "trimester")) |>
+  niceCohortName()
 data$reenrollment <- pre_data$cohort_stats |>
   filter(result_type == "recontributions") |>
   splitAll() |>
@@ -75,9 +80,10 @@ data$reenrollment <- pre_data$cohort_stats |>
   ) |>
   uniteStrata(c = c("vaccine_brand", "trimester")) |>
   mutate(reenrollments = as.numeric(reenrollments)) |>
+  niceCohortName() |>
   left_join(
     data$population_count,
-    by = c("cdm_name", "cohort_name", "strata_name", "strata_level")
+    by = c("cdm_name", "cohort_name", "strata_name", "strata_level", "covid_definition")
   ) |>
   mutate(
     count = reenrollments,
@@ -105,7 +111,8 @@ data$large_scale <- pre_data$characteristics |>
       exposed == "1" ~ "exposed",
       .default = exposed
     )
-  )
+  ) |>
+  niceCohortName()
 data$smd <- pre_data$characteristics |>
   filter(result_type %in% c("large_scale_differences")) |>
   splitGroup() |>
@@ -113,7 +120,8 @@ data$smd <- pre_data$characteristics |>
   mutate(smd = as.numeric(estimate_value), asmd = abs(smd)) |>
   rename("window" = "variable_level", "concept_name" = "variable_name") |>
   select(!c("result_id", "result_type", "package_name", "package_version",
-            "estimate_type", "estimate_name", "estimate_value"))
+            "estimate_type", "estimate_name", "estimate_value")) |>
+  niceCohortName()
 data$survival_summary <- pre_data$relative_risk |>
   filter(result_type == "followup") |>
   newSummarisedResult() |>
@@ -135,7 +143,8 @@ data$survival_summary <- pre_data$relative_risk |>
   mutate(suppress = if_else(any(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0), TRUE, FALSE)) |>
   ungroup() |>
   mutate(estimate_value = if_else(suppress, NA, estimate_value)) |>
-  select(!suppress)
+  select(!suppress) |>
+  niceCohortName()
 data$risk <- pre_data$relative_risk |>
   filter(result_type %in% c("binomial", "cox")) |>
   splitGroup() |>
@@ -147,7 +156,8 @@ data$risk <- pre_data$relative_risk |>
     c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression",
       "analysis", "study_end", "window", "outcome", "variable_name",
       "estimate_type", "estimate_name", "estimate_value")
-  )
+  ) |>
+  niceCohortName()
 data$population_count <- data$population_count |>
   mutate(total = num_control + num_exposed)
 

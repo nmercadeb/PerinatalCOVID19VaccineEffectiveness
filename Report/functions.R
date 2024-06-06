@@ -189,3 +189,12 @@ niceNum <- function(x, dec = 0) {
   trimws(format(round(as.numeric(x), dec), big.mark = ",", nsmall = dec, scientific = FALSE))
 }
 
+niceCohortName <- function(x) {
+  x |>
+    mutate(
+      covid_definition = if_else(
+        grepl("covid_diagnostic_test", cohort_name), "diagnostic_test", "test"),
+      cohort_name = gsub("_covid_diagnostic_test|_covid_test", "", cohort_name)
+    ) |>
+    relocate("covid_definition", .after = "cohort_name")
+}
