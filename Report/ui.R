@@ -33,6 +33,10 @@ ui <- dashboardPage(
         menuSubItem(
           text = "Re-enrollment",
           tabName = "reenrollment"
+        ),
+        menuSubItem(
+          text = "Vaccination",
+          tabName = "vaccination"
         )
       ),
       menuItem(
@@ -263,6 +267,65 @@ ui <- dashboardPage(
           )
         )
       ),
+      ## re-enrollment ----
+      tabItem(
+        tabName = "vaccination",
+        h3("No index vaccination"),
+        p("Future (for 1st vs. unvaccinated) and prior (for 3rd vs. 2nd vaccine) vaccination temporal distrbution among exposed subjects."),
+        selectors(
+          data$vaccine_distribution, prefix = "vaccination",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          default = list(
+            "cdm_name" = data$vaccine_distribution$cdm_name[1],
+            "comparison" = data$vaccine_distribution$comparison[1],
+            "covid_definition" = data$vaccine_distribution$covid_definition[1],
+            "strata_name" = "overall"
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("vaccination_strata_level")
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("vaccination_vaccine_dose")
+        ),
+        div(
+          pickerInput(
+            inputId = "vaccination_group",
+            label = "Group by",
+            choices = c("days", "weeks", "months", "years"),
+            selected = c("weeks"),
+            options = list(`actions-box` = FALSE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = FALSE,
+            inline = TRUE
+          )
+        ),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Raw",
+            h5(),
+            downloadButton("vaccination_table_download", "Download table as csv"),
+            DTOutput('vaccination_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Table",
+            h5(),
+            downloadButton("vaccination_summary_download", "Download table in word"),
+            gt_output('vaccination_summary') %>% withSpinner()
+          ),
+          tabPanel(
+            "Plot",
+            h5(),
+            plotSelectors(prefix = "plt_vax", choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level", "vaccine_dose"),
+                          default = list("color" = NULL, "facet_by" = "cdm_name")),
+            plotDownloadSelectors(prefix = "dwn_vax"),
+            downloadButton("vaccination_plot_download", "Download figure"),
+            plotlyOutput('vaccination_plot') %>% withSpinner()
+          )
+        )
+      ),
       ## population attrition ----
       tabItem(
         tabName = "attrition",
@@ -356,7 +419,7 @@ ui <- dashboardPage(
           prefix = "large",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           multiple = FALSE
-          ),
+        ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("large_scale_strata_level")
@@ -387,7 +450,7 @@ ui <- dashboardPage(
           prefix = "smd",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           multiple = FALSE
-          ),
+        ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("smd_strata_level")
@@ -615,7 +678,7 @@ ui <- dashboardPage(
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           pickerInput(
-            inputId = "delivery_sum",
+            inputId = "delivery_risk",
             label = "delivery excluded",
             choices = c("yes", "no"),
             selected = "yes",
@@ -662,6 +725,67 @@ ui <- dashboardPage(
             plotlyOutput('study_risk_plot', height = "800px") %>% withSpinner()
           )
         )
+      ),
+      # STUDY FOREST ----
+      tabItem(
+        tabName = "kaplan_meier",
+        h3("Kaplan-Meier"),
+        p("Kaplan-Meier curves for all populations and exposed_censoring"),
+        selectors(
+          data = data$kaplan_meier,
+          prefix = "km",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          default = list(
+            "cdm_name" = "SIDIAP",
+            "comparison" = "none_first",
+            "covid_definition" = "diagnostic_test",
+            "strata_name" = "exposed"
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("km_strata_level")
+        ),
+        selectors(
+          data = data$kaplan_meier,
+          prefix = "km",
+          columns = "outcome",
+          default = list(
+            "outcome" = data$kaplan_meier |> pull(outcome) |> unique()
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "delivery_km",
+            label = "Delivery excluded",
+            choices = c("yes", "no"),
+            selected = "yes",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "followup_km",
+            label = "Followup end",
+            choices = c("cohort_end_date", "pregnancy_end_date"),
+            selected = "cohort_end_date",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = FALSE,
+            inline = TRUE
+          )
+        ),
+        plotSelectors(
+          prefix = "plt_km",
+          choices = c("cdm_name", "cohort", "strata_name", "strata_level",
+                      "variable_level"),
+          default = list("color" = "strata_level", "facet_by" = "variable_level")),
+        plotDownloadSelectors(prefix = "dwn_km"),
+        downloadButton("km_download_plot", "Download table in word"),
+        plotlyOutput('km_plot') %>% withSpinner()
       )
     )
   )

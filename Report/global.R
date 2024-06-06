@@ -24,6 +24,7 @@ library(rsvg)
 library(glue)
 library(stats)
 library(PatientProfiles)
+library(CohortSurvival)
 
 
 # load functions

@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.2.3",
+    "Version": "4.2.2",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -46,6 +46,33 @@
         "withr"
       ],
       "Hash": "507fdfbd3b32aa616eac3050325069e2"
+    },
+    "CohortSurvival": {
+      "Package": "CohortSurvival",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "CDMConnector",
+        "DBI",
+        "PatientProfiles",
+        "broom",
+        "checkmate",
+        "cli",
+        "dbplyr",
+        "dplyr",
+        "lubridate",
+        "magrittr",
+        "omopgenerics",
+        "rlang",
+        "scales",
+        "stringr",
+        "survival",
+        "tibble",
+        "tidyr",
+        "visOmopResults"
+      ],
+      "Hash": "e255fb02817bd1264844cf5b07d0c61f"
     },
     "DBI": {
       "Package": "DBI",
@@ -317,6 +344,27 @@
       ],
       "Hash": "40415719b5a479b87949f3aa0aee737c"
     },
+    "broom": {
+      "Package": "broom",
+      "Version": "1.0.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "backports",
+        "dplyr",
+        "ellipsis",
+        "generics",
+        "glue",
+        "lifecycle",
+        "purrr",
+        "rlang",
+        "stringr",
+        "tibble",
+        "tidyr"
+      ],
+      "Hash": "fd25391c3c4f6ecf0fa95f1e6d15378c"
+    },
     "bslib": {
       "Package": "bslib",
       "Version": "0.7.0",
@@ -536,6 +584,17 @@
         "vctrs"
       ],
       "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
+    },
+    "ellipsis": {
+      "Package": "ellipsis",
+      "Version": "0.3.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "rlang"
+      ],
+      "Hash": "bb0eec2fe32e88d9e2836c2f73ea2077"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -1502,6 +1561,22 @@
         "vctrs"
       ],
       "Hash": "960e2ae9e09656611e0b8214ad543207"
+    },
+    "survival": {
+      "Package": "survival",
+      "Version": "3.5-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "graphics",
+        "methods",
+        "splines",
+        "stats",
+        "utils"
+      ],
+      "Hash": "184d7799bca4ba8c3be72ea396f4b9a3"
     },
     "sys": {
       "Package": "sys",

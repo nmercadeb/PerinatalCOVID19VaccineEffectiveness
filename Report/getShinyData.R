@@ -92,6 +92,15 @@ data$reenrollment <- pre_data$cohort_stats |>
     percentage = reenrollments/(num_control + num_exposed - reenrollments) * 100
   ) |>
   select(!c("reenrollments", "num_control", "num_exposed"))
+data$vaccine_distribution <- pre_data$cohort_stats |>
+  filter(result_type %in% c("second_dose_date", "first_prior_dose", "second_prior_dose")) |>
+  splitGroup() |>
+  splitAdditional() |>
+  rename("vaccine_dose" = "result_type", "date" = "variable_level") |>
+  niceCohortName() |>
+  mutate(estimate_value = as.numeric(estimate_value), date = as.Date(date)) |>
+  arrange(date) |>
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, vaccine_dose, date, estimate_value)
 data$baseline <- pre_data$characteristics |>
   filter(!result_type %in% c("summarised_large_scale_characteristics", "large_scale_differences")) |>
   splitStrata() |>
@@ -176,6 +185,9 @@ data$risk <- pre_data$relative_risk |>
 data$population_count <- data$population_count |>
   mutate(total = num_control + num_exposed) |>
   select(cdm_name, comparison, covid_definition, strata_name, strata_level, total, num_control, num_exposed)
-
+data$kaplan_meier <- pre_data$kaplan_meier |>
+  filter(strata_name != "overall") |>
+  niceCohortName(col = "group_level", removeCol = FALSE) |>
+  niceOutcomeName(col = "variable_level")
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))
