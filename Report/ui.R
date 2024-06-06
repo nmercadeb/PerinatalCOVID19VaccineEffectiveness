@@ -30,10 +30,6 @@ ui <- dashboardPage(
           text = "Index date",
           tabName = "index_date"
         ),
-        # menuSubItem(
-        #   text = "Future observation",
-        #   tabName = "available_followup"
-        # ),
         menuSubItem(
           text = "Re-enrollment",
           tabName = "reenrollment"
@@ -132,10 +128,11 @@ ui <- dashboardPage(
         h3("Weekly counts"),
         p("Weekly enrollment counts during propensity score matching:"),
         selectors(
-          data$weekly_counts, prefix = "weekly_cnts", columns = c("cdm_name", "cohort"),
+          data$weekly_counts, prefix = "weekly_cnts", columns = c("cdm_name", "comparison", "covid_definition"),
           default = list(
             "cdm_name" = data$weekly_counts$cdm_name[1],
-            "cohort" = data$weekly_counts$cohort[1]
+            "comparison" = data$weekly_counts$comparison[1],
+            "covid_definition" = data$weekly_counts$covid_definition[1]
           )
         ),
         tabsetPanel(
@@ -166,7 +163,7 @@ ui <- dashboardPage(
                 inline = TRUE
               )
             ),
-            plotSelectors(prefix = "plt_wcounts", choices = c("cdm_name", "cohort", "matching_status"),
+            plotSelectors(prefix = "plt_wcounts", choices = c("cdm_name", "comparison", "covid_definition", "matching_status"),
                           default = list("color" = "matching_status", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "wcounts"),
             downloadButton("weekly_counts_plot_download", "Download figure"),
@@ -181,10 +178,11 @@ ui <- dashboardPage(
         p("Distribution of index dates (patient follow-up start date)."),
         selectors(
           data$index_date, prefix = "index_dates",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
-            "cohort_name" = data$index_date$cohort_name[1],
+            "comparison" = data$index_date$comparison[1],
+            "covid_definition" = data$index_date$covid_definition[1],
             "strata_name" = data$index_date$strata_name[1]
           )
         ),
@@ -220,7 +218,7 @@ ui <- dashboardPage(
           tabPanel(
             "Plot",
             h5(),
-            plotSelectors(prefix = "plt_index", choices = c("cdm_name", "cohort_name", "strata_name", "strata_level"),
+            plotSelectors(prefix = "plt_index", choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level"),
                           default = list("color" = NULL, "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_index"),
             downloadButton("index_date_plot_download", "Download figure"),
@@ -229,44 +227,6 @@ ui <- dashboardPage(
         )
       ),
       ## future observation ----
-      # tabItem(
-      #   tabName = "available_followup",
-      #   h3("Future observation"),
-      #   p("Future observation time in the database from index date."),
-      #   selectors(
-      #     data$available_followup, prefix = "future_obs",
-      #     columns = c("cdm_name", "group_level", "strata_name"),
-      #     default = list(
-      #       "cdm_name" = data$available_followup$cdm_name[1],
-      #       "group_level" = data$available_followup$group_level[1],
-      #       "strata_name" = data$available_followup$strata_name[1]
-      #     )
-      #   ),
-      #   div(
-      #     style = "display: inline-block;vertical-align:top; width: 150px;",
-      #     uiOutput("future_obs_strata_level")
-      #   ),
-      #   tabsetPanel(
-      #     type = "tabs",
-      #     tabPanel(
-      #       "Summary",
-      #       h5(),
-      #       downloadButton("future_obs_summary_download", "Download table in word"),
-      #       gt_output('future_obs_summary') %>% withSpinner()
-      #     ),
-      #     tabPanel(
-      #       "Plot",
-      #       h5(),
-      #       plotSelectors(
-      #         prefix = "plt_future", choices = c("cdm_name", "cohort_name", "strata_name", "strata_level", "exposed"),
-      #         default = list("color" = "exposed", "facet_by" = "cdm_name")
-      #       ),
-      #       plotDownloadSelectors(prefix = "dwn_future"),
-      #       downloadButton("future_obs_plot_download", "Download figure"),
-      #       plotlyOutput('future_obs_plot') %>% withSpinner()
-      #     )
-      #   )
-      # )
       ## re-enrollment ----
       tabItem(
         tabName = "reenrollment",
@@ -275,10 +235,11 @@ ui <- dashboardPage(
           vaccinated an contributed in the exposed group."),
         selectors(
           data$index_date, prefix = "reenrolment",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
-            "cohort_name" = data$index_date$cohort_name[1],
+            "comparison" = data$index_date$comparison[1],
+            "covid_definition" = data$index_date$covid_definition[1],
             "strata_name" = data$index_date$strata_name[1]
           )
         ),
@@ -309,10 +270,11 @@ ui <- dashboardPage(
         p("Population enrollment attrition"),
         selectors(
           data$population_attrition, prefix = "attrition",
-          columns = c("cdm_name", "cohort_name"),
+          columns = c("cdm_name", "comparison", "covid_definition"),
           default = list(
             "cdm_name" = data$population_attrition$cdm_name[1],
-            "cohort_name" = data$population_attrition$cohort_name[1]
+            "comparison" = data$population_attrition$comparison[1],
+            "covid_definition" = data$population_attrition$covid_definition[1]
           ),
           multiple = FALSE
         ),
@@ -328,10 +290,11 @@ ui <- dashboardPage(
         p("Population counts"),
         selectors(
           data$population_count, prefix = "pop_count",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$population_count$cdm_name[1],
-            "cohort_name" = data$population_count$cohort_name[1],
+            "comparison" = data$population_count$comparison[1],
+            "covid_definition" = data$population_count$covid_definition[1],
             "strata_name" = data$population_count$strata_name[1]
           )
         ),
@@ -365,11 +328,12 @@ ui <- dashboardPage(
         p("Characterisation of the population before index date"),
         selectors(
           data$baseline, prefix = "baseline",
-          columns = c("cdm_name", "group_level", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$baseline$cdm_name[1],
-            "group_level" = data$baseline$group_level[1],
-            "strata_name" = data$baseline$strata_name[1]
+            "comparison" = data$baseline$comparison[1],
+            "covid_definition" = data$baseline$covid_definition[1],
+            "strata_name" = "overall"
           )
         ),
         div(
@@ -387,9 +351,12 @@ ui <- dashboardPage(
         tabName = "large_scale_characteristics",
         h3("Large scale characteristics"),
         p("Large scale characeristics for each cohort and strata of the study"),
-        selectors(data = data$large_scale,
-                  prefix = "large",
-                  columns = c("cdm_name", "cohort_name", "strata_name"), multiple = FALSE),
+        selectors(
+          data = data$large_scale,
+          prefix = "large",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          multiple = FALSE
+          ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("large_scale_strata_level")
@@ -415,9 +382,12 @@ ui <- dashboardPage(
         tabName = "smd",
         h3("Standardised mean differences"),
         p("Standardised mean differences between exposed and unexposed cohorts"),
-        selectors(data = data$smd,
-                  prefix = "smd",
-                  columns = c("cdm_name", "cohort_name", "strata_name"), multiple = FALSE),
+        selectors(
+          data = data$smd,
+          prefix = "smd",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          multiple = FALSE
+          ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("smd_strata_level")
@@ -438,13 +408,14 @@ ui <- dashboardPage(
       tabItem(
         tabName = "nco_summary",
         h3("Survival summary"),
-        p("Counts and follor-up for each negative control outcome and analysis"),
+        p("Counts and follor-up for each negative control outcome and exposed_censoring"),
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
-          default = list("cdm_name" = "CPRD",
-                         "cohort_name" = "none_first_covid_diagnostic_test",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          default = list("cdm_name" = "SIDIAP",
+                         "comparison" = "none_first",
+                         "covid_definition" = "diagnostic_test",
                          "strata_name" = "overall")
         ),
         div(
@@ -462,13 +433,12 @@ ui <- dashboardPage(
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
-          columns = c("analysis", "study_end", "window"),
+          columns = c("exposed_censoring", "followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "analysis" = "main",
-            "study_end" = "cohort_end_date"
-          ),
-          multiple = FALSE
+            "exposed_censoring" = "none",
+            "followup_end" = "cohort_end_date"
+          )
         ),
         tabsetPanel(
           type = "tabs",
@@ -490,14 +460,15 @@ ui <- dashboardPage(
       tabItem(
         tabName = "study_summary",
         h3("Survival summary"),
-        p("Counts and follor-up for each study outcome and analysis"),
+        p("Counts and follor-up for each study outcome and exposed_censoring"),
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "CPRD",
-            "cohort_name" = "none_first_covid_diagnostic_test",
+            "cdm_name" = "SIDIAP",
+            "comparison" = "none_first",
+            "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
           )
         ),
@@ -513,16 +484,27 @@ ui <- dashboardPage(
             "outcome" = data$survival_summary |> filter(variable_name == "study") |> pull(outcome) |> unique()
           )
         ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "delivery_sum",
+            label = "delivery excluded",
+            choices = c("yes", "no"),
+            selected = "yes",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
+          )
+        ),
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
-          columns = c("analysis", "study_end", "window"),
+          columns = c("exposed_censoring", "followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "analysis" = "main",
-            "study_end" = "cohort_end_date"
-          ),
-          multiple = FALSE
+            "exposed_censoring" = "none",
+            "followup_end" = "cohort_end_date"
+          )
         ),
         tabsetPanel(
           type = "tabs",
@@ -544,14 +526,15 @@ ui <- dashboardPage(
       tabItem(
         tabName = "nco_forest_plot",
         h3("Forest plots"),
-        p("Negative control outcomes risk estimates for all populations and analysis"),
+        p("Negative control outcomes risk estimates for all populations and exposed_censoring"),
         selectors(
           data = data$risk |> filter(variable_name == "nco"),
           prefix = "nco_risk",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "CPRD",
-            "cohort_name" = "none_first_covid_diagnostic_test",
+            "cdm_name" = "SIDIAP",
+            "comparison" = "none_first",
+            "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
           )
         ),
@@ -562,12 +545,13 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "nco"),
           prefix = "nco_risk",
-          columns = c("regression", "outcome", "analysis", "study_end", "window"),
+          columns = c("regression", "outcome", "exposed_censoring", "followup_end", "window"),
           default = list(
+            "regression" = "cox",
             "outcome" = data$risk |> filter(variable_name == "nco") |> pull(outcome) |> unique(),
             "window" = "0_Inf",
-            "analysis" = "main",
-            "study_end" = "cohort_end_date"
+            "exposed_censoring" = "none",
+            "followup_end" = "cohort_end_date"
           )
         ),
         tabsetPanel(
@@ -589,13 +573,13 @@ ui <- dashboardPage(
             h5(),
             plotSelectors(
               prefix = "plt_nco_risk",
-              choices = c("cdm_name", "cohort_name", "strata_name", "strata_level",
-                          "regression", "analysis", "study_end", "window", "outcome",
+              choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level",
+                          "regression", "exposed_censoring", "followup_end", "window", "outcome",
                           "association"),
               default = list("color" = "association", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_nco_risk"),
             downloadButton("nco_risk_download_plot", "Download table in word"),
-            plotlyOutput('nco_risk_plot') %>% withSpinner()
+            plotlyOutput('nco_risk_plot', height = "1400px") %>% withSpinner()
           )
         )
       ),
@@ -603,14 +587,15 @@ ui <- dashboardPage(
       tabItem(
         tabName = "study_forest_plot",
         h3("Forest plots"),
-        p("Study outcomes risk estimates for all populations and analysis"),
+        p("Study outcomes risk estimates for all populations and exposed_censoring"),
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
-          columns = c("cdm_name", "cohort_name", "strata_name"),
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "CPRD",
-            "cohort_name" = "none_first_covid_diagnostic_test",
+            "cdm_name" = "SIDIAP",
+            "comparison" = "none_first",
+            "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
           )
         ),
@@ -621,12 +606,32 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
-          columns = c("regression", "outcome", "analysis", "study_end", "window"),
+          columns = c("regression", "outcome"),
           default = list(
-            "outcome" = data$risk |> filter(variable_name == "study") |> pull(outcome) |> unique(),
+            "regression" = "cox",
+            "outcome" = data$risk |> filter(variable_name == "study") |> pull(outcome) |> unique()
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "delivery_sum",
+            label = "delivery excluded",
+            choices = c("yes", "no"),
+            selected = "yes",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
+          )
+        ),
+        selectors(
+          data = data$risk |> filter(variable_name == "study"),
+          prefix = "study_risk",
+          columns = c("exposed_censoring", "followup_end", "window"),
+          default = list(
             "window" = "0_Inf",
-            "analysis" = "main",
-            "study_end" = "cohort_end_date"
+            "exposed_censoring" = "none",
+            "followup_end" = "cohort_end_date"
           )
         ),
         tabsetPanel(
@@ -648,13 +653,13 @@ ui <- dashboardPage(
             h5(),
             plotSelectors(
               prefix = "plt_study_risk",
-              choices = c("cdm_name", "cohort_name", "strata_name", "strata_level",
-                          "regression", "analysis", "study_end", "window", "outcome",
+              choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level",
+                          "regression", "exposed_censoring", "followup_end", "window", "outcome", "delivery_excluded",
                           "association"),
               default = list("color" = "outcome", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_study_risk"),
             downloadButton("study_risk_download_plot", "Download table in word"),
-            plotlyOutput('study_risk_plot') %>% withSpinner()
+            plotlyOutput('study_risk_plot', height = "800px") %>% withSpinner()
           )
         )
       )

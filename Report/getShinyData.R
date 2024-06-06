@@ -59,7 +59,8 @@ data$weekly_counts <- pre_data$matching_summary |>
     across(contains("exposed"), ~ as.numeric(.x)),
     week_start = as.Date(week_start)
   ) |>
-  niceCohortName()
+  niceCohortName() |>
+  select(cdm_name, comparison, covid_definition, week_start, exposed_pre, unexposed_pre, exposed_post, unexposed_post)
 data$index_date <- pre_data$cohort_stats |>
   filter(result_type == "index_date") |>
   mutate("index_date" = as.Date(variable_level)) |>
@@ -70,7 +71,8 @@ data$index_date <- pre_data$cohort_stats |>
   ) |>
   mutate(counts = as.numeric(counts)) |>
   uniteStrata(c = c("vaccine_brand", "trimester")) |>
-  niceCohortName()
+  niceCohortName() |>
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, index_date, counts)
 data$reenrollment <- pre_data$cohort_stats |>
   filter(result_type == "recontributions") |>
   splitAll() |>
@@ -83,7 +85,7 @@ data$reenrollment <- pre_data$cohort_stats |>
   niceCohortName() |>
   left_join(
     data$population_count,
-    by = c("cdm_name", "cohort_name", "strata_name", "strata_level", "covid_definition")
+    by = c("cdm_name", "comparison", "strata_name", "strata_level", "covid_definition")
   ) |>
   mutate(
     count = reenrollments,
@@ -96,7 +98,8 @@ data$baseline <- pre_data$characteristics |>
   filter(exposed != "overall") |>
   select(-starts_with("additional")) |>
   uniteAdditional(cols = c("exposed")) |>
-  uniteStrata(cols = c("vaccine_brand", "trimester"))
+  uniteStrata(cols = c("vaccine_brand", "trimester")) |>
+  niceCohortName(col = "group_level", removeCol = FALSE)
 data$large_scale <- pre_data$characteristics |>
   filter(result_type %in% c("summarised_large_scale_characteristics")) |>
   splitGroup() |>
@@ -121,7 +124,8 @@ data$smd <- pre_data$characteristics |>
   rename("window" = "variable_level", "concept_name" = "variable_name") |>
   select(!c("result_id", "result_type", "package_name", "package_version",
             "estimate_type", "estimate_name", "estimate_value")) |>
-  niceCohortName()
+  niceCohortName() |>
+  relocate(c("comparison", "covid_definition"), .after = "cdm_name")
 data$survival_summary <- pre_data$relative_risk |>
   filter(result_type == "followup") |>
   newSummarisedResult() |>
@@ -142,24 +146,36 @@ data$survival_summary <- pre_data$relative_risk |>
   group_by(cdm_name, cohort_name, strata_name, strata_level, variable_name, outcome, window, analysis, study_end, exposed) |>
   mutate(suppress = if_else(any(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0), TRUE, FALSE)) |>
   ungroup() |>
-  mutate(estimate_value = if_else(suppress, NA, estimate_value)) |>
-  select(!suppress) |>
-  niceCohortName()
+  mutate(
+    estimate_value = if_else(suppress, NA, estimate_value),
+    exposed_censoring = if_else(analysis == "main", "none", "3rd/4rt dose")
+    ) |>
+  rename("followup_end" = "study_end") |>
+  select(!c("suppress", "result_type", "package_name", "package_version", "analysis")) |>
+  niceCohortName() |>
+  niceOutcomeName() |>
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value)
 data$risk <- pre_data$relative_risk |>
   filter(result_type %in% c("binomial", "cox")) |>
   splitGroup() |>
   splitAdditional() |>
   rename("outcome" = "variable_level", "regression" = "result_type") |>
   select(!c("package_name", "package_version", "result_id")) |>
-  mutate(estimate_value = as.numeric(estimate_value)) |>
+  mutate(
+    estimate_value = as.numeric(estimate_value),
+    exposed_censoring = if_else(analysis == "main", "none", "3rd/4rt dose")
+    ) |>
   select(
     c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression",
-      "analysis", "study_end", "window", "outcome", "variable_name",
+      "exposed_censoring","followup_end" = "study_end", "window", "outcome", "variable_name",
       "estimate_type", "estimate_name", "estimate_value")
   ) |>
-  niceCohortName()
+  niceCohortName() |>
+  niceOutcomeName() |>
+  relocate(c("comparison", "covid_definition"), .after = "cdm_name")
 data$population_count <- data$population_count |>
-  mutate(total = num_control + num_exposed)
+  mutate(total = num_control + num_exposed) |>
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, total, num_control, num_exposed)
 
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

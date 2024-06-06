@@ -189,12 +189,34 @@ niceNum <- function(x, dec = 0) {
   trimws(format(round(as.numeric(x), dec), big.mark = ",", nsmall = dec, scientific = FALSE))
 }
 
-niceCohortName <- function(x) {
-  x |>
+niceCohortName <- function(x, col = "cohort_name", removeCol = TRUE) {
+  x <- x |>
     mutate(
       covid_definition = if_else(
-        grepl("covid_diagnostic_test", cohort_name), "diagnostic_test", "test"),
-      cohort_name = gsub("_covid_diagnostic_test|_covid_test", "", cohort_name)
+        grepl("covid_diagnostic_test", .data[[col]]), "diagnostic_test", "test"),
+      comparison = gsub("_covid_diagnostic_test|_covid_test", "", .data[[col]])
     ) |>
-    relocate("covid_definition", .after = "cohort_name")
+    relocate("covid_definition", .after = "comparison")
+  if (removeCol) {
+    x <- x |> select(!all_of(col))
+  }
+  return(x)
+}
+
+niceOutcomeName <- function(x) {
+  x |>
+    mutate(
+      covid_definition_out = if_else(
+        grepl("covid_diagnostic_test", outcome), "diagnostic_test", "test"),
+      delivery_excluded = case_when(
+        variable_name == "nco" ~ NA,
+        grepl("no_delivery", outcome) ~ "yes",
+        !grepl("no_delivery", outcome) & grepl("inpatient|icu", outcome) ~ "no",
+        !grepl("no_delivery", outcome) & !grepl("inpatient|icu", outcome) ~ "-"
+      ),
+      outcome = gsub("_diagnostic_test|_test|_no_delivery", "", outcome)
+    ) |>
+    filter(covid_definition == covid_definition_out | variable_name == "nco")  |>
+    relocate("delivery_excluded", .after = "outcome") |>
+    select(!covid_definition_out)
 }
