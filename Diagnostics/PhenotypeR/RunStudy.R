@@ -23,7 +23,7 @@ tic(msg = "phenotypeR total time run: ")
 tic(msg = "Settings and loading of Phoebe")
 
 cohort_json_dir <- here("Cohorts/")
-cohorts_name <- "phenotyping_paper_"
+cohorts_name <- "diagnostics"
 
 # To export output 
 result_names <- c("cohort_definitions", "cohort_count", "code_counts", "cohort_overlap", 
