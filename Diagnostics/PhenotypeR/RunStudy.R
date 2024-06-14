@@ -1,6 +1,6 @@
 # settings ------
 input <- list(
-  runGenerateCohort = F,              #### Generate cohort or use preloaded cohorts
+  runGenerateCohort = T,              #### Generate cohort or use preloaded cohorts
   runCalculateOverlap = T,            #### Calculate Overlap
   runCountCodes = T,                  #### run orphan codes and count codes
   runIndexEvents = T,                 #### run index events
