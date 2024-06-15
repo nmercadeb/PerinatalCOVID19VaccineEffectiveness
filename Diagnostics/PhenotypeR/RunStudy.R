@@ -31,7 +31,11 @@ result_names <- c("cohort_definitions", "cohort_count", "code_counts", "cohort_o
                   "index_events", "lsc_sample", "lsc_matched", "lsc_difference", "log")
 output <- data <- vector("list", length(result_names)) |> setNames(result_names)
 
-
+# Results folder
+output_folder <- here(paste0("Results"))
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder)
+}
 
 if (input$runCountCodes & !file.exists(here("Phoebe/concept_recommended.csv")) ){
   if (file.exists(here("Phoebe/concept_recommended_20221006 1.zip"))){
@@ -269,7 +273,7 @@ tic(msg = "Patient_profiles summary")
 #cdm$Results_dx <- cdm[[cohorts_name]]
 if (input$runProfiling) {
   Patient_profiles <- cdm[[cohorts_name]] %>%
-    addDemographics(cdm) %>% 
+    addDemographics() %>% 
     collect()   %>%
     mutate( age_group= cut(age, c(seq(0, 110, 5 ), Inf), include.lowest=TRUE))
   
