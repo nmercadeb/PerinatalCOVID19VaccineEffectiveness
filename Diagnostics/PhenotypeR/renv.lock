@@ -42,20 +42,15 @@
     },
     "CirceR": {
       "Package": "CirceR",
-      "Version": "1.3.2",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "CirceR",
-      "RemoteUsername": "ohdsi",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "758a67ee9c446420efba7bcbc9b7217dccfa8805",
+      "Version": "1.3.3",
+      "Source": "Repository",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "RJSONIO",
         "rJava"
       ],
-      "Hash": "cfba98b562fa0b6a31ea8cdf09912e60"
+      "Hash": "2f9522a81dac11183e90b4236afa441d"
     },
     "CodelistGenerator": {
       "Package": "CodelistGenerator",
