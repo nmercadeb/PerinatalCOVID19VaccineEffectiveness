@@ -1,4 +1,4 @@
-# libraries ----
+# Libraries ----
 library(dplyr)
 library(readr)
 library(here)
@@ -188,6 +188,21 @@ data$population_count <- data$population_count |>
 data$kaplan_meier <- pre_data$kaplan_meier |>
   filter(strata_name != "overall") |>
   niceCohortName(col = "group_level", removeCol = FALSE) |>
-  niceOutcomeName(col = "variable_level")
+  filter(result_type == "survival_estimate") |>
+  splitAdditional() |>
+  splitStrata() |>
+  uniteStrata(cols = c("vaccine_brand", "trimester")) |>
+  niceOutcomeName(col = "variable_level") |>
+  mutate(
+    estimate_value = as.numeric(estimate_value),
+    followup_end = if_else(result_id == 1, "cohort_end_date", "pregnancy_end_date"),
+    time = as.numeric(time),
+    Cohort = if_else(exposed == "0", "Unexposed", "Exposed"),
+    strata_level = factor(strata_level,
+                          levels = c("overall", "pfizer", "moderna", "T1", "T2", "T3"),
+                          label = c("Overall", "Pfizer", "Moderna", "Trimester 1", "Trimester 2", "Trimester 3"))
+  ) |>
+  select(-c("result_id", "result_type", "package_name", "package_version", "group_name", "group_level", "analysis_type", "variable_name", "variable_level", "estimate_type", "exposed")) |>
+  pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

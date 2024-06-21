@@ -852,7 +852,7 @@ server <- function(input, output, session) {
       filter(
         variable_name == "study",
         delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
-        ) |>
+      ) |>
       formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
@@ -876,7 +876,10 @@ server <- function(input, output, session) {
 
     table <- data$risk |>
       filterData(prefix = "study_risk", input = input) |>
-      filter(variable_name == "study") |>
+      filter(
+        variable_name == "study",
+        delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
+      ) |>
       select(!"estimate_type") |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       mutate(
@@ -943,24 +946,27 @@ server <- function(input, output, session) {
     restrictions = "strata_name", input = input, multiple = TRUE
   )
   plotKM <- reactive({
-    plotSurvival(
-      result =  data$kaplan_meier |>
-        filterData(prefix = "km", input = input) %>%
-        {if (input$followup_km == "cohort_end_date") {
-          filter(., result_id == 1)
-        } else {
-          filter(., result_id == 2)
-        }} %>%
-        filter(delivery_excluded %in% input$delivery_km | delivery_excluded == "-") |>
-        select(omopgenerics::resultColumns()),
-      x = "time",
-      xscale = "days",
-      ylim = c(0, NA),
-      cumulativeFailure = FALSE,
-      ribbon = TRUE,
-      facet = input$plt_km_facet_by,
-      colour = input$plt_km_color
-    )
+    table <- data$kaplan_meier |>
+      filterData("km", input = input) |>
+      filter(delivery_excluded %in% input$delivery_km | delivery_excluded == "-")
+    if (!is.null(input$plt_km_facet_by)) {
+      table <- table |>
+        unite("facet_by", input$plt_km_facet_by, sep = "; ", remove = FALSE)
+    }
+    gg <- table |>
+      ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort, ymin = estimate_95CI_lower, ymax = estimate_95CI_upper)) +
+      geom_step(size = 1) +
+      geom_ribbon(alpha = 0.3, colour = NA) +
+      scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+      scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+      theme_bw() +
+      xlab("Time (days)") +
+      ylab("Survival probability")
+    if (!is.null(input$plt_km_facet_by)) {
+      gg <- gg +
+        facet_wrap(vars(facet_by))
+    }
+    gg
   })
   output$km_plot <- renderPlotly({
     plotKM()

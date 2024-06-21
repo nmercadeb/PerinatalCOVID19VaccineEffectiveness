@@ -126,11 +126,11 @@ ui <- dashboardPage(
         ),
         DTOutput("cohort_count_table") %>% withSpinner()
       ),
-      ### weekly counts ----
+      ### matching counts ----
       tabItem(
         tabName = "weekly_counts",
-        h3("Weekly counts"),
-        p("Weekly enrollment counts during propensity score matching:"),
+        h3("Matching counts"),
+        p("Enrollment counts during propensity score matching:"),
         selectors(
           data$weekly_counts, prefix = "weekly_cnts", columns = c("cdm_name", "comparison", "covid_definition"),
           default = list(
@@ -267,7 +267,7 @@ ui <- dashboardPage(
           )
         )
       ),
-      ## re-enrollment ----
+      ## vaccination ----
       tabItem(
         tabName = "vaccination",
         h3("No index vaccination"),
@@ -726,7 +726,7 @@ ui <- dashboardPage(
           )
         )
       ),
-      # STUDY FOREST ----
+      # KAPLAN MEIER ----
       tabItem(
         tabName = "kaplan_meier",
         h3("Kaplan-Meier"),
@@ -739,7 +739,7 @@ ui <- dashboardPage(
             "cdm_name" = "SIDIAP",
             "comparison" = "none_first",
             "covid_definition" = "diagnostic_test",
-            "strata_name" = "exposed"
+            "strata_name" = "overall"
           )
         ),
         div(
@@ -750,9 +750,7 @@ ui <- dashboardPage(
           data = data$kaplan_meier,
           prefix = "km",
           columns = "outcome",
-          default = list(
-            "outcome" = data$kaplan_meier |> pull(outcome) |> unique()
-          )
+          default = list( "outcome" = "covid")
         ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
@@ -769,7 +767,7 @@ ui <- dashboardPage(
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           pickerInput(
-            inputId = "followup_km",
+            inputId = "km_followup_end",
             label = "Followup end",
             choices = c("cohort_end_date", "pregnancy_end_date"),
             selected = "cohort_end_date",
@@ -779,10 +777,11 @@ ui <- dashboardPage(
           )
         ),
         plotSelectors(
+          selectors = "facet_by",
           prefix = "plt_km",
-          choices = c("cdm_name", "cohort", "strata_name", "strata_level",
-                      "variable_level"),
-          default = list("color" = "strata_level", "facet_by" = "variable_level")),
+          choices = c("cdm_name", "comparison", "covid_definition", "strata_name",
+                      "strata_level", "outcome", "followup_end"),
+          default = list("facet_by" = "cdm_name")),
         plotDownloadSelectors(prefix = "dwn_km"),
         downloadButton("km_download_plot", "Download table in word"),
         plotlyOutput('km_plot') %>% withSpinner()
