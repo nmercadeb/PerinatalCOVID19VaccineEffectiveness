@@ -3,8 +3,21 @@ if (!dir.exists(output_folder)) {
   dir.create(output_folder)
 }
 
+# save study settings ----
+tibble(
+  days.booster = days.booster,
+  booster.janssen = booster.janssen,
+  days.moderna = days.moderna,
+  days.astrazeneca = days.astrazeneca,
+  days.pfizer = days.pfizer,
+  study.start = study.start,
+  study.end = study.end,
+  cdm_name = cdmName(cdm)
+) |>
+  write_csv(file = here(output_folder, paste0("study_settings_", database_name, ".csv")))
+
 # create logger ----
-log_file <- here(results, paste0("log", "_", gsub("-", "", today()), ".txt"))
+log_file <- here(results, paste0("log", "_", gsub("-", "", Sys.Date()), ".txt"))
 if (file.exists(log_file)) {
   unlink(log_file)
 }
@@ -121,7 +134,7 @@ if (runOutcomeModel) {
 info(logger, "STEP 4 ZIP RESULTS ----")
 output_folder <- basename(output_folder)
 zip(
-  zipfile = paste0(output_folder, "_", gsub("-", "", today()), ".zip"),
+  zipfile = paste0(output_folder, "_", gsub("-", "", Sys.Date()), ".zip"),
   files = list.files(output_folder, full.names = TRUE)
 )
 

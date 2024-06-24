@@ -4,7 +4,10 @@ info(logger, "1) Relative risk estimates")
 outcomes <- colnames(cdm$survival_raw)
 outcomes <- outcomes[grepl("nco_|study_", outcomes)]
 study_ends <- c("cohort_end_date", "pregnancy_end_date")
-windows <- list(c(0, Inf), c(0, 10), c(11, 27), c(28, 90), c(91, 150), c(150, Inf), c(11,90), c(91, Inf))
+windows <- list(
+  c(0, 7), c(8, 28), c(29, 90), c(91, 180), c(181, 365), c(366, Inf),
+  c(365, Inf), c(7, Inf), c(7, 365), c(0, Inf) # last one only for NCO
+)
 analyses <- c("main", "sensitivity")
 
 results <- list()
@@ -22,7 +25,7 @@ for (analysis in analyses) {
         compute()
       # set outcomes to evaluate depending on window
       if (window[1] == 0 & is.infinite(window[2])) {
-        outcomes.k <- outcomes
+        outcomes.k <- outcomes[grepl("nco_", outcomes)]
       } else {
         outcomes.k <- outcomes[grepl("study_", outcomes)]
       }
@@ -37,14 +40,14 @@ for (analysis in analyses) {
             group = "cohort_name", c("overall", "vaccine_brand", "trimester"),
             cox = TRUE, binomial = FALSE
           ) |>
-          mutate(
-            cdm_name = cdmName(cdm),
-            variable_name = "nco",
-            variable_level = gsub("nco_", "", outcome),
-            window = paste0(as.character(window), collapse = "_"),
-            analysis = analysis,
-            study_end = studyEnd
-          )
+            mutate(
+              cdm_name = cdmName(cdm),
+              variable_name = "nco",
+              variable_level = gsub("nco_", "", outcome),
+              window = paste0(as.character(window), collapse = "_"),
+              analysis = analysis,
+              study_end = studyEnd
+            )
         } else {
           results[[k]] <- estimateSurvival(
             data = survival_data,

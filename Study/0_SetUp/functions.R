@@ -164,10 +164,10 @@ matchItDataset <- function(x, objective_id) {
         as.numeric(!!datediff("pregnancy_start_date", "week_start")),
         c(0, 90, 180, 330),
         include.lowest = TRUE
-        ),
+      ),
       gestational_age = cut(
         as.numeric(!!datediff("pregnancy_start_date", "week_start")),
-        !!c(seq(0, 293, 7*6), 303),
+        !!c(seq(0, 30*9, 9), 303),
         include.lowest = TRUE)
     ) |>
     addTableIntersectCount(
@@ -269,8 +269,11 @@ censorExposedPair <- function(x) {
         select(cohort_definition_id, match_id, new_cohort_end_date = cohort_end_date),
       by = c("cohort_definition_id", "match_id")
     ) |>
-    mutate(cohort_end_date = if_else(is.na(new_cohort_end_date) | new_cohort_end_date > cohort_end_date,
-                                     cohort_end_date, new_cohort_end_date)) |>
+    mutate(cohort_end_date = if_else(
+      new_cohort_end_date > cohort_end_date,
+      cohort_end_date,
+      new_cohort_end_date
+    )) |>
     select(-new_cohort_end_date)
 }
 

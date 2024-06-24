@@ -70,11 +70,11 @@ study.start <- as.Date("...") # date of initiation of the vaccination campaing
 study.end   <- as.Date("...") # end of data availability (data cut date)
 
 # standard days between vaccine doses
-days.booster     <- 90
-booster.janssen  <- 90
-days.moderna     <- 28
-days.astrazeneca <- 28
-days.pfizer      <- 21
+days.booster     <- as.numeric("...") # days for booster after pfizer, moderna, or astrazeneca
+booster.janssen  <- as.numeric("...") # days for booster after janssen
+days.moderna     <- as.numeric("...") # days for 2nd dose after moderna
+days.astrazeneca <- as.numeric("...") # days for 2nd dose after astrazeneca
+days.pfizer      <- as.numeric("...") # days for 2nd dose after pfizer
 
 # Choose code to run
 runInstantiateCohorts <- TRUE

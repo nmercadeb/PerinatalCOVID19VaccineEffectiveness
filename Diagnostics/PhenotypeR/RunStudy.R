@@ -4,7 +4,7 @@ input <- list(
   runCalculateOverlap = T,            #### Calculate Overlap
   runCountCodes = T,                  #### run orphan codes and count codes
   runIndexEvents = T,                 #### run index events
-  runProfiling = T,                   #### run age and time in database characterisation
+  runProfiling = F,                   #### run age and time in database characterisation
   runMatchedSampleLSC = T,            #### run matched LSC
   runIncidence = T,                   #### run Incidence
   runPrevalence = T,                  #### run Prevalence
@@ -275,7 +275,7 @@ if (input$runProfiling) {
   Patient_profiles <- cdm[[cohorts_name]] %>%
     addDemographics() %>% 
     collect()   %>%
-    mutate( age_group= cut(age, c(seq(0, 110, 5 ), Inf), include.lowest=TRUE))
+    mutate(age_group= cut(age, c(seq(0, 110, 5 ), Inf), include.lowest=TRUE))
   
   
   
