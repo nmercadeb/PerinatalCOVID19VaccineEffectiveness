@@ -192,20 +192,64 @@ cdm$matched <- tbl(db, inSchema(schema = results_database_schema, table = paste0
 
 # "clean" cohort
 cdm$matched <- cdm$matched %>%
-  mutate(
-    # stop follow-up when control is exposed
-    cohort_end_date = if_else(
-      exposed == 0 & !is.na(index_vaccine_date),
-      as.Date(!!dateadd("index_vaccine_date", -1)),
-      cohort_end_date
-    )
-    # control_censored = if_else(exposed == 0 & !is.na(index_vaccine_date), TRUE, FALSE)
+  mutate(reason = "end_observation") %>%
+  left_join(
+    cdm$vaccine_schema %>%
+      filter(!is.na(schema_id)) %>%
+      select(subject_id, schema_id, vaccine_date) %>%
+      pivot_wider(names_from = schema_id, values_from = vaccine_date) %>%
+      select(subject_id, partial, complete, booster_1, booster_2),
+    by = "subject_id"
   ) %>%
-  # stop exposed follow-up when control censored
-  # censorExposedPair() %>%
-  select(-index_vaccine_date) %>%
+  mutate(
+    # do not follow primary schema treatment
+    days_primary = !!datediff("cohort_start_date", "complete"),
+    recommended_days = if_else(vaccine_brand == "pfizer", days.pfizer + 5, days.moderna + 5),
+    censor_primary = as.Date(add_days(.data$cohort_start_date, .data$recommended_days)),
+    reason = case_when(
+      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$days_primary <= .data$recommended_days & .data$cohort_end_date > .data$censor_primary ~ "no second dose",
+      .default = .data$reason
+    ),
+    cohort_end_date = case_when(
+      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$days_primary <= .data$recommended_days & .data$cohort_end_date > .data$censor_primary ~ .data$censor_primary,
+      .default = .data$cohort_end_date
+    ),
+    # deviate from treatment strategy
+    reason = case_when(
+      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$cohort_end_date >= .data$booster_1 ~ "3rd dose",
+      .data$cohort_definition_id %in% 1:2 & .data$exposed == 0 & .data$cohort_end_date >= .data$partial ~ "1st dose",
+      .data$cohort_definition_id %in% 3:4 & .data$exposed == 1 & .data$cohort_end_date >= .data$booster_2 ~ "4th dose",
+      .data$cohort_definition_id %in% 3:4 & .data$exposed == 0 & .data$cohort_end_date >= .data$booster_1 ~ "3rd dose",
+      .default = .data$reason
+    ),
+    cohort_end_date = case_when(
+      .data$reason == "3rd dose" ~ as.Date(add_days(.data$booster_1, -1)),
+      .data$reason == "1st dose" ~ as.Date(add_days(.data$partial, -1)),
+      .data$reason == "4rt dose" ~ as.Date(add_days(.data$booster_2, -1)),
+      .default = cohort_end_date
+    )
+  ) %>%
+  compute()
+
+censoring <- cdm$matched |>
+  group_by(cohort_definition_id, match_id) %>%
+  filter(cohort_end_date == min(cohort_end_date)) %>%
+  ungroup() %>%
+  mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) |>
+  group_by(cohort_definition_id, reason) %>%
+  summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75)) |>
+  collect()
+
+write_csv(
+  censoring |> mutate(cdm_name = cdmName(cdm)),
+  file = here(output_folder, paste0("censoring_", cdmName(cdm), ".csv"))
+)
+
+
+cdm$matched <- cdm$matched %>%
   group_by(cohort_definition_id, match_id) %>%
   mutate(cohort_end_date = min(cohort_end_date)) %>%
+  select(-c(age, maternal_age, partial, complete, booster_1, booster_2, days_primary, recommended_days, censor_primary, reason)) %>%
   compute(name = "matched", temporary = FALSE)
 
 cdm$matched <- cdm$matched %>%

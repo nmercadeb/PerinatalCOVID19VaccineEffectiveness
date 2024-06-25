@@ -8,7 +8,7 @@ windows <- list(
   c(0, 7), c(8, 28), c(29, 90), c(91, 180), c(181, 365), c(366, Inf),
   c(365, Inf), c(7, Inf), c(7, 365), c(0, Inf) # last one only for NCO
 )
-analyses <- c("main", "sensitivity")
+analyses <- c("main")
 
 results <- list()
 k <- 1

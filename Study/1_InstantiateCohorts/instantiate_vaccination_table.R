@@ -35,6 +35,7 @@ cdm$vaccine_schema <- cdm$vaccine_json %>%
                 dose_id == 7 ~ "booster_5")
       )
   ) %>%
+  filter(!is.na(schema_id)) %>%
   compute(name = "vaccine_schema", temporary = FALSE) %>%
   newCdmTable(src = cdmSource(cdm), name = "vaccine_schema")
 

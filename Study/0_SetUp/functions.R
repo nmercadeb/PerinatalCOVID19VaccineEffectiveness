@@ -315,6 +315,7 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
     ) |>
     # reset end date
     mutate(end_date = if_else(end_date > end_data, end_data, end_date))
+
   return(x)
 }
 
@@ -331,18 +332,19 @@ survivalFormat <- function(x, out) {
     mutate(
       status = if_else(.data[[out]] > start_date & .data[[out]] < end_date, 1, 0),
       status = if_else(is.na(status), 0, status),
-      time = if_else(status == 1, !!datediff("start_date", out), !!datediff("start_date", "end_date"))
+      time = if_else(status == 1, !!datediff("start_date", out), !!datediff("start_date", "end_date")),
     ) |>
     select(all_of(c(
       "cohort_name", "subject_id", "match_id", "exposed", "trimester", "vaccine_brand",
-      "status", "time"
+      "status", "time", "start_date"
     ))) |>
     compute()
   return(x)
 }
 
 estimateSurvival <- function(data, group, strata,
-                             cox = TRUE, binomial = TRUE) {
+                             cox = TRUE, binomial = FALSE,
+                             coxTime = TRUE) {
   results <- list()
   groupLevel = unique(data |> pull(.data[[group]]))
   k <- 1
@@ -363,7 +365,8 @@ estimateSurvival <- function(data, group, strata,
         # data
         data.k <- data |>
           filter(cohort_name == group.k, .data[[strata.k]] == strataLevel.k) |>
-          collect()
+          collect() |>
+          mutate(start_date = month(.data$start_date))
         # formula
         # if (length(covariates) == 0) {
         covariates_formula <- "exposed"
@@ -400,6 +403,35 @@ estimateSurvival <- function(data, group, strata,
               ) |>
               regressionToSummarised(
                 type = "cox", groupLevel = group.k,
+                strataName = strata.k, strataLevel = strataLevel.k
+              ) |>
+              mutate(exposed = NA) # for KM and followup
+            k <- k + 1
+          },
+          error = function(e) {
+          })
+        }
+
+        # cox yime ----
+        if (coxTime) {
+          tryCatch({
+            formula <- as.formula(paste0("Surv(time, status) ~ ", paste0(covariates_formula, " + start_date")))
+            coxRegression <- coxph(formula,  data = data.k)
+            results[[k]] <-  summary(coxRegression)$coefficients |>
+              as_tibble(rownames = "variable") |>
+              select(
+                "variable", "coef", "exp_coef" = "exp(coef)",
+                "se_coef" = "se(coef)", "z", "p" = "Pr(>|z|)"
+              ) |>
+              filter(variable == "exposed") |>
+              left_join(
+                summary(coxRegression)$conf.int |>
+                  as_tibble(rownames = "variable") |>
+                  select("variable", "lower_ci" = "lower .95", "upper_ci" = "upper .95"),
+                by = "variable"
+              ) |>
+              regressionToSummarised(
+                type = "cox-time", groupLevel = group.k,
                 strataName = strata.k, strataLevel = strataLevel.k
               ) |>
               mutate(exposed = NA) # for KM and followup
