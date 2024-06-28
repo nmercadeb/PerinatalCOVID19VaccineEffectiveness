@@ -19,6 +19,20 @@
               "VOCABULARY_ID": "RxNorm"
             },
             "includeDescendants": true
+          },
+          {
+            "concept": {
+              "CONCEPT_CLASS_ID": "Branded Drug Form",
+              "CONCEPT_CODE": "2593846",
+              "CONCEPT_ID": 1759205,
+              "CONCEPT_NAME": "SARS-CoV-2 (COVID-19) vaccine, mRNA spike protein Injectable Suspension [Comirnaty]",
+              "DOMAIN_ID": "Drug",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "VOCABULARY_ID": "RxNorm"
+            }
           }
         ]
       }
