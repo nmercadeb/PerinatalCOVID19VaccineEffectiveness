@@ -22,21 +22,6 @@
           },
           {
             "concept": {
-              "CONCEPT_CLASS_ID": "ATC 5th",
-              "CONCEPT_CODE": "J07BX03",
-              "CONCEPT_ID": 947817,
-              "CONCEPT_NAME": "covid-19 vaccines; systemic",
-              "DOMAIN_ID": "Drug",
-              "INVALID_REASON": "V",
-              "INVALID_REASON_CAPTION": "Valid",
-              "STANDARD_CONCEPT": "C",
-              "STANDARD_CONCEPT_CAPTION": "Classification",
-              "VOCABULARY_ID": "ATC"
-            },
-            "includeDescendants": true
-          },
-          {
-            "concept": {
               "CONCEPT_CLASS_ID": "CVX",
               "CONCEPT_CODE": "210",
               "CONCEPT_ID": 724905,
