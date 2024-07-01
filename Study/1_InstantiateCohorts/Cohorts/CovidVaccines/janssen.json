@@ -2,7 +2,7 @@
   "ConceptSets": [
     {
       "id": 0,
-      "name": "Janssen vaccine",
+      "name": "janssen",
       "expression": {
         "items": [
           {

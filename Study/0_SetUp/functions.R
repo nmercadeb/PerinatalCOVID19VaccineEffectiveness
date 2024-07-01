@@ -301,7 +301,7 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
     ) |>
     select(all_of(c(
       "cohort_name", "subject_id", "match_id", "exposed", "trimester",
-      "vaccine_brand", "maternal_age","end_date", "start_date", "end_data",
+      "vaccine_brand", "end_date", "start_date", "end_data",
       outcomes
     )))
 

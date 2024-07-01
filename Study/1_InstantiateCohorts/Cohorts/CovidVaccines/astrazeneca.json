@@ -2,7 +2,7 @@
   "ConceptSets": [
     {
       "id": 2,
-      "name": "AstraZeneca vaccine",
+      "name": "astrazeneca",
       "expression": {
         "items": [
           {
