@@ -5,8 +5,8 @@ outcomes <- colnames(cdm$survival_raw)
 outcomes <- outcomes[grepl("nco_|study_", outcomes)]
 study_ends <- c("cohort_end_date", "pregnancy_end_date")
 windows <- list(
-  c(0, 7), c(8, 28), c(29, 90), c(91, 180), c(181, 365), c(366, Inf),
-  c(365, Inf), c(7, Inf), c(7, 365), c(0, Inf) # last one only for NCO
+  c(0, 7), c(8, 28), c(8, 90), c(29, 90), c(29, 180), c(91, 180), c(181, 365),
+  c(366, Inf), c(8, 180), c(8, 365), c(8, Inf), c(0, Inf) # last one only for NCO
 )
 analyses <- c("main")
 
@@ -38,7 +38,7 @@ for (analysis in analyses) {
           results[[k]] <- estimateSurvival(
             data = survival_data,
             group = "cohort_name", c("overall", "vaccine_brand", "trimester"),
-            cox = TRUE, binomial = FALSE
+            cox = TRUE, binomial = FALSE, coxTime = FALSE
           ) |>
             mutate(
               cdm_name = cdmName(cdm),
@@ -51,7 +51,8 @@ for (analysis in analyses) {
         } else {
           results[[k]] <- estimateSurvival(
             data = survival_data,
-            group = "cohort_name", strata = c("overall", "vaccine_brand", "trimester")
+            group = "cohort_name", strata = c("overall", "vaccine_brand", "trimester"),
+            cox = TRUE, binomial = FALSE, coxTime = TRUE
           ) |>
             mutate(
               cdm_name = cdmName(cdm),

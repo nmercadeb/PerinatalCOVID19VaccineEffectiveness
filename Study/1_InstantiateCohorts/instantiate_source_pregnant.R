@@ -95,6 +95,12 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   recordCohortAttrition(reason = "Sex: female")
 
+# eliminate subjects with multiple vax records
+cdm$source_pregnant <- cdm$source_pregnant %>%
+  anti_join(exclude_vax_records, by = "subject_id") %>%
+  compute(name = "source_pregnant", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "Duplicate vaccination records")
+
 ## stop follow-up at vaccine irregularities
 # save counts:
 cdm$source_pregnant <- cdm$source_pregnant %>%
@@ -132,7 +138,10 @@ cdm$temp_none_first <- cdm$source_pregnant %>%
   ) %>%
   filter(is.na(index_vaccine_date) | index_vaccine_date > pregnancy_start_date) %>%
   compute(name = "temp_none_first", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "No vaccine before pregnancy")
+  recordCohortAttrition(reason = "No vaccine before pregnancy") %>%
+  anti_join(exclude_unkown_1, by = "subject_id") %>%
+  compute(name = "temp_none_first", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "Unkown vaccine brand")
 
 ## 2-3, no vaccine before:
 cdm$temp_second_third <- cdm$source_pregnant %>%
@@ -172,7 +181,10 @@ cdm$temp_second_third <- cdm$source_pregnant %>%
   ) %>%
   filter(is.na(vaccine_censor_date) | vaccine_censor_date > index_vaccine_date) %>%
   compute(name = "temp_second_third", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "No irregular vaccine records on 3rd dose or before")
+  recordCohortAttrition(reason = "No irregular vaccine records on 3rd dose or before") %>%
+  anti_join(exclude_unkown_2, by = "subject_id") %>%
+  compute(name = "temp_second_third", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "Unkown vaccine brand")
 
 cdm <- omopgenerics::bind(cdm$temp_none_first, cdm$temp_second_third, name = "source_pregnant")
 cdm <- dropTable(cdm, starts_with("temp"))
@@ -180,9 +192,11 @@ cdm <- dropTable(cdm, starts_with("temp"))
 # Set cohort dates and columns to keep:
 cdm$source_pregnant <- cdm$source_pregnant %>%
   select(-cohort_end_date) %>%
-  left_join(cdm$observation_period %>%
-              select(subject_id = person_id, cohort_end_date = observation_period_end_date, observation_period_start_date),
-            by = "subject_id") %>%
+  left_join(
+    cdm$observation_period %>%
+      select(subject_id = person_id, cohort_end_date = observation_period_end_date, observation_period_start_date),
+    by = "subject_id"
+  ) %>%
   addCohortIntersectDate(
     targetCohortTable = "mother_table",
     indexDate = "pregnancy_end_date",
@@ -193,10 +207,11 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
     cohort_end_date = if_else(
       !is.na(next_pregnancy_date) & next_pregnancy_date <= cohort_end_date,
       !!dateadd("next_pregnancy_date", -1), cohort_end_date),
-    cohort_end_date = as.Date(cohort_end_date)
+    cohort_end_date = as.Date(cohort_end_date),
+    enrollment_end_date = !!dateadd("pregnancy_start_date", 238)
   ) %>%
   select(cohort_definition_id, subject_id, cohort_start_date, cohort_end_date, pregnancy_id,
-         pregnancy_start_date, pregnancy_end_date, age, index_vaccine_date, index_vaccine_brand,
-         previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
+         pregnancy_start_date, pregnancy_end_date, enrollment_end_date, age, index_vaccine_date,
+         index_vaccine_brand, previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   newCohortTable()

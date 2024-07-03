@@ -24,7 +24,7 @@ library(omopgenerics)
 library(visOmopResults)
 library(CohortSurvival)
 
-database_name <- "..." # "SIDIAP", "UiO", "CPRD
+database_name <- "..." # "SIDIAP", "UiO", "CPRD Gold
 
 # Connection details
 server_dbi <- Sys.getenv("...")
@@ -68,13 +68,6 @@ results <- paste0("Results_", cdmName(cdm))
 # study dates
 study.start <- as.Date("...") # date of initiation of the vaccination campaing
 study.end   <- as.Date("...") # end of data availability (data cut date)
-
-# standard days between vaccine doses
-days.booster     <- as.numeric("...") # days for booster after pfizer, moderna, or astrazeneca
-booster.janssen  <- as.numeric("...") # days for booster after janssen
-days.moderna     <- as.numeric("...") # days for 2nd dose after moderna
-days.astrazeneca <- as.numeric("...") # days for 2nd dose after astrazeneca
-days.pfizer      <- as.numeric("...") # days for 2nd dose after pfizer
 
 # Choose code to run
 runInstantiateCohorts <- TRUE

@@ -111,6 +111,8 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
       cohort_start_date <= week_start &  # start before the week
         cohort_end_date >= week_end      # end after the week
     ) |>
+    # elegible for enrollment
+    filter(enrollment_end_date >= week_start) |> # enrollment end > start date
     # no covid-19 in the last three months from week start date
     addCohortIntersectFlag(
       targetCohortTable = "covid",
@@ -125,7 +127,7 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
     mutate(exposed = if_else(index_vaccine_date >= week_start & index_vaccine_date <= week_end, 1, 0),
            exposed = if_else(is.na(exposed), 0, exposed)) |>
     # exclude if not pfizer or moderna
-    filter(!(exposed == 1 & index_vaccine_brand %in% c("janssen", "astrazeneca"))) |>
+    filter(!(exposed == 1 & index_vaccine_brand %in% c("janssen", "astrazeneca", "unkown"))) |>
     # exclude if exposed before week start
     filter(index_vaccine_date >= week_start | is.na(index_vaccine_date)) |>
     # in observation at week end date
@@ -149,11 +151,6 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
   temp <- temp |>
     anti_join(temp |> filter(exposed == 1, covid_date_week < index_vaccine_date), by = colnames(temp)) |>
     compute()
-  # if (objective_id == 2) {
-  #   # check booster elegibility
-  #   temp <- temp %>%
-  #     filter(!!datediff("previous_vaccine_date", "week_start") >= days.booster)
-  # }
   return(temp)
 }
 

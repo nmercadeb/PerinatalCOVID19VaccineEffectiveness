@@ -5,11 +5,6 @@ if (!dir.exists(output_folder)) {
 
 # save study settings ----
 tibble(
-  days.booster = days.booster,
-  booster.janssen = booster.janssen,
-  days.moderna = days.moderna,
-  days.astrazeneca = days.astrazeneca,
-  days.pfizer = days.pfizer,
   study.start = study.start,
   study.end = study.end,
   cdm_name = cdmName(cdm)
@@ -49,6 +44,15 @@ outcomes_table_name        <- "outcomes"
 matched_cohort_table_name  <- "matched"
 clean_mother_table_name    <- "mother_table"
 
+# Minimum days between vaccine doses
+days.booster     <- 90 # days for booster after pfizer, moderna, or astrazeneca
+booster.janssen  <- 90 # days for booster after janssen
+days.moderna     <- 28 # days for 2nd dose after moderna
+days.astrazeneca <- 28 # days for 2nd dose after astrazeneca
+days.pfizer      <- 21 # days for 2nd dose after pfizer
+pfizer <- c(17, 30)
+moderna <- c(21, 37)
+days.badrecord <- 4
 
 # Load study functions
 info(logger, "Load study functions ")

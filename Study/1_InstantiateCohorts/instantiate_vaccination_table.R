@@ -40,8 +40,29 @@ cdm$vaccine_schema <- cdm$vaccine_json %>%
   newCdmTable(src = cdmSource(cdm), name = "vaccine_schema")
 
 
-# censoring times:
-deviaton.days <- 5
+exclude_vax_records <- cdm$vaccine_schema |>
+  group_by(subject_id) |>
+  window_order(dose_id) |>
+  mutate(next_vaccine = lead(vaccine_date)) |>
+  ungroup() %>%
+  mutate(days = !!datediff("vaccine_date", "next_vaccine")) |>
+  filter(days <= !!days.badrecord) |>
+  distinct(subject_id)|>
+  compute()
+
+exclude_unkown_1 <- cdm$vaccine_schema |>
+  filter(schema_id %in% c("partial", "complete")) |>
+  filter(any(.data$vaccine_brand == "unkown"), .by = "subject_id") |>
+  distinct(subject_id)|>
+  compute()
+
+exclude_unkown_2 <- cdm$vaccine_schema |>
+  filter(schema_id == "booster_1", .data$vaccine_brand == "unkown") |>
+  distinct(subject_id)|>
+  union(exclude_unkown_1) |>
+  distinct() |>
+  compute()
+
 censor_vaccination <- cdm$vaccine_schema %>%
   addCohortIntersectDays(
     targetCohortTable = "vaccine_json",
@@ -56,15 +77,15 @@ censor_vaccination <- cdm$vaccine_schema %>%
     censor =
       case_when(
         schema_id == "complete" & vaccine_brand == "pfizer" &
-          (abs(days_prior_vaccine) < days.pfizer-deviaton.days) ~ "Second dose of primary vaccine schema adiministered before recommended time",
+          (abs(days_prior_vaccine) < !!pfizer[1]) ~ "Second dose of primary vaccine schema adiministered before recommended time",
         schema_id == "complete" & vaccine_brand == "astrazeneca" &
-          (abs(days_prior_vaccine) < days.astrazeneca-deviaton.days) ~ "Second dose of primary vaccine schema adiministered before recommended time",
+          (abs(days_prior_vaccine) < days.astrazeneca-days.badrecord) ~ "Second dose of primary vaccine schema adiministered before recommended time",
         schema_id == "complete" & vaccine_brand == "moderna" &
-          (abs(days_prior_vaccine) < days.moderna-deviaton.days) ~ "Second dose of primary vaccine schema adiministered before recommended time",
+          (abs(days_prior_vaccine) < !!moderna[1]) ~ "Second dose of primary vaccine schema adiministered before recommended time",
         schema_id == "complete" & vaccine_brand == "janssen" &
-          (abs(days_prior_vaccine) < booster.janssen-deviaton.days) ~ "Booster dose adiministered before recommended time",
+          (abs(days_prior_vaccine) < booster.janssen-days.badrecord) ~ "Booster dose adiministered before recommended time",
         grepl("booster", schema_id) &
-          (abs(days_prior_vaccine) < days.booster-deviaton.days) ~ "Booster dose adiministered before recommended time",
+          (abs(days_prior_vaccine) < days.booster-days.badrecord) ~ "Booster dose adiministered before recommended time",
         .default = NA
       )
   ) %>%
@@ -81,4 +102,3 @@ censor_vaccination <- cdm$vaccine_schema %>%
   distinct() %>%
   compute()
 
-# clean vaccine table

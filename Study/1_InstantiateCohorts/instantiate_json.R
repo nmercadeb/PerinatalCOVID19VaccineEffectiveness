@@ -42,14 +42,11 @@ cdm <- generateCohortSet(
 
 # COVID-19 vaccines
 info(logger, "  - COVID-19 vaccines")
-vaccine_json_cohort_set <- readCohortSet(here("1_InstantiateCohorts", "Cohorts", "CovidVaccines"))
-
-cdm <- generateCohortSet(
+vax_codes <- codesFromCohort(cdm = cdm, path = here("1_InstantiateCohorts", "Cohorts", "CovidVaccines"))
+cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
   cdm = cdm,
-  cohortSet = vaccine_json_cohort_set,
   name = vaccine_json_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
+  conceptSet = vax_codes
 )
 
 
@@ -106,7 +103,8 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                              cohort_group = "conditions"),
                          by = "cohort_definition_id")) %>%
   union_all(cdm[[vaccine_json_table_name]] %>%
-              settings() %>%
+              settings()  %>%
+              select(cohort_definition_id, cohort_name) %>%
               inner_join(cdm[[vaccine_json_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "covid_vaccines"),
