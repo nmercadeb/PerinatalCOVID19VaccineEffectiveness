@@ -93,7 +93,7 @@ for (dose in c("partial", "complete", "booster_1", "booster_2")) {
           group_name = "cohort_name",
           group_level = cohort_name,
           additional_name = "exposed",
-          additional_level = exposed
+          additional_level = as.character(exposed)
         ) |>
         pivot_longer(cols = c("overall", "vaccine_brand", "trimester"),
                      names_to = "strata_name", values_to = "strata_level") |>
