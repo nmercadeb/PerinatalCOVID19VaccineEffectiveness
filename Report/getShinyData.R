@@ -14,7 +14,7 @@ source(here("functions.R"))
 result_patterns <- c(
   "cdm_snapshot", "characteristics", "cohort_stats", "cohort_counts",
   "attrition", "matching_summary", "relative_risk", "vaccine_records_censor",
-  "kaplan_meier"
+  "kaplan_meier", "censoring"
 )
 pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
@@ -93,14 +93,31 @@ data$reenrollment <- pre_data$cohort_stats |>
   ) |>
   select(!c("reenrollments", "num_control", "num_exposed"))
 data$vaccine_distribution <- pre_data$cohort_stats |>
-  filter(result_type %in% c("second_dose_date", "first_prior_dose", "second_prior_dose")) |>
+  filter(result_type %in% c("vaccine_uptake")) |>
   splitGroup() |>
   splitAdditional() |>
-  rename("vaccine_dose" = "result_type", "date" = "variable_level") |>
+  rename("date" = "variable_level", "vaccine_dose" = "variable_name") |>
   niceCohortName() |>
-  mutate(estimate_value = as.numeric(estimate_value), date = as.Date(date)) |>
+  mutate(
+    estimate_value = as.numeric(estimate_value),
+    date = as.Date(date),
+    vaccine_dose = gsub("dose number: ", "", vaccine_dose),
+    exposed = if_else(exposed == "1", "exposed", "comparator")
+  ) |>
   arrange(date) |>
-  select(cdm_name, comparison, covid_definition, strata_name, strata_level, vaccine_dose, date, estimate_value)
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, exposed, vaccine_dose, date, estimate_value)
+data$pregnant_vaccination <- pre_data$cohort_stats |>
+  filter(result_type %in% c("pregnant_vaccination")) |>
+  splitGroup() |>
+  splitAdditional() |>
+  rename("vaccine_dose" = "variable_name") |>
+  niceCohortName() |>
+  mutate(
+    estimate_value = as.numeric(estimate_value),
+    vaccine_dose = gsub("dose number: ", "", vaccine_dose),
+    exposed = if_else(exposed == "1", "exposed", "comparator")
+  ) |>
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, exposed, vaccine_dose, estimate_value)
 data$baseline <- pre_data$characteristics |>
   filter(!result_type %in% c("summarised_large_scale_characteristics", "large_scale_differences")) |>
   splitStrata() |>
@@ -158,7 +175,7 @@ data$survival_summary <- pre_data$relative_risk |>
   mutate(
     estimate_value = if_else(suppress, NA, estimate_value),
     exposed_censoring = if_else(analysis == "main", "none", "3rd/4rt dose")
-    ) |>
+  ) |>
   rename("followup_end" = "study_end") |>
   select(!c("suppress", "result_type", "package_name", "package_version", "analysis")) |>
   niceCohortName() |>
@@ -173,7 +190,7 @@ data$risk <- pre_data$relative_risk |>
   mutate(
     estimate_value = as.numeric(estimate_value),
     exposed_censoring = if_else(analysis == "main", "none", "3rd/4rt dose")
-    ) |>
+  ) |>
   select(
     c("cdm_name", "cohort_name", "strata_name", "strata_level", "regression",
       "exposed_censoring","followup_end" = "study_end", "window", "outcome", "variable_name",
@@ -204,5 +221,14 @@ data$kaplan_meier <- pre_data$kaplan_meier |>
   ) |>
   select(-c("result_id", "result_type", "package_name", "package_version", "group_name", "group_level", "analysis_type", "variable_name", "variable_level", "estimate_type", "exposed")) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
+data$censoring <- pre_data$censoring |>
+  mutate(
+    n = as.numeric(n),
+    N = if_else(n < 5 & n != 0, "<5", niceNum(n)),
+    Reason = stringr::str_to_sentence(gsub("_", " ", reason)),
+    "Mean (SD)" = paste0(niceNum(mean, 2), " (", niceNum(sd, 2), ")"),
+    "Median (Q25-Q75)" = paste0(niceNum(median, 2), " (", niceNum(q25, 2), " - ", niceNum(q75, 2), ")")
+  ) |>
+  select("CDM name" = "cdm_name", Reason, N, "Mean (SD)", "Median (Q25-Q75)")
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

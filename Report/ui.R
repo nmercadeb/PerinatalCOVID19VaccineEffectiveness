@@ -27,16 +27,8 @@ ui <- dashboardPage(
           tabName = "weekly_counts"
         ),
         menuSubItem(
-          text = "Index date",
-          tabName = "index_date"
-        ),
-        menuSubItem(
           text = "Re-enrollment",
           tabName = "reenrollment"
-        ),
-        menuSubItem(
-          text = "Vaccination",
-          tabName = "vaccination"
         )
       ),
       menuItem(
@@ -49,6 +41,18 @@ ui <- dashboardPage(
         menuSubItem(
           text = "Counts",
           tabName = "count"
+        ),
+        menuSubItem(
+          text = "Index date",
+          tabName = "index_date"
+        ),
+        menuSubItem(
+          text = "Vaccine uptake",
+          tabName = "vaccination"
+        ),
+        menuSubItem(
+          text = "Pregnant vaccination",
+          tabName = "pregnant_vaccination"
         ),
         menuSubItem(
           text = "Baseline characteristics",
@@ -82,10 +86,10 @@ ui <- dashboardPage(
           text = "Summary",
           tabName = "study_summary"
         ),
-        # menuSubItem(
-        #   text = "Proportionality",
-        #   tabName = "proportionality"
-        # ),
+        menuSubItem(
+          text = "Follow-up end",
+          tabName = "followup"
+        ),
         menuSubItem(
           text = "Kaplan-Meier",
           tabName = "kaplan_meier"
@@ -270,8 +274,8 @@ ui <- dashboardPage(
       ## vaccination ----
       tabItem(
         tabName = "vaccination",
-        h3("No index vaccination"),
-        p("Future (for 1st vs. unvaccinated) and prior (for 3rd vs. 2nd vaccine) vaccination temporal distrbution among exposed subjects."),
+        h3("Vaccine uptake"),
+        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine in the study population."),
         selectors(
           data$vaccine_distribution, prefix = "vaccination",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -285,6 +289,17 @@ ui <- dashboardPage(
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("vaccination_strata_level")
+        ),
+        div(
+          pickerInput(
+            inputId = "vaccination_exposed",
+            label = "Exposure",
+            choices = c("exposed", "comparator"),
+            selected = c("exposed"),
+            options = list(`actions-box` = FALSE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
+          )
         ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
@@ -318,11 +333,61 @@ ui <- dashboardPage(
           tabPanel(
             "Plot",
             h5(),
-            plotSelectors(prefix = "plt_vax", choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level", "vaccine_dose"),
-                          default = list("color" = NULL, "facet_by" = "cdm_name")),
+            plotSelectors(prefix = "plt_vax", choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level", "exposed", "vaccine_dose"),
+                          default = list("color" = "vaccine_dose", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_vax"),
             downloadButton("vaccination_plot_download", "Download figure"),
             plotlyOutput('vaccination_plot') %>% withSpinner()
+          )
+        )
+      ),
+      ## pregnant vaccination ----
+      tabItem(
+        tabName = "pregnant_vaccination",
+        h3("Vaccination during pregnancy"),
+        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine in the study population."),
+        selectors(
+          data$vaccine_distribution, prefix = "pregnant_vax",
+          columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
+          default = list(
+            "cdm_name" = data$vaccine_distribution$cdm_name[1],
+            "comparison" = data$vaccine_distribution$comparison[1],
+            "covid_definition" = data$vaccine_distribution$covid_definition[1],
+            "strata_name" = "overall"
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("pregnant_vax_strata_level")
+        ),
+        div(
+          pickerInput(
+            inputId = "pregnant_vax_exposed",
+            label = "Exposure",
+            choices = c("exposed", "comparator"),
+            selected = c("exposed"),
+            options = list(`actions-box` = FALSE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
+          )
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          uiOutput("pregnant_vax_vaccine_dose")
+        ),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Raw",
+            h5(),
+            downloadButton("pregnant_vax_table_download", "Download table as csv"),
+            DTOutput('pregnant_vax_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Table",
+            h5(),
+            downloadButton("pregnant_vax_summary_download", "Download table in word"),
+            gt_output('pregnant_vax_summary') %>% withSpinner()
           )
         )
       ),
@@ -471,12 +536,12 @@ ui <- dashboardPage(
       tabItem(
         tabName = "nco_summary",
         h3("Survival summary"),
-        p("Counts and follor-up for each negative control outcome and exposed_censoring"),
+        p("Counts and follor-up for each negative control outcome"),
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
-          default = list("cdm_name" = "SIDIAP",
+          default = list("cdm_name" = data$survival_summary$cdm_name[1],
                          "comparison" = "none_first",
                          "covid_definition" = "diagnostic_test",
                          "strata_name" = "overall")
@@ -496,10 +561,9 @@ ui <- dashboardPage(
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
-          columns = c("exposed_censoring", "followup_end", "window"),
+          columns = c("followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "exposed_censoring" = "none",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -523,13 +587,13 @@ ui <- dashboardPage(
       tabItem(
         tabName = "study_summary",
         h3("Survival summary"),
-        p("Counts and follor-up for each study outcome and exposed_censoring"),
+        p("Counts and follor-up for each study outcome."),
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "SIDIAP",
+            "cdm_name" = data$survival_summary$cdm_name[1],
             "comparison" = "none_first",
             "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
@@ -562,10 +626,9 @@ ui <- dashboardPage(
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
-          columns = c("exposed_censoring", "followup_end", "window"),
+          columns = c("followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "exposed_censoring" = "none",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -589,13 +652,13 @@ ui <- dashboardPage(
       tabItem(
         tabName = "nco_forest_plot",
         h3("Forest plots"),
-        p("Negative control outcomes risk estimates for all populations and exposed_censoring"),
+        p("Negative control outcomes risk estimates for all populations."),
         selectors(
           data = data$risk |> filter(variable_name == "nco"),
           prefix = "nco_risk",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "SIDIAP",
+            "cdm_name" = data$survival_summary$cdm_name[1],
             "comparison" = "none_first",
             "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
@@ -608,12 +671,11 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "nco"),
           prefix = "nco_risk",
-          columns = c("regression", "outcome", "exposed_censoring", "followup_end", "window"),
+          columns = c("regression", "outcome", "followup_end", "window"),
           default = list(
             "regression" = "cox",
             "outcome" = data$risk |> filter(variable_name == "nco") |> pull(outcome) |> unique(),
             "window" = "0_Inf",
-            "exposed_censoring" = "none",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -637,7 +699,7 @@ ui <- dashboardPage(
             plotSelectors(
               prefix = "plt_nco_risk",
               choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level",
-                          "regression", "exposed_censoring", "followup_end", "window", "outcome",
+                          "regression", "followup_end", "window", "outcome",
                           "association"),
               default = list("color" = "association", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_nco_risk"),
@@ -650,13 +712,13 @@ ui <- dashboardPage(
       tabItem(
         tabName = "study_forest_plot",
         h3("Forest plots"),
-        p("Study outcomes risk estimates for all populations and exposed_censoring"),
+        p("Study outcomes risk estimates for all populations."),
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "SIDIAP",
+            "cdm_name" = data$survival_summary$cdm_name[1],
             "comparison" = "none_first",
             "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
@@ -690,10 +752,9 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
-          columns = c("exposed_censoring", "followup_end", "window"),
+          columns = c("followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "exposed_censoring" = "none",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -717,7 +778,7 @@ ui <- dashboardPage(
             plotSelectors(
               prefix = "plt_study_risk",
               choices = c("cdm_name", "comparison", "covid_definition", "strata_name", "strata_level",
-                          "regression", "exposed_censoring", "followup_end", "window", "outcome", "delivery_excluded",
+                          "regression", "followup_end", "window", "outcome", "delivery_excluded",
                           "association"),
               default = list("color" = "outcome", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_study_risk"),
@@ -730,13 +791,13 @@ ui <- dashboardPage(
       tabItem(
         tabName = "kaplan_meier",
         h3("Kaplan-Meier"),
-        p("Kaplan-Meier curves for all populations and exposed_censoring"),
+        p("Kaplan-Meier curves for all populations."),
         selectors(
           data = data$kaplan_meier,
           prefix = "km",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
-            "cdm_name" = "SIDIAP",
+            "cdm_name" = data$survival_summary$cdm_name[1],
             "comparison" = "none_first",
             "covid_definition" = "diagnostic_test",
             "strata_name" = "overall"
@@ -785,6 +846,22 @@ ui <- dashboardPage(
         plotDownloadSelectors(prefix = "dwn_km"),
         downloadButton("km_download_plot", "Download table in word"),
         plotlyOutput('km_plot') %>% withSpinner()
+      ),
+      # Followup ----
+      tabItem(
+        tabName = "followup",
+        h3("Follow-up end"),
+        p("End of follow-up."),
+        selectors(
+          data = data$censoring,
+          prefix = "followup",
+          columns = c("CDM name"),
+          default = list(
+            "cdm_name" = data$censoring$`CDM name`[1]
+          )
+        ),
+        downloadButton("followup_summary_download_table", "Download table in word"),
+        gt_output('followup_summary_table') %>% withSpinner()
       )
     )
   )

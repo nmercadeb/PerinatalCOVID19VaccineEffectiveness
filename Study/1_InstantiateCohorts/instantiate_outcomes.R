@@ -19,21 +19,21 @@ cdm <- generateVisitRelatedOutcomes(
   codes = icu.codes, window = c(-3, 21), name = "icu", attritionReason = "COVID-19 related ICU"
 )
 
-info(logger, "Death outcome cohorts")
-cdm$temp_death <- cdm$temp_covid %>%
-  inner_join(cdm$death %>% select(subject_id = person_id, death_date), by = "subject_id") %>%
-  mutate(diff_days = death_date - cohort_start_date) %>%
-  filter(diff_days >= 0 & diff_days <= 28) %>%
-  select(-death_date, -diff_days) %>%
-
-  distinct() %>%
-  compute(name = "temp_death", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "COVID-19 related death") %>%
-  newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
+# info(logger, "Death outcome cohorts")
+# cdm$temp_death <- cdm$temp_covid %>%
+#   inner_join(cdm$death %>% select(subject_id = person_id, death_date), by = "subject_id") %>%
+#   mutate(diff_days = death_date - cohort_start_date) %>%
+#   filter(diff_days >= 0 & diff_days <= 28) %>%
+#   select(-death_date, -diff_days) %>%
+#
+#   distinct() %>%
+#   compute(name = "temp_death", temporary = FALSE) %>%
+#   recordCohortAttrition(reason = "COVID-19 related death") %>%
+#   newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
 
 # outcome cohort
 cdm <- omopgenerics::bind(cdm$temp_covid,cdm$temp_inpatient, cdm$temp_inpatient_delivery,
-                          cdm$temp_icu, cdm$temp_icu_delivery, cdm$temp_death, name = "outcomes")
+                          cdm$temp_icu, cdm$temp_icu_delivery, name = "outcomes")
 
 cdm <- omopgenerics::dropTable(cdm, starts_with("temp"))
 

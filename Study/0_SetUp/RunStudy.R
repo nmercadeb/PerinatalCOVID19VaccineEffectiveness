@@ -3,14 +3,6 @@ if (!dir.exists(output_folder)) {
   dir.create(output_folder)
 }
 
-# save study settings ----
-tibble(
-  study.start = study.start,
-  study.end = study.end,
-  cdm_name = cdmName(cdm)
-) |>
-  write_csv(file = here(output_folder, paste0("study_settings_", database_name, ".csv")))
-
 # create logger ----
 log_file <- here(results, paste0("log", "_", gsub("-", "", Sys.Date()), ".txt"))
 if (file.exists(log_file)) {
@@ -53,6 +45,17 @@ days.pfizer      <- 21 # days for 2nd dose after pfizer
 pfizer <- c(17, 30)
 moderna <- c(21, 37)
 days.badrecord <- 4
+
+# save study settings ----
+tibble(
+  study.start = study.start,
+  study.end = study.end,
+  pfizer_window = paste0(pfizer, collapse = " to "),
+  moderna_window = paste0(moderna, collapse = " to "),
+  rerecording_days = days.badrecord,
+  cdm_name = cdmName(cdm)
+) |>
+  write_csv(file = here(output_folder, paste0("study_settings_", database_name, ".csv")))
 
 # Load study functions
 info(logger, "Load study functions ")

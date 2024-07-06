@@ -385,7 +385,7 @@ server <- function(input, output, session) {
   getVaccination <- reactive({
     data$vaccine_distribution %>%
       filterData(prefix = "vaccination", input = input) %>%
-      arrange(.data$date) %>%
+      arrange(date, comparison, covid_definition, vaccine_dose) %>%
       {if (input$vaccination_group == "years") {
         mutate(., date = lubridate::floor_date(date, unit = "years"))
       } else if (input$vaccination_group == "weeks") {
@@ -393,8 +393,9 @@ server <- function(input, output, session) {
       } else if (input$vaccination_group == "months") {
         mutate(., date = lubridate::floor_date(date, unit = "months"))
       } else .} %>%
-      group_by(cdm_name, comparison, covid_definition, strata_name, strata_level, vaccine_dose, date) %>%
-      summarise(estimate_value = sum(estimate_value), .groups = "drop")
+      group_by(cdm_name, comparison, covid_definition, strata_name, strata_level, exposed, vaccine_dose, date) %>%
+      summarise(estimate_value = sum(estimate_value), .groups = "drop") %>%
+      ungroup()
   })
   output$vaccination_summary <- render_gt({
     getVaccination() %>%
@@ -404,7 +405,7 @@ server <- function(input, output, session) {
       ) |>
       niceChar() |>
       rename("estimate_value" = "Estimate value") |>
-      formatHeader(header = c("Strata name", "Strata level"), includeHeaderName = FALSE) |>
+      formatHeader(header = c("Strata name", "Strata level", "Exposed"), includeHeaderName = FALSE) |>
       gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
   })
   output$vaccination_summary_download <- downloadHandler(
@@ -419,7 +420,7 @@ server <- function(input, output, session) {
                ) |>
                niceChar() |>
                rename("estimate_value" = "Estimate value") |>
-               formatHeader(header = c("Strata name", "Strata level"), includeHeaderName = FALSE) |>
+               formatHeader(header = c("Strata name", "Strata level", "Exposed"), includeHeaderName = FALSE) |>
                gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE),
              filename = file,
              vwidth = 400,
@@ -453,7 +454,7 @@ server <- function(input, output, session) {
   getVaccinationPlot <- reactive({
     table <- getVaccination() |>
       mutate(counts = if_else(estimate_value < 5 & estimate_value > 0, NA, estimate_value)) |>
-      filter(!is.na(counts))
+      filter(!is.na(counts) & !is.na(date))
 
     validate(need(ncol(table)>1, "Provide a valid selection of parameters"))
 
@@ -480,7 +481,8 @@ server <- function(input, output, session) {
           y = "counts"
         ))
     }
-    p <- p + geom_line() + geom_point()
+    max <- max(table$counts)
+    p <- p + geom_line() + geom_point() + scale_y_continuous(limits = c(0, max))
     if (!is.null(input$plt_vax_facet_by)) {
       p <- p +
         facet_wrap(vars(facet_var), ncol = 2)
@@ -492,6 +494,67 @@ server <- function(input, output, session) {
   })
   output$vaccination_plot_download <- serverPlotDownload(
     prefix = "dwn_vax", name = "vaccinationPlot", plot = getVaccinationPlot(), input = input
+  )
+  # pregnant vaccination ----
+  output$pregnant_vax_strata_level <-  reactiveSelectors(
+    data = data$vaccine_distribution, prefix = "pregnant_vax", columns = "strata_level",
+    restrictions = "strata_name", input = input, multiple = TRUE
+  )
+  output$pregnant_vax_vaccine_dose <- reactiveSelectors(
+    data = data$vaccine_distribution, prefix = "pregnant_vax", columns = "vaccine_dose",
+    restrictions = "comparison", input = input, multiple = TRUE
+  )
+  getVaccinationPregnant <- reactive({
+    data$pregnant_vaccination %>%
+      filterData(prefix = "pregnant_vax", input = input) %>%
+      mutate(
+        estimate_value = if_else(estimate_value>0 & estimate_value<5, "<5", niceNum(estimate_value)),
+      ) |>
+      arrange(comparison, covid_definition, vaccine_dose) |>
+      niceChar() |>
+      rename("estimate_value" = "Estimate value") |>
+      formatHeader(header = c("Strata name", "Strata level", "Exposed"), includeHeaderName = FALSE) |>
+      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
+  })
+  output$pregnant_vax_summary <- render_gt({
+    getVaccinationPregnant()
+  })
+  output$pregnant_vax_summary_download <- downloadHandler(
+    filename = function() {
+      "pregnantVaccinationSummary.docx"
+    },
+    content = function(file) {
+      gtsave(data = getVaccinationPregnant(),
+             filename = file,
+             vwidth = 400,
+             vheight = 300)
+    },
+    contentType = "docx"
+  )
+  output$pregnant_vax_table <- renderDataTable({
+    datatable(
+      data$pregnant_vaccination %>%
+        filterData(prefix = "pregnant_vax", input = input) %>%
+        mutate(estimate_value = if_else(estimate_value < 5 & estimate_value > 0, NA, estimate_value)) %>%
+        niceChar() |>
+        rename("Counts" = "Estimate value"),
+      rownames = FALSE,
+      extensions = "Buttons",
+      options = list(scrollX = TRUE, scrollCollapse = TRUE, pageLength = 25)
+    )
+  })
+  output$pregnant_vax_table_download <- downloadHandler(
+    filename = function() {
+      "pregnantVaccinationCounts.csv"
+    },
+    content = function(file) {
+      write_csv( data$pregnant_vaccination %>%
+                   filterData(prefix = "pregnant_vax", input = input) %>%
+                  mutate(estimate_value = if_else(estimate_value < 5 & estimate_value > 0, NA, estimate_value)) %>%
+                  niceChar() |>
+                  rename("Counts" = "Estimate value"),
+                file)
+    }
   )
   # attrition ----
   getAttrition <- reactive({
@@ -668,7 +731,7 @@ server <- function(input, output, session) {
       filterData(prefix = "study_summ", input = input) |>
       filter(
         variable_name == "study",
-        delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
+        delivery_excluded %in% input$delivery_sum | delivery_excluded == "-"
       ) |>
       select(!c("estimate_type")) |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
@@ -688,7 +751,7 @@ server <- function(input, output, session) {
       filterData(prefix = "study_summ", input = input) |>
       filter(
         variable_name == "study",
-        delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
+        delivery_excluded %in% input$delivery_sum | delivery_excluded == "-"
       ) |>
       formatEstimateValue() |>
       formatEstimateName(
@@ -974,4 +1037,10 @@ server <- function(input, output, session) {
   output$study_risk_download_plot <- serverPlotDownload(
     prefix = "km_download_plot", name = "kaplanMeier", plot = plotKM(), input = input
   )
+  # FOLLOW-UP ----
+  output$followup_summary <- render_gt({
+    data$censoring |>
+      filterData("followup", input) |>
+      gtTable()
+  })
 }

@@ -79,6 +79,7 @@ for (dose in c("partial", "complete", "booster_1", "booster_2")) {
           cohort %>%
             rename("dose_date" := !!doseId) %>%
             group_by(cohort_name, exposed, dose_date, .data[[x]])%>%
+            filter(!is.na(dose_date)) |>
             tally(name = "estimate_value") %>%
             collect()
         }) %>% bind_rows() |>

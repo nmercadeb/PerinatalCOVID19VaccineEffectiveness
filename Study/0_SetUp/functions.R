@@ -162,6 +162,10 @@ matchItDataset <- function(x, objective_id) {
         c(0, 90, 180, 330),
         include.lowest = TRUE
       ),
+      # gestational_age = cut(
+      #   as.numeric(!!datediff("pregnancy_start_date", "week_start")),
+      #   !!c(0, 90, 180, 330),
+      #   include.lowest = TRUE)
       gestational_age = cut(
         as.numeric(!!datediff("pregnancy_start_date", "week_start")),
         !!c(seq(0, 30*9, 9), 303),

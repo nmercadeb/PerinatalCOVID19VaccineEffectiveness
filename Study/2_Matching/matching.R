@@ -256,8 +256,9 @@ cdm$matched  <- cdm$matched  %>%
 
 # Report censoring
 censoring <- cdm$matched  %>%
+  addCohortName() %>%
   mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
-  group_by(cohort_definition_id, reason) %>%
+  group_by(cohort_name, reason) %>%
   summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75)) %>%
   collect()
 
