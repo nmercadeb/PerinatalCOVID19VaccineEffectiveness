@@ -246,6 +246,7 @@ cdm$matched  <- cdm$matched  %>%
       filter(cohort_end_date == min(cohort_end_date)) %>%
       ungroup() %>%
       select(cohort_definition_id, match_id, cohort_end_date, reason) %>%
+      distinct() %>%
       group_by(cohort_definition_id, match_id) %>%
       mutate(reason = str_flatten(reason, collapse = "; ")) %>%
       ungroup() %>%
@@ -256,7 +257,7 @@ cdm$matched  <- cdm$matched  %>%
 
 # Report censoring
 censoring <- cdm$matched  %>%
-  addCohortName() %>%
+  inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
   mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
   group_by(cohort_name, reason) %>%
   summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75)) %>%
@@ -270,7 +271,7 @@ write_csv(
 cdm$matched <- cdm$matched %>%
   group_by(cohort_definition_id, match_id) %>%
   mutate(cohort_end_date = min(cohort_end_date)) %>%
-  select(-c(age, maternal_age, recommended_lower, recommended_upper, reason)) %>%
+  select(-c(maternal_age, recommended_lower, recommended_upper, reason)) %>%
   compute(name = "matched", temporary = FALSE) %>%
   omopgenerics::newCohortTable(cohortSetRef = cohort_set, cohortAttritionRef = cohort_attrition)
 

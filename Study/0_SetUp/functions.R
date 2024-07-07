@@ -302,7 +302,7 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
     ) |>
     select(all_of(c(
       "cohort_name", "subject_id", "match_id", "exposed", "trimester",
-      "vaccine_brand", "end_date", "start_date", "end_data",
+      "vaccine_brand", "end_date", "start_date", "end_data", "age",
       outcomes
     )))
 
@@ -337,7 +337,7 @@ survivalFormat <- function(x, out) {
     ) |>
     select(all_of(c(
       "cohort_name", "subject_id", "match_id", "exposed", "trimester", "vaccine_brand",
-      "status", "time", "start_date"
+      "status", "time", "start_date", "age"
     ))) |>
     compute()
   return(x)
@@ -368,6 +368,7 @@ estimateSurvival <- function(data, group, strata,
           filter(cohort_name == group.k, .data[[strata.k]] == strataLevel.k) |>
           collect() |>
           mutate(start_date = month(.data$start_date))
+
         # formula
         # if (length(covariates) == 0) {
         covariates_formula <- "exposed"
@@ -475,19 +476,27 @@ estimateSurvival <- function(data, group, strata,
         results[[k]] <- data.k |>
           group_by(exposed) |>
           summarise(
-            mean = mean(time),
-            median = median(time),
-            q25 = quantile(time, 0.25),
-            q75 = quantile(time, 0.75),
-            min = min(time),
-            max = max(time)
+            followup_mean = mean(time),
+            followup_sd = sd(time),
+            followup_median = median(time),
+            followup_q25 = quantile(time, 0.25),
+            followup_q75 = quantile(time, 0.75),
+            followup_min = min(time),
+            followup_max = max(time),
+            age_mean = mean(age),
+            age_sd = sd(age),
+            age_median = median(age),
+            age_q25 = quantile(age, 0.25),
+            age_q75 = quantile(age, 0.75),
+            age_min = min(age),
+            age_max = max(age)
           ) |>
           mutate(
             group_name = "cohort_name",
             group_level = group.k,
             strata_name = strata.k,
             strata_level = strataLevel.k,
-            result_type = "followup",
+            result_type = "survival_stats",
             estimate_type = "numeric",
             num_control = sum(data.k$exposed == 0),
             num_exposed = sum(data.k$exposed == 1),
@@ -495,8 +504,11 @@ estimateSurvival <- function(data, group, strata,
             num_events_exposed = sum(data.k$exposed == 1 & data.k$status == 1)
           ) |>
           pivot_longer(
-            cols = c("mean", "median", "q25", "q75", "min", "max", "num_control",
-                     "num_exposed", "num_events_control", "num_events_exposed"),
+            cols = c("followup_mean", "followup_median", "followup_q25", "followup_q75",
+                     "followup_min", "followup_max","followup_sd",  "num_control",
+                     "num_exposed", "num_events_control", "num_events_exposed",
+                     "age_mean", "age_median", "age_q25", "age_q75",
+                     "age_min", "age_max", "age_sd"),
             names_to = "estimate_name", values_to = "estimate_value"
           ) |>
           mutate(estimate_value = as.character(estimate_value))
@@ -509,10 +521,11 @@ estimateSurvival <- function(data, group, strata,
 
 regressionToSummarised <- function(
     x, type, groupLevel, strataName, strataLevel,
-    cols = c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci")) {
+    cols = c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci"),
+    estimate = "numeric") {
   x |>
     mutate(
-      estimate_type = "numeric",
+      estimate_type = estimate,
       group_name = "cohort_name",
       group_level = groupLevel,
       strata_name = strataName,

@@ -701,8 +701,12 @@ server <- function(input, output, session) {
         estimateNameFormat = c(
           "Subjects (N)" = "<count>",
           "Events (N)" = "<count_events>",
-          "Follow-up, Median [Q25-Q75]"  = "<median> [<q25>-<q75>]",
-          "Follow-up, [Min-Max]"  = "[<min>-<max>]"
+          "Follow-up, Median [Q25-Q75]"  = "<followup_median> [<followup_q25>-<followup_q75>]",
+          "Follow-up, Mean (SD)"  = "<followup_mean> [(<followup_sd>)",
+          "Follow-up, [Min-Max]"  = "[<followup_min>-<followup_max>]",
+          "Age, Median [Q25-Q75]"  = "<age_median> [<age_q25>-<age_q75>]",
+          "Age, Mean (SD)"  = "<age_mean> [(<age_sd>)",
+          "Age, [Min-Max]"  = "[<age_min>-<age_max>]"
         ),
         keepNotFormatted = FALSE
       ) |>
@@ -712,7 +716,7 @@ server <- function(input, output, session) {
       ) |>
       arrange(cdm_name, comparison, covid_definition) |>
       select(!c("estimate_type")) |>
-      relocate(c("window", "exposed_censoring", "followup_end"), .before = "outcome") |>
+      relocate(c("window", "followup_end"), .before = "outcome") |>
       select(!c("variable_name", "window", "exposed_censoring", "delivery_excluded")) |>
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
@@ -758,8 +762,12 @@ server <- function(input, output, session) {
         estimateNameFormat = c(
           "Subjects (N)" = "<count>",
           "Events (N)" = "<count_events>",
-          "Follow-up, Median [Q25-Q75]"  = "<median> [<q25>-<q75>]",
-          "Follow-up, [Min-Max]"  = "[<min>-<max>]"
+          "Follow-up, Median [Q25-Q75]"  = "<followup_median> [<followup_q25>-<followup_q75>]",
+          "Follow-up, Mean (SD)"  = "<followup_mean> [(<followup_sd>)",
+          "Follow-up, [Min-Max]"  = "[<followup_min>-<followup_max>]",
+          "Age, Median [Q25-Q75]"  = "<age_median> [<age_q25>-<age_q75>]",
+          "Age, Mean (SD)"  = "<age_mean> [(<age_sd>)",
+          "Age, [Min-Max]"  = "[<age_min>-<age_max>]"
         ),
         keepNotFormatted = FALSE
       ) |>
@@ -768,8 +776,8 @@ server <- function(input, output, session) {
         includeHeaderName = FALSE,
       ) |>
       arrange(cdm_name, comparison, covid_definition) |>
-      select(!estimate_type) |>
-      relocate(c("window", "exposed_censoring", "followup_end"), .before = "outcome") |>
+      select(!c("estimate_type", "exposed_censoring")) |>
+      relocate(c("window", "followup_end"), .before = "outcome") |>
       select(!c("variable_name")) |>
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
@@ -895,8 +903,11 @@ server <- function(input, output, session) {
   getStudyForestRaw <- reactive({
     data$risk |>
       filterData(prefix = "study_risk", input = input) |>
-      filter(variable_name == "study") |>
-      select(!"estimate_type") |>
+      filter(
+        variable_name == "study",
+        delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
+      ) |>
+      select(!c("estimate_type", "exposed_censoring")) |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       select(!c("variable_name"))
   })
@@ -926,7 +937,7 @@ server <- function(input, output, session) {
         includeHeaderName = FALSE,
       ) |>
       arrange(comparison, covid_definition) |>
-      select(!c("estimate_type", "variable_name")) |>
+      select(!c("estimate_type", "variable_name", "exposed_censoring")) |>
       gtTable(colsToMergeRows = "all_columns")
   })
   output$study_risk_table <- render_gt({

@@ -35,7 +35,7 @@ data$population_attrition <- pre_data$attrition |>
   niceCohortName()
 data$population_count <- pre_data$relative_risk |>
   filter(
-    result_type == "followup",
+    result_type == "survival_stats",
     estimate_name %in% c("num_control", "num_exposed")
   ) |>
   splitAll() |>
@@ -153,7 +153,7 @@ data$smd <- pre_data$characteristics |>
   niceCohortName() |>
   relocate(c("comparison", "covid_definition"), .after = "cdm_name")
 data$survival_summary <- pre_data$relative_risk |>
-  filter(result_type == "followup") |>
+  filter(result_type == "survival_stats") |>
   newSummarisedResult() |>
   mutate(estimate_name = gsub("num", "count", estimate_name)) |>
   splitGroup() |>
@@ -182,7 +182,7 @@ data$survival_summary <- pre_data$relative_risk |>
   niceOutcomeName() |>
   select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value)
 data$risk <- pre_data$relative_risk |>
-  filter(result_type %in% c("binomial", "cox")) |>
+  filter(result_type %in% c("cox", "cox-time")) |>
   splitGroup() |>
   splitAdditional() |>
   rename("outcome" = "variable_level", "regression" = "result_type") |>
@@ -229,6 +229,6 @@ data$censoring <- pre_data$censoring |>
     "Mean (SD)" = paste0(niceNum(mean, 2), " (", niceNum(sd, 2), ")"),
     "Median (Q25-Q75)" = paste0(niceNum(median, 2), " (", niceNum(q25, 2), " - ", niceNum(q75, 2), ")")
   ) |>
-  select("CDM name" = "cdm_name", Reason, N, "Mean (SD)", "Median (Q25-Q75)")
+  select("CDM name" = "cdm_name", "Cohort name" = "cohort_name", Reason, N, "Mean (SD)", "Median (Q25-Q75)")
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

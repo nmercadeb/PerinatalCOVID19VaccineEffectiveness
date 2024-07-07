@@ -628,7 +628,7 @@ ui <- dashboardPage(
           prefix = "study_summ",
           columns = c("followup_end", "window"),
           default = list(
-            "window" = "0_Inf",
+            "window" = "8_Inf",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -754,7 +754,7 @@ ui <- dashboardPage(
           prefix = "study_risk",
           columns = c("followup_end", "window"),
           default = list(
-            "window" = "0_Inf",
+            "window" = "8_Inf",
             "followup_end" = "cohort_end_date"
           )
         ),
@@ -855,9 +855,10 @@ ui <- dashboardPage(
         selectors(
           data = data$censoring,
           prefix = "followup",
-          columns = c("CDM name"),
+          columns = c("CDM name", "Cohort name"),
           default = list(
-            "cdm_name" = data$censoring$`CDM name`[1]
+            "cdm_name" = data$censoring$`CDM name`[1],
+            "Cohort name" = data$censoring$`Cohort name`[1]
           )
         ),
         downloadButton("followup_summary_download_table", "Download table in word"),
