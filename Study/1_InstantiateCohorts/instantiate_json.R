@@ -66,17 +66,29 @@ cdm <- generateCohortSet(
 
 # Conditions to prioritize vaccination CAT
 info(logger, "  - Conditions for prior vaccination")
-ps_covariates_cohort_set <- readCohortSet(
-  here("1_InstantiateCohorts", "Cohorts", "Matching")
-)
+if (database_name == "UiO") {
+  ps_covariates_cohort_set <- CodelistGenerator::codesFromConceptSet(
+    here("1_InstantiateCohorts", "Cohorts", "Matching"), cdm = cdm
+  )
+  cdm <- CDMConnector::generateConceptCohortSet(
+    cdm = cdm,
+    name = medications_table_name,
+    conceptSet = medications_codelist
+  )
 
-cdm <- generateCohortSet(
-  cdm = cdm,
-  cohortSet = ps_covariates_cohort_set,
-  name = ps_covariates_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
-)
+} else {
+  ps_covariates_cohort_set <- readCohortSet(
+    here("1_InstantiateCohorts", "Cohorts", "Matching")
+  )
+  cdm <- generateCohortSet(
+    cdm = cdm,
+    cohortSet = ps_covariates_cohort_set,
+    name = ps_covariates_table_name,
+    computeAttrition = TRUE,
+    overwrite = TRUE
+  )
+}
+
 
 
 # export counts

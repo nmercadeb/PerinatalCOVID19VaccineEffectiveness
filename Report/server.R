@@ -915,7 +915,8 @@ server <- function(input, output, session) {
     datatable(getStudyForestRaw(),
               rownames = FALSE,
               extensions = "Buttons",
-              options = list(scrollX = TRUE, scrollCollapse = TRUE, pageLength = 25))
+              options = list
+              (scrollX = TRUE, scrollCollapse = TRUE, pageLength = 25))
   })
   output$study_risk_download_raw <- serverCSVDownload(
     name = "estimatesStudy", table = getStudyForestRaw()
