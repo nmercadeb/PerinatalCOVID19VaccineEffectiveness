@@ -67,7 +67,7 @@ cdm <- generateCohortSet(
 # Conditions to prioritize vaccination CAT
 info(logger, "  - Conditions for prior vaccination")
 if (database_name == "UiO") {
-  ps_covariates_cohort_set <- CodelistGenerator::codesFromConceptSet(
+  ps_covariates_cohort_set <- CodelistGenerator::codesFromCohort(
     here("1_InstantiateCohorts", "Cohorts", "Matching"), cdm = cdm
   )
   cdm <- CDMConnector::generateConceptCohortSet(
