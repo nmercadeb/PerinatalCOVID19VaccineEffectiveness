@@ -72,8 +72,8 @@ if (database_name == "UiO") {
   )
   cdm <- CDMConnector::generateConceptCohortSet(
     cdm = cdm,
-    name = medications_table_name,
-    conceptSet = medications_codelist
+    name = ps_covariates_table_name,
+    conceptSet = ps_covariates_cohort_set
   )
 
 } else {
