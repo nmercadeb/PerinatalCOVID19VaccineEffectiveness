@@ -129,6 +129,7 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                          by = "cohort_definition_id"))  %>%
   union_all(cdm[[ps_covariates_table_name]] %>%
               settings() %>%
+              select(cohort_definition_id, cohort_name) %>%
               inner_join(cdm[[ps_covariates_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "ps_covariates"),
