@@ -197,9 +197,9 @@ cdm$matched <- cdm$matched_raw %>%
   left_join(
     cdm$vaccine_schema %>%
       filter(!is.na(schema_id)) %>%
-      select(subject_id, schema_id, vaccine_date) %>%
-      pivot_wider(names_from = schema_id, values_from = vaccine_date) %>%
-      select(subject_id, partial, complete, booster_1, booster_2),
+      select(subject_id, dose_id, vaccine_date) %>%
+      pivot_wider(names_from = dose_id, values_from = vaccine_date) %>%
+      select(subject_id, "partial" = "1", "complete" = "2", "booster_1" = "3", "booster_2" = "4"),
     by = "subject_id"
   ) %>%
   ##### Subject level censoring

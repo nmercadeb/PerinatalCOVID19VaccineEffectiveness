@@ -5,9 +5,9 @@ account: dpa-pde-oxford
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11927025
-bundleId: 8578918
+bundleId: 8851621
 url: https://dpa-pde-oxford.shinyapps.io/PregnantCOVID19VaccineEffectiveness/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: data/Effectiveness_Study_Results_UiO_20240430.zip|data/Results_CPRD_30_04_2024.zip|data/Results_SIDIAP_20240503.zip|getShinyData.R
+ignoredFiles: .Rprofile|data/Results_CPRD_20240711.zip|data/Results_SIDIAP_20240711.zip|figures.R|getShinyData.R|prepare_data.R|tables.R

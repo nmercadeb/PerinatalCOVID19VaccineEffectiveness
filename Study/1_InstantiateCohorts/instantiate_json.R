@@ -89,8 +89,6 @@ if (database_name == "UiO") {
   )
 }
 
-
-
 # export counts
 json_cohort_counts <- cdm[[medications_table_name]] %>%
   settings() %>%
