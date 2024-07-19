@@ -167,7 +167,7 @@ if (runIndexEvents) {
     )
   }
   # change to bind when omopgenerics #336
-  output$index_events <- index_events |> bind_rows()
+  output$index_events <- index_events |> bind_rows() |> omopgenerics::newSummarisedResult()
   file.remove(here("Phoebe", "concept_recommended.csv"))
   toc(log = TRUE)
 }

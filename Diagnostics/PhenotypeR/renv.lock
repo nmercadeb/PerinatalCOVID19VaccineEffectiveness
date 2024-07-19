@@ -222,7 +222,7 @@
     },
     "PatientProfiles": {
       "Package": "PatientProfiles",
-      "Version": "1.0.0",
+      "Version": "1.1.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -231,6 +231,7 @@
         "checkmate",
         "cli",
         "dplyr",
+        "lifecycle",
         "magrittr",
         "omopgenerics",
         "purrr",
@@ -239,7 +240,7 @@
         "tidyr",
         "visOmopResults"
       ],
-      "Hash": "1589725d3c89528a1d584fa64a0ec77c"
+      "Hash": "8981f38fcf92168d90112c9b5dacd826"
     },
     "R6": {
       "Package": "R6",
