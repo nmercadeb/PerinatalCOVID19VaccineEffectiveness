@@ -51,13 +51,13 @@ exclude_vax_records <- cdm$vaccine_schema |>
   compute()
 
 exclude_unkown_1 <- cdm$vaccine_schema |>
-  filter(schema_id %in% c("partial", "complete")) |>
+  filter(dose_id %in% c(1, 2)) |>
   filter(any(.data$vaccine_brand == "unkown"), .by = "subject_id") |>
   distinct(subject_id)|>
   compute()
 
 exclude_unkown_2 <- cdm$vaccine_schema |>
-  filter(schema_id == "booster_1", .data$vaccine_brand == "unkown") |>
+  filter(dose_id == 1, .data$vaccine_brand == "unkown") |>
   distinct(subject_id)|>
   union(exclude_unkown_1) |>
   distinct() |>

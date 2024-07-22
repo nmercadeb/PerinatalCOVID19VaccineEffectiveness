@@ -946,7 +946,7 @@ server <- function(input, output, session) {
   })
   output$study_risk_download_table <- serverGTDownload(name = "summaryStudy", gt = getStudyForestTable())
   getStudyForestPlot <- reactive({
-    format <- c("cdm_name", "strata_level", "regression", "window", "outcome")
+    format <- c("cdm_name", "strata_level", "window", "outcome")
     format <- format[!format %in% input$plt_study_risk_facet_by]
 
     table <- data$risk |>
@@ -959,7 +959,7 @@ server <- function(input, output, session) {
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       mutate(
         outcome_plot = glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
-        outcome_plot = if_else(delivery_excluded == "yes", paste0(outcome, "; delivery_excluded"), outcome),
+        outcome_plot = if_else(delivery_excluded == "no", paste0(outcome_plot, "; delivery_not_excluded"), outcome_plot),
         association = case_when(
           lower_ci > 1 ~ "positive association",
           upper_ci < 1 ~ "negative association",
@@ -1050,9 +1050,9 @@ server <- function(input, output, session) {
     prefix = "km_download_plot", name = "kaplanMeier", plot = plotKM(), input = input
   )
   # FOLLOW-UP ----
-  output$followup_summary <- render_gt({
+  output$followup_summary_table <- render_gt({
     data$censoring |>
       filterData("followup", input) |>
-      gtTable()
+      gtTable(colsToMergeRows = "all_columns")
   })
 }

@@ -10,13 +10,16 @@ library(dplyr)
 library(CodelistGenerator)
 library(PatientProfiles)
 library(here)
-library(DrugUtilisation)
 library(IncidencePrevalence)
 library(tictoc)
 library(readr)
 library(stringr)
 library(testthat)
 library(SqlRender)
+library(CirceR)
+library(tidyr)
+library(CohortCharacteristics)
+library(visOmopResults)
 
 # database metadata and connection details -----
 # The name/ acronym for the database
@@ -48,6 +51,24 @@ achilles_schema <- "..."
 # note, any existing tables in your write schema starting with this prefix may
 # be dropped during running this analysis
 study_prefix <- "..."
+
+# Jobs to run ----
+runGenerateCohort <- TRUE 
+runCalculateOverlap <- TRUE 
+runCohortTiming <- TRUE
+runCountCodes <- TRUE                
+runIndexEvents <- TRUE                 
+runProfiling <- TRUE                   
+runMatchedSampleLSC <- TRUE         
+runIncidence <- FALSE                
+runPrevalence <- FALSE               
+sampleIncidencePrevalence <- 1000000 
+
+exportResultsRData <- TRUE 
+dropCohortTable <- TRUE
+
+# zip file containing the csv with recommended codes
+zipFileName <- "concept_recommended_20221006.zip"
 
 # Run the study ------
 source(here("RunStudy.R"))

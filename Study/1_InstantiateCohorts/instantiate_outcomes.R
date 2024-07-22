@@ -1,6 +1,9 @@
 info(logger, "Covid outcome cohorts")
 cdm$temp_covid <- cdm$covid %>%
   compute(name = "temp_covid", temporary = FALSE)
+cdm$temp_delivery <- cdm$mother_table_original |>
+  filter(pregnancy_outcome_id == 4092289) |>
+  compute(name = "temp_delivery", temporary = FALSE)
 
 info(logger, "Inpatient outcome cohorts")
 ip.codes <- c(9201, 262)
