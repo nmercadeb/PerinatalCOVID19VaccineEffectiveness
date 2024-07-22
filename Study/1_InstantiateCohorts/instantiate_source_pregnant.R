@@ -1,11 +1,14 @@
 # Mother table:
-cdm$mother_table <- tbl(db, inSchema(schema = mother_table_schema, table = mother_table_name)) %>%
+cdm$mother_table_original <- tbl(db, inSchema(schema = mother_table_schema, table = mother_table_name)) %>%
+  {if (grepl("CPRD", database_name)) {
+    rename(., "pregnancy_outcome_id" = "original_outcome")
+  }} %>%
   compute()
 
 # CLEAN MOTHER TABLE----
 info(logger, "Clean mother table")
 ## Start with all population
-cdm$mother_table <- cdm$mother_table %>%
+cdm$mother_table <- cdm$mother_table_original %>%
   mutate(cohort_definition_id = 1,
          cohort_start_date = pregnancy_start_date,
          cohort_end_date = pregnancy_end_date) %>%
