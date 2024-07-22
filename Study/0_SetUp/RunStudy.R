@@ -42,8 +42,8 @@ booster.janssen  <- 90 # days for booster after janssen
 days.moderna     <- 28 # days for 2nd dose after moderna
 days.astrazeneca <- 28 # days for 2nd dose after astrazeneca
 days.pfizer      <- 21 # days for 2nd dose after pfizer
-pfizer <- c(17, 30)
-moderna <- c(21, 37)
+pfizer <- c(17, 42)
+moderna <- c(21, 42)
 days.badrecord <- 4
 
 # save study settings ----
