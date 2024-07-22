@@ -28,11 +28,12 @@ generateVisitRelatedOutcomes <- function(codes, window, name, attritionReason) {
                      mutate(cohort_name = paste0(name, "_", cohort_name)))
   # covid visit cohort - delivery date
   cdm[[paste0("temp_", name, "_delivery")]] <- covid_visit |>
-    addCohortIntersectFlag(
-      targetCohortTable = "temp_delivery",
+    addTableIntersectFlag(
+      tableName = "temp_delivery",
       window = c(-2,2),
       indexDate = "visit_start_date",
-      targetStartDate = "cohort_end_date",
+      targetStartDate = "pregnancy_end_date",
+      targetEndDate = NULL,
       nameStyle = "is_delivery_date") |>
     filter(is_delivery_date == 0) |>
     select(-visit_start_date, -diff_days) |>
