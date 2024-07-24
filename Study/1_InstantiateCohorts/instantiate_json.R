@@ -52,16 +52,13 @@ cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
 
 # Ohter vax
 info(logger, "  - Other vaccines")
-other_vaccines_cohort_set <- readCohortSet(
-  here("1_InstantiateCohorts", "Cohorts", "OtherVaccines")
+other_vaccines_cohort_set <- CodelistGenerator::codesFromCohort(
+  here("1_InstantiateCohorts", "Cohorts", "OtherVaccines"), cdm = cdm
 )
-
-cdm <- generateCohortSet(
+cdm <- CDMConnector::generateConceptCohortSet(
   cdm = cdm,
-  cohortSet = other_vaccines_cohort_set,
   name = other_vaccines_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
+  conceptSet = other_vaccines_cohort_set
 )
 
 # Conditions to prioritize vaccination CAT
@@ -121,6 +118,7 @@ json_cohort_counts <- cdm[[medications_table_name]] %>%
                          by = "cohort_definition_id")) %>%
   union_all(cdm[[other_vaccines_table_name]] %>%
               settings() %>%
+              select(cohort_definition_id, cohort_name) %>%
               inner_join(cdm[[other_vaccines_table_name]] %>%
                            cohort_count() %>%
                            mutate(cohort_group = "other_vaccines"),
