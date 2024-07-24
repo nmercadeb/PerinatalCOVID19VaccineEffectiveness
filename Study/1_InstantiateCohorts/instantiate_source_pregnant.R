@@ -2,7 +2,7 @@
 cdm$mother_table_original <- tbl(db, inSchema(schema = mother_table_schema, table = mother_table_name)) %>%
   {if (grepl("CPRD", database_name)) {
     rename(., "pregnancy_outcome_id" = "original_outcome")
-  }} %>%
+  } else . } %>%
   compute()
 
 # CLEAN MOTHER TABLE----

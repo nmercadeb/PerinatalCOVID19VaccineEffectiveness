@@ -1,8 +1,12 @@
 info(logger, "Covid outcome cohorts")
 cdm$temp_covid <- cdm$covid %>%
   compute(name = "temp_covid", temporary = FALSE)
-cdm$temp_delivery <- cdm$mother_table_original |>
-  filter(pregnancy_outcome_id == 4092289) |>
+cdm$temp_delivery <- tbl(db, inSchema(schema = mother_table_schema, table = mother_table_name)) %>%
+  {if (grepl("CPRD", database_name)) {
+    rename(., "pregnancy_outcome" = "original_outcome")
+  } else . } %>%
+  compute() |>
+  filter(pregnancy_outcome == 4092289) |>
   compute(name = "temp_delivery", temporary = FALSE)
 
 info(logger, "Inpatient outcome cohorts")
@@ -35,7 +39,7 @@ cdm <- generateVisitRelatedOutcomes(
 #   newCohortTable(cohortSetRef = settings(cdm$temp_covid) %>% mutate(cohort_name = paste0("death_", cohort_name)))
 
 # outcome cohort
-cdm <- omopgenerics::bind(cdm$temp_covid,cdm$temp_inpatient, cdm$temp_inpatient_delivery,
+cdm <- omopgenerics::bind(cdm$temp_covid, cdm$temp_inpatient, cdm$temp_inpatient_delivery,
                           cdm$temp_icu, cdm$temp_icu_delivery, name = "outcomes")
 
 cdm <- omopgenerics::dropTable(cdm, starts_with("temp"))

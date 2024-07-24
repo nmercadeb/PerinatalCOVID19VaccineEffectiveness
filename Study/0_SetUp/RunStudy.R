@@ -138,7 +138,7 @@ if (runOutcomeModel) {
   source(here("4_OutcomeModel", "estimate_survival.R"))
 }
 
-info(logger, "STEP 4 ZIP RESULTS ----")
+info(logger, "STEP 5 ZIP RESULTS ----")
 output_folder <- basename(output_folder)
 zip(
   zipfile = paste0(output_folder, "_", gsub("-", "", Sys.Date()), ".zip"),
