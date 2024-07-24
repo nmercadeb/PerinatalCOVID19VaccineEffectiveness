@@ -151,13 +151,15 @@ if (runIndexEvents) {
   tic(msg = "Index Event Breakdown")
   cli::cli_bullets(c("*" = "{.strong Getting index event breakdown}"))
   cohortSet <- settings(cdm[[cohort_table]])
-  if (!runCountCodes) {
-    codes <- codesFromCohort(here("Cohorts"), cdm, withConceptDetails = F)
-  }
   index_events <- list()
   for (id in cohortSet$cohort_definition_id) {
+    codesCohort <- codesFromCohort(
+      here("Cohorts", paste0(cohortSet$cohort_name[id], ".json")), 
+      cdm = cdm, 
+      withConceptDetails = F
+    )
     index_events[[id]] <- summariseCohortCodeUse(
-      x = codes[id],
+      x = codesCohort,
       cdm = cdm, 
       cohortTable = cohort_table,
       timing = "entry",
