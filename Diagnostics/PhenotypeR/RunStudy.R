@@ -78,7 +78,7 @@ if (runGenerateCohort) {
 # Cohort details ----
 cli::cli_bullets(c("*" = "Getting cohort summary"))
 tic(msg = "Cohort details")
-output$cohort_details <- summary(cdm[[cohort_table]]) 
+output$cohort_details <- summary(cdm[[cohort_table]]) |> omopgenerics::newSummarisedResult()
 toc(log = TRUE)
 
 # Cohort definitions ----
@@ -98,7 +98,7 @@ if (runGenerateCohort) {
 if (runCalculateOverlap) {
   tic(msg = "Calculate Overlap")
   cli::cli_bullets(c("*" = "{.strong Summarising cohort overlap}"))
-  output$cohort_overlap <- CohortCharacteristics::summariseCohortOverlap(cdm[[cohort_table]])
+  output$cohort_overlap <- CohortCharacteristics::summariseCohortOverlap(cdm[[cohort_table]]) |> omopgenerics::newSummarisedResult()
   toc(log = TRUE)
 }
 
@@ -106,7 +106,7 @@ if (runCalculateOverlap) {
 if (runCohortTiming) {
   tic(msg = "Calculate cohort timings")
   cli::cli_bullets(c("*" = "{.strong Summarising cohort timing}"))
-  output$cohort_timing <- CohortCharacteristics::summariseCohortTiming(cdm[[cohort_table]], density = TRUE) 
+  output$cohort_timing <- CohortCharacteristics::summariseCohortTiming(cdm[[cohort_table]], density = TRUE) |> omopgenerics::newSummarisedResult()
   toc(log = TRUE)
 }
 
@@ -116,7 +116,7 @@ if(runCountCodes) {
   cli::cli_bullets(c("*" = "{.strong Summarising code use}"))
   codes <- codesFromCohort(here("Cohorts"), cdm, withConceptDetails = F)
   # original codes
-  output$code_counts <- summariseAchillesCodeUse(codes, cdm = cdm) 
+  output$code_counts <- summariseAchillesCodeUse(codes, cdm = cdm) |> omopgenerics::newSummarisedResult()
   # orphan codes
   cli::cli_bullets(c("*" = "{.strong Getting orphan codes}"))
   orphanCodelist <- lapply(codes, function(codelist, phoebe = concept_recommended) {
@@ -141,8 +141,10 @@ if(runCountCodes) {
       additional_name = paste0(.data$additional_name, " &&& relationship_id"),
       additional_level = paste0(.data$additional_level, " &&& ", .data$relationship_id)
     ) |> 
-    select(-"relationship_id")
-  attr(output$orphan_codes, "settings") <- attr(output$orphan_codes, "settings") |> mutate(result_type = "orphan_codes")
+    select(-"relationship_id") 
+  output$orphan_codes <- output$orphan_codes |>
+    omopgenerics::newSummarisedResult(settings = attr(output$orphan_codes, "settings") |> mutate(result_type = "orphan_codes"))
+
   toc(log = TRUE)
 }
 
@@ -305,9 +307,11 @@ if (runMatchedSampleLSC) {
   toc(log = TRUE)
   # to export
   output$lsc_matched <- lsc_matched |>
-    mutate(group_name = if_else(group_name == "cohort_name", "cohort_name_reference", group_name)) 
+    mutate(group_name = if_else(group_name == "cohort_name", "cohort_name_reference", group_name)) |> 
+    omopgenerics::newSummarisedResult()
   output$lsc_sample <- lsc_sample |>
-    mutate(group_name = if_else(group_name == "cohort_name", "cohort_name_comparator", group_name)) 
+    mutate(group_name = if_else(group_name == "cohort_name", "cohort_name_comparator", group_name)) |> 
+    omopgenerics::newSummarisedResult()
 }
 
 
