@@ -406,6 +406,11 @@ if (!dir.exists(output_folder)) {
 summarised_results <- c("cohort_details", "cohort_overlap", "characteristics", "orphan_codes", "index_events",
                         "code_counts", "lsc_sample", "lsc_matched", "lsc_difference", "snapshot", "cohort_timing")
 # summarised results
+for (nm in summarised_results) {
+  if (is.null(output[[nm]])) {
+    output[[nm]] <- omopgenerics::emptySummarisedResult()
+  }
+}
 overallSR <- omopgenerics::bind(output[summarised_results])
 overallSR <- overallSR |> 
   omopgenerics::newSummarisedResult(
