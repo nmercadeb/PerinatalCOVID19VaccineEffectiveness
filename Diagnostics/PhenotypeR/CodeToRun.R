@@ -58,7 +58,7 @@ runCalculateOverlap <- TRUE
 runCohortTiming <- TRUE
 runCountCodes <- TRUE                
 runIndexEvents <- TRUE                 
-runProfiling <- TRUE                   
+runProfiling <- FALSE                   
 runMatchedSampleLSC <- TRUE         
 runIncidence <- FALSE                
 runPrevalence <- FALSE               
