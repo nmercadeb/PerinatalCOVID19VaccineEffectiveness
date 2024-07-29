@@ -74,10 +74,13 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
           while (doMatching) {
             exactMatch = c("maternal_age", "gestational_age")
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
-            working.match <- matchit(exposed ~ .- subject_id - pregnancy_id - trimester, data = working.match_data,
-                                     method = "nearest", distance = "glm", caliper = 0.2,
+            exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
+            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - ", paste0(exactMatch, collapse = " - ")))
+            working.match <- matchit(formula = psFormula, method = "nearest",
+                                     distance = "glm", caliper = 0.2,
                                      ratio = 1, std.caliper = FALSE,
-                                     exact = formula(paste0(". ~", paste0(exactMatch, collapse = " + "))))
+                                     data = working.match_data,
+                                     exact = exactFormula)
             # Save matched pairs
             working.matched.population <- match.data(working.match) %>%
               inner_join(working.table,

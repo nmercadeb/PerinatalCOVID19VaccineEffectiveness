@@ -220,22 +220,17 @@ matchItDataset <- function(x, objective_id) {
       window = list(c(-Inf, -1)),
       nameStyle = "previous_pregnancies"
     ) %>%
-    mutate(previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start"))) |>
-    collect()
-
-  if (objective_id == 1) {
-    x <- x |>
-      select(-c(cohort_start_date, cohort_end_date, observation_period_start_date, covid_date_week,
-                week_start, week_end, previous_vaccine_date, previous_vaccine_brand,
-                index_vaccine_date, index_vaccine_brand, pregnancy_start_date, pregnancy_end_date))
-  } else if (objective_id == 2) {
-    x <- x |>
-      mutate(days_previous_vaccine = as.numeric(week_start - previous_vaccine_date)) |>
-      select(-c(cohort_start_date, cohort_end_date, observation_period_start_date, covid_date_week,
-                week_start, week_end, previous_vaccine_date, index_vaccine_date, index_vaccine_brand,
-                pregnancy_start_date, pregnancy_end_date))
-  }
-
+    mutate(
+      previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start")),
+      days_previous_vaccine = as.numeric(!!datediff("previous_vaccine_date", "week_start"))
+    ) |>
+    collect() |>
+    select(-any_of(c(
+      "cohort_start_date", "cohort_end_date", "observation_period_start_date",
+      "covid_date_week", "week_start", "week_end", "index_vaccine_date",
+      "index_vaccine_brand", "pregnancy_start_date", "pregnancy_end_date",
+      "enrollment_end_date"
+    )))
 }
 
 addAttritionReason <- function(attrition_table, reason, x) {
