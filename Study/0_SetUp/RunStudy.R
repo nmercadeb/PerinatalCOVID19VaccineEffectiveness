@@ -66,7 +66,40 @@ readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_sn
 
 if (runInstantiateCohorts) {
   cdm$condition_occurrence <- cdm$condition_occurrence %>%
-    filter(condition_start_date <= condition_end_date)
+    filter(condition_start_date <= condition_end_date) %>%
+    inner_join(
+      cdm$observation_period |>
+        select(person_id, start = observation_period_start_date, end = observation_period_end_date)
+    ) |>
+    filter(condition_start_date >= start & condition_start_date <= end) |>
+    filter(condition_end_date >= start & condition_end_date <= end) |>
+    select(!c("start", "end"))
+
+  cdm$measurement <- cdm$measurement %>%
+    inner_join(
+      cdm$observation_period |>
+        select(person_id, start = observation_period_start_date, end = observation_period_end_date)
+    ) |>
+    filter(measurement_date >= start & measurement_date <= end) |>
+    select(!c("start", "end"))
+
+  cdm$observation <- cdm$observation %>%
+    inner_join(
+      cdm$observation_period |>
+        select(person_id, start = observation_period_start_date, end = observation_period_end_date)
+    ) |>
+    filter(observation_date >= start & observation_date <= end) |>
+    select(!c("start", "end"))
+
+  cdm$visit_occurrence <- cdm$visit_occurrence %>%
+    inner_join(
+      cdm$observation_period |>
+        select(person_id, start = observation_period_start_date, end = observation_period_end_date)
+    ) |>
+    filter(visit_start_date >= start & visit_start_date <= end) |>
+    filter(visit_end_date >= start & visit_end_date <= end) |>
+    select(!c("start", "end"))
+
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
   source(here("1_InstantiateCohorts", "instantiate_nco.R"))
