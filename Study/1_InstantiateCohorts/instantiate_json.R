@@ -1,30 +1,33 @@
 # Read medication concept sets
 info(logger, "Instantiate characterisation cohorts: ")
 
-# Medications
-info(logger, "  - Medications")
-medications_codelist <- CodelistGenerator::codesFromConceptSet(
-  path = here("1_InstantiateCohorts", "Cohorts", "MedicationsConceptSet"),
-  cdm = cdm
-)
-cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
-  cdm = cdm,
-  name = medications_table_name,
-  conceptSet = medications_codelist
-)
+if (FALSE) {
+  # Medications
+  info(logger, "  - Medications")
+  medications_codelist <- CodelistGenerator::codesFromConceptSet(
+    path = here("1_InstantiateCohorts", "Cohorts", "MedicationsConceptSet"),
+    cdm = cdm
+  )
+  cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
+    cdm = cdm,
+    name = medications_table_name,
+    conceptSet = medications_codelist
+  )
 
-# Read condition cohorts
-info(logger, "  - Conditions")
-conditions_cohort_set <- readCohortSet(
-  path = here("1_InstantiateCohorts", "Cohorts", "Comorbidities")
-)
-cdm <- generateCohortSet(
-  cdm = cdm,
-  cohortSet = conditions_cohort_set,
-  name = conditions_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
-)
+  # Read condition cohorts
+  info(logger, "  - Conditions")
+  conditions_cohort_set <- readCohortSet(
+    path = here("1_InstantiateCohorts", "Cohorts", "Comorbidities")
+  )
+  cdm <- generateCohortSet(
+    cdm = cdm,
+    cohortSet = conditions_cohort_set,
+    name = conditions_table_name,
+    computeAttrition = TRUE,
+    overwrite = TRUE
+  )
+}
+
 
 # COVID
 info(logger, "  - COVID-19")
