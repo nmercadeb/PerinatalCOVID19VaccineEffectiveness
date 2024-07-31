@@ -42,7 +42,7 @@
   "PrimaryCriteria": {
     "CriteriaList": [
       {
-        "ConditionOccurrence": {
+        "VisitOccurrence": {
           "CodesetId": 0
         }
       }
