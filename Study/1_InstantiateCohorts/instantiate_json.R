@@ -26,69 +26,67 @@ if (FALSE) {
     computeAttrition = TRUE,
     overwrite = TRUE
   )
-}
 
-
-# COVID
-info(logger, "  - COVID-19")
-covid_json_cohort_set <- readCohortSet(
-  here("1_InstantiateCohorts", "Cohorts", "Covid")
-)
-
-cdm <- generateCohortSet(
-  cdm = cdm,
-  cohortSet = covid_json_cohort_set,
-  name = covid_table_name,
-  computeAttrition = TRUE,
-  overwrite = TRUE
-)
-
-# COVID-19 vaccines
-info(logger, "  - COVID-19 vaccines")
-vax_codes <- codesFromCohort(cdm = cdm, path = here("1_InstantiateCohorts", "Cohorts", "CovidVaccines"))
-cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
-  cdm = cdm,
-  name = vaccine_json_table_name,
-  conceptSet = vax_codes
-)
-
-
-# Ohter vax
-info(logger, "  - Other vaccines")
-other_vaccines_cohort_set <- CodelistGenerator::codesFromCohort(
-  here("1_InstantiateCohorts", "Cohorts", "OtherVaccines"), cdm = cdm
-)
-cdm <- CDMConnector::generateConceptCohortSet(
-  cdm = cdm,
-  name = other_vaccines_table_name,
-  conceptSet = other_vaccines_cohort_set
-)
-
-# Conditions to prioritize vaccination CAT
-info(logger, "  - Conditions for prior vaccination")
-if (database_name == "UiO") {
-  ps_covariates_cohort_set <- CodelistGenerator::codesFromCohort(
-    here("1_InstantiateCohorts", "Cohorts", "Matching"), cdm = cdm
-  )
-  cdm <- CDMConnector::generateConceptCohortSet(
-    cdm = cdm,
-    name = ps_covariates_table_name,
-    conceptSet = ps_covariates_cohort_set
+  # COVID
+  info(logger, "  - COVID-19")
+  covid_json_cohort_set <- readCohortSet(
+    here("1_InstantiateCohorts", "Cohorts", "Covid")
   )
 
-} else {
-  ps_covariates_cohort_set <- readCohortSet(
-    here("1_InstantiateCohorts", "Cohorts", "Matching")
-  )
   cdm <- generateCohortSet(
     cdm = cdm,
-    cohortSet = ps_covariates_cohort_set,
-    name = ps_covariates_table_name,
+    cohortSet = covid_json_cohort_set,
+    name = covid_table_name,
     computeAttrition = TRUE,
     overwrite = TRUE
   )
-}
 
+  # COVID-19 vaccines
+  info(logger, "  - COVID-19 vaccines")
+  vax_codes <- codesFromCohort(cdm = cdm, path = here("1_InstantiateCohorts", "Cohorts", "CovidVaccines"))
+  cdm <- DrugUtilisation::generateDrugUtilisationCohortSet(
+    cdm = cdm,
+    name = vaccine_json_table_name,
+    conceptSet = vax_codes
+  )
+
+
+  # Ohter vax
+  info(logger, "  - Other vaccines")
+  other_vaccines_cohort_set <- CodelistGenerator::codesFromCohort(
+    here("1_InstantiateCohorts", "Cohorts", "OtherVaccines"), cdm = cdm
+  )
+  cdm <- CDMConnector::generateConceptCohortSet(
+    cdm = cdm,
+    name = other_vaccines_table_name,
+    conceptSet = other_vaccines_cohort_set
+  )
+
+  # Conditions to prioritize vaccination CAT
+  info(logger, "  - Conditions for prior vaccination")
+  if (database_name == "UiO") {
+    ps_covariates_cohort_set <- CodelistGenerator::codesFromCohort(
+      here("1_InstantiateCohorts", "Cohorts", "Matching"), cdm = cdm
+    )
+    cdm <- CDMConnector::generateConceptCohortSet(
+      cdm = cdm,
+      name = ps_covariates_table_name,
+      conceptSet = ps_covariates_cohort_set
+    )
+
+  } else {
+    ps_covariates_cohort_set <- readCohortSet(
+      here("1_InstantiateCohorts", "Cohorts", "Matching")
+    )
+    cdm <- generateCohortSet(
+      cdm = cdm,
+      cohortSet = ps_covariates_cohort_set,
+      name = ps_covariates_table_name,
+      computeAttrition = TRUE,
+      overwrite = TRUE
+    )
+  }
+}
 # export counts
 json_cohort_counts <- cdm[[medications_table_name]] %>%
   settings() %>%

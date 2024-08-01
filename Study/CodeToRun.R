@@ -52,7 +52,7 @@ cdm <- cdmFromCon(
   con = db,
   cdmSchema = cdm_database_schema,
   writeSchema = c("schema" = results_database_schema, "prefix" = tolower(table_stem)),
-  cohortTables = c("medications", "conditions")
+  cohortTables = c("medications", "conditions", "covid", "vaccine_json", "other_vax", "ps_covariates", "nco_cohort"),
   cdmName = database_name
 )
 

@@ -195,10 +195,15 @@ cdm <- dropTable(cdm, starts_with("temp"))
 # Set cohort dates and columns to keep:
 cdm$source_pregnant <- cdm$source_pregnant %>%
   select(-cohort_end_date) %>%
-  left_join(
-    cdm$observation_period %>%
-      select(subject_id = person_id, cohort_end_date = observation_period_end_date, observation_period_start_date),
-    by = "subject_id"
+  addDemographics(
+    age = FALSE,
+    sex = FALSE,
+    priorObservation = TRUE,
+    priorObservationName = "observation_period_start_date",
+    priorObservationType = "date",
+    futureObservation = TRUE,
+    futureObservationName = "cohort_end_date",
+    futureObservationType = "date"
   ) %>%
   addCohortIntersectDate(
     targetCohortTable = "mother_table",
@@ -217,4 +222,13 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
          pregnancy_start_date, pregnancy_end_date, enrollment_end_date, age, index_vaccine_date,
          index_vaccine_brand, previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
+  addInObservation(nameStyle = "start") %>%
+  filter(start == 1) %>%
+  compute(name = "source_pregnant", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "After date arrangements: In observation at start date") %>%
+  addInObservation(nameStyle = "end") %>%
+  filter(end == 1) %>%
+  select(!c("start", "end")) %>%
+  compute(name = "source_pregnant", temporary = FALSE) %>%
+  recordCohortAttrition(reason = "After date arrangements: In observation at end date") %>%
   newCohortTable()

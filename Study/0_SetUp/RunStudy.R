@@ -73,7 +73,8 @@ if (runInstantiateCohorts) {
     ) |>
     filter(condition_start_date >= start & condition_start_date <= end) |>
     filter(condition_end_date >= start & condition_end_date <= end) |>
-    select(!c("start", "end"))
+    select(!c("start", "end")) |>
+    distinct()
 
   cdm$measurement <- cdm$measurement %>%
     inner_join(
@@ -81,7 +82,8 @@ if (runInstantiateCohorts) {
         select(person_id, start = observation_period_start_date, end = observation_period_end_date)
     ) |>
     filter(measurement_date >= start & measurement_date <= end) |>
-    select(!c("start", "end"))
+    select(!c("start", "end")) >
+    distinct()
 
   cdm$observation <- cdm$observation %>%
     inner_join(
@@ -89,7 +91,8 @@ if (runInstantiateCohorts) {
         select(person_id, start = observation_period_start_date, end = observation_period_end_date)
     ) |>
     filter(observation_date >= start & observation_date <= end) |>
-    select(!c("start", "end"))
+    select(!c("start", "end")) >
+    distinct()
 
   cdm$visit_occurrence <- cdm$visit_occurrence %>%
     inner_join(
@@ -98,11 +101,12 @@ if (runInstantiateCohorts) {
     ) |>
     filter(visit_start_date >= start & visit_start_date <= end) |>
     filter(visit_end_date >= start & visit_end_date <= end) |>
-    select(!c("start", "end"))
+    select(!c("start", "end")) >
+    distinct()
 
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
   source(here("1_InstantiateCohorts", "instantiate_json.R"))
-  source(here("1_InstantiateCohorts", "instantiate_nco.R"))
+  # source(here("1_InstantiateCohorts", "instantiate_nco.R"))
   source(here("1_InstantiateCohorts", "instantiate_vaccination_table.R"))
   source(here("1_InstantiateCohorts", "instantiate_source_pregnant.R"))
   source(here("1_InstantiateCohorts", "instantiate_outcomes.R"))
