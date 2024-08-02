@@ -230,5 +230,6 @@ data$censoring <- pre_data$censoring |>
     "Median (Q25-Q75)" = paste0(niceNum(median, 2), " (", niceNum(q25, 2), " - ", niceNum(q75, 2), ")")
   ) |>
   select("CDM name" = "cdm_name", "Cohort name" = "cohort_name", Reason, N, "Mean (SD)", "Median (Q25-Q75)")
+
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

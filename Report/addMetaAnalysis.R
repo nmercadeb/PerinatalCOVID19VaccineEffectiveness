@@ -54,7 +54,7 @@ for (jj in 1:nrow(metaanalyses)) {
             mutate(
               cdm_name = "Meta-analysis", exp_coef = exp(meta$TE.random),
               coef = meta$TE.random, se_coef = meta$seTE.random,
-              lower_ci = exp(meta$lower.random), exp(upper_ci = meta$upper.random),
+              lower_ci = exp(meta$lower.random), upper_ci = exp(meta$upper.random),
               i2 = meta$I2, z= NA, p = NA
             ) |>
             distinct()

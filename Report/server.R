@@ -959,7 +959,7 @@ server <- function(input, output, session) {
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       mutate(
         outcome_plot = glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
-        outcome_plot = if_else(input$delivery_risk == "no", paste0(outcome_plot, "; delivery_not_excluded"), outcome_plot),
+        outcome_plot = if_else(.data$delivery_excluded == "no", paste0(outcome_plot, "; delivery_not_excluded"), outcome_plot),
         association = case_when(
           lower_ci > 1 ~ "positive association",
           upper_ci < 1 ~ "negative association",
@@ -985,11 +985,13 @@ server <- function(input, output, session) {
               c(all_of(input[[paste0("plt_study_risk_color")]])), remove = FALSE, sep = "; ")
       p <- table %>%
         ggplot(aes(x = exp_coef, y = outcome_plot, color = Group, label = outcome, label1 = lower_ci, label2 = upper_ci,
-                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed,
+                   label6 = count_events_exposed, label7 = i2))
     } else {
       p <- table %>%
         ggplot(aes(x = exp_coef, y = outcome_plot, label = outcome, label1 = lower_ci, label2 = upper_ci,
-                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed, label6 = count_events_exposed))
+                   label3 = count_unexposed, label4 = count_exposed, label5 = count_events_unexposed,
+                   label6 = count_events_exposed, label7 = i2))
     }
     p <- p +
       geom_vline(xintercept = 1) +
