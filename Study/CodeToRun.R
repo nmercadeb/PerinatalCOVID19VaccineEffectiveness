@@ -23,6 +23,7 @@ library(SqlRender)
 library(omopgenerics)
 library(visOmopResults)
 library(CohortSurvival)
+library(odbc)
 
 database_name <- "..." # "SIDIAP", "UiO", "CPRD Gold
 

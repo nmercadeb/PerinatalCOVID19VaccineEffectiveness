@@ -13,7 +13,7 @@
       "Package": "CDMConnector",
       "Version": "1.4.0",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "DBI",
         "R",
@@ -38,7 +38,7 @@
         "waldo",
         "withr"
       ],
-      "Hash": "507fdfbd3b32aa616eac3050325069e2"
+      "Hash": "064b48c7c112c78247849bef3a955d8e"
     },
     "CirceR": {
       "Package": "CirceR",
@@ -878,6 +878,25 @@
         "utils"
       ],
       "Hash": "a623a2239e642806158bc4dc3f51565d"
+    },
+    "odbc": {
+      "Package": "odbc",
+      "Version": "1.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "DBI",
+        "R",
+        "Rcpp",
+        "bit64",
+        "blob",
+        "cli",
+        "hms",
+        "lifecycle",
+        "methods",
+        "rlang"
+      ],
+      "Hash": "0609d24c52744c675f8578622c33d5fa"
     },
     "omopgenerics": {
       "Package": "omopgenerics",
