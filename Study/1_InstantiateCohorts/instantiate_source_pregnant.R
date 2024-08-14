@@ -61,8 +61,20 @@ cdm$mother_table <- cdm$mother_table %>%
     nameStyle = "overlap"
   ) %>%
   filter(overlap <= 1) %>%
+  left_join(
+    cdm$observation_period |>
+      select(subject_id = person_id, observation_period_start_date, observation_period_end_date)
+  ) |>
+  filter(
+    cohort_start_date >= observation_period_start_date & cohort_start_date <= observation_period_end_date
+  ) |>
+  filter(
+    cohort_end_date >= observation_period_start_date & cohort_end_date <= observation_period_end_date
+  ) |>
+  select(!c("observation_period_start_date", "observation_period_end_date")) %>%
   compute(name = "mother_table", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "No overlapping pregnancy records")
+  recordCohortAttrition(reason = "No overlapping pregnancy records")%>%
+  newCohortTable()
 
 ## enrollment period: start
 cdm$mother_table <- cdm$mother_table %>%
@@ -84,7 +96,8 @@ cdm$source_pregnant <- cdm$mother_table  %>%
   addDemographics() %>%
   filter(prior_observation >= 365) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
-  recordCohortAttrition(reason = "1 year of prior observation at pregnancy start date")
+  recordCohortAttrition(reason = "1 year of prior observation at pregnancy start date") %>%
+  newCohortTable()
 
 ## age
 cdm$source_pregnant <- cdm$source_pregnant %>%
@@ -190,7 +203,6 @@ cdm$temp_second_third <- cdm$source_pregnant %>%
   recordCohortAttrition(reason = "Unkown vaccine brand")
 
 cdm <- omopgenerics::bind(cdm$temp_none_first, cdm$temp_second_third, name = "source_pregnant")
-cdm <- dropTable(cdm, starts_with("temp"))
 
 # Set cohort dates and columns to keep:
 cdm$source_pregnant <- cdm$source_pregnant %>%
@@ -226,7 +238,7 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   filter(start == 1) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   recordCohortAttrition(reason = "After date arrangements: In observation at start date") %>%
-  addInObservation(nameStyle = "end") %>%
+  addInObservation(indexDate = "cohort_end_date", nameStyle = "end") %>%
   filter(end == 1) %>%
   select(!c("start", "end")) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
