@@ -973,6 +973,10 @@ server <- function(input, output, session) {
           pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
       )
 
+    if (!"i2" %in% colnames(table)) {
+      table <- table |> mutate(i2 = NA)
+    }
+
     if (!is.null(input[[paste0("plt_study_risk_facet_by")]])) {
       table <- table %>%
         unite("facet_var",
