@@ -3,7 +3,7 @@ cdm$mother_table_original <- tbl(db, inSchema(schema = mother_table_schema, tabl
   {if (grepl("CPRD", database_name)) {
     rename(., "pregnancy_outcome_id" = "original_outcome")
   } else . } %>%
-  compute()
+  compute(name = "mother_table_original", temporary = FALSE)
 
 # CLEAN MOTHER TABLE----
 info(logger, "Clean mother table")
@@ -13,7 +13,7 @@ cdm$mother_table <- cdm$mother_table_original %>%
          cohort_start_date = pregnancy_start_date,
          cohort_end_date = pregnancy_end_date) %>%
   rename("subject_id" = "person_id") %>%
-  compute(name = "mother_table", temporary = FALSE) %>%
+  compute(name = "mother_table", temporary = FALSE, overwrite = TRUE) %>%
   newCohortTable(.softValidation = TRUE)
 
 ## In observation at pregnancy start date
