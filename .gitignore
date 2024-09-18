@@ -8,3 +8,6 @@
 *.csv
 *.docx
 *.txt
+Report/figures/*
+Report/data/*
+Study/CodeToRunDevelop.R

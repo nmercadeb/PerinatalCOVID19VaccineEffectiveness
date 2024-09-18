@@ -1,5 +1,5 @@
 info(logger, "Create vaccine schema table: ")
-cdm$vaccine_schema <- cdm$vaccine_json %>%
+cdm$temp_vax_1 <- cdm$vaccine_json %>%
   filter(cohort_definition_id == !!getId(cdm$vaccine_json, "any_covid_vaccine")) %>%
   select(-cohort_definition_id) %>%
   left_join(cdm$vaccine_json %>%
@@ -13,11 +13,24 @@ cdm$vaccine_schema <- cdm$vaccine_json %>%
   group_by(subject_id) %>%
   window_order(vaccine_date) %>%
   mutate(dose_id = row_number()) %>%
-  mutate(first_janssen = if_else(any(vaccine_brand == "janssen" & dose_id == 1), TRUE, FALSE)) %>%
   ungroup() %>%
+  compute(name = "temp_vax_1", temporary = FALSE)
+
+cdm$vaccine_schema <- cdm$temp_vax_1 %>%
+  left_join(
+    cdm$temp_vax_1 %>%
+      mutate(first_janssen = if_else(vaccine_brand == "janssen" & dose_id == 1, TRUE, FALSE)) %>%
+      filter(first_janssen==TRUE) %>%
+      select(subject_id, first_janssen) %>%
+      compute(name = "temp_vax_2", temporary = FALSE),
+    by = "subject_id"
+  ) %>%
+  mutate(
+    first_janssen = if_else(first_janssen == TRUE, TRUE, FALSE)
+  ) %>%
   mutate(
     schema_id =
-      if_else(first_janssen,
+      if_else(first_janssen == TRUE,
               case_when(
                 dose_id == 1 ~ "complete",
                 dose_id == 2 ~ "booster_1",
@@ -52,7 +65,7 @@ exclude_vax_records <- cdm$vaccine_schema |>
 
 exclude_unkown_1 <- cdm$vaccine_schema |>
   filter(dose_id %in% c(1, 2)) |>
-  filter(any(.data$vaccine_brand == "unkown"), .by = "subject_id") |>
+  filter(.data$vaccine_brand == "unkown") |>
   distinct(subject_id)|>
   compute()
 
@@ -84,7 +97,7 @@ censor_vaccination <- cdm$vaccine_schema %>%
           (abs(days_prior_vaccine) < !!moderna[1]) ~ "Second dose of primary vaccine schema adiministered before recommended time",
         schema_id == "complete" & vaccine_brand == "janssen" &
           (abs(days_prior_vaccine) < booster.janssen-days.badrecord) ~ "Booster dose adiministered before recommended time",
-        grepl("booster", schema_id) &
+        substr(schema_id, 1, 7) == "booster" &
           (abs(days_prior_vaccine) < days.booster-days.badrecord) ~ "Booster dose adiministered before recommended time",
         .default = NA
       )
@@ -101,4 +114,3 @@ censor_vaccination <- cdm$vaccine_schema %>%
   select(subject_id, vaccine_censor_date = vaccine_date, censor) %>%
   distinct() %>%
   compute()
-
