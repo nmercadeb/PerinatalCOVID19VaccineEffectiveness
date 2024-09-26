@@ -55,7 +55,7 @@ cdm <- generateCohortSet(
 
 # Ohter vax
 info(logger, "  - Other vaccines")
-vax_codes <- readCohortSet(
+other_vaccines_cohort_set <- readCohortSet(
   here("1_InstantiateCohorts", "Cohorts", "OtherVaccines")
 )
 cdm <- generateCohortSet(
