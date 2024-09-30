@@ -3,7 +3,7 @@ cdm$mother_table_original <- tbl(db, inSchema(schema = mother_table_schema, tabl
   {if (grepl("CPRD", database_name)) {
     rename(., "pregnancy_outcome_id" = "original_outcome")
   } else . } %>%
-  compute(name = "mother_table_original", temporary = FALSE)
+  compute(name = inSchema(results_database_schema, "mother_table_original"), temporary = FALSE, overwrite = TRUE)
 
 # CLEAN MOTHER TABLE----
 info(logger, "Clean mother table")
@@ -228,7 +228,8 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
       !is.na(next_pregnancy_date) & next_pregnancy_date <= cohort_end_date,
       !!dateadd("next_pregnancy_date", -1), cohort_end_date),
     cohort_end_date = as.Date(cohort_end_date),
-    enrollment_end_date = !!dateadd("pregnancy_start_date", 238)
+    enrollment_end_date = !!dateadd("pregnancy_start_date", 238),
+    enrollment_end_date = if_else(enrollment_end_date > pregnancy_end_date, pregnancy_end_date, enrollment_end_date)
   ) %>%
   select(cohort_definition_id, subject_id, cohort_start_date, cohort_end_date, pregnancy_id,
          pregnancy_start_date, pregnancy_end_date, enrollment_end_date, age, index_vaccine_date,

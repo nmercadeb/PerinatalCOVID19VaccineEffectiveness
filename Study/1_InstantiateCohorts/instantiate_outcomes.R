@@ -7,7 +7,7 @@ cdm$temp_delivery <- tbl(db, inSchema(schema = mother_table_schema, table = moth
   } else . } %>%
   compute() |>
   filter(pregnancy_outcome == 4092289) |>
-  compute(name = "temp_delivery", temporary = FALSE)
+  compute(name = inSchema(results_database_schema, "temp_delivery"), temporary = FALSE)
 
 info(logger, "Inpatient outcome cohorts")
 ip.codes <- c(9201, 262)

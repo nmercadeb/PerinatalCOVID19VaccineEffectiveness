@@ -19,11 +19,12 @@ library(meta)
 source(here("functions.R"))
 
 # load data
-load(here("shinyData.Rdata"))
+load(here("shinyData2.Rdata"))
 
 # add meta analysis
 metaData <- data$risk |>
   filter(variable_name == "study") |>
+  filter(cdm_name != "CPRD Gold") |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
 
 metaanalyses <- expand_grid(
@@ -69,4 +70,4 @@ data$risk <- data$risk |>
                            names_to = "estimate_name", values_to = "estimate_value") |>
               distinct())
 
-save(data, file = here("shinyData.Rdata"))
+save(data, file = here("shinyData2.Rdata"))

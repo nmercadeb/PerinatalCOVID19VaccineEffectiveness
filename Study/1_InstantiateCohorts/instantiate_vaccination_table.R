@@ -1,5 +1,5 @@
 info(logger, "Create vaccine schema table: ")
-cdm$temp_vax_1 <- cdm$vaccine_json %>%
+cdm$vaccine_schema <- cdm$vaccine_json %>%
   filter(cohort_definition_id == !!getId(cdm$vaccine_json, "any_covid_vaccine")) %>%
   select(-cohort_definition_id) %>%
   left_join(cdm$vaccine_json %>%
@@ -14,20 +14,7 @@ cdm$temp_vax_1 <- cdm$vaccine_json %>%
   window_order(vaccine_date) %>%
   mutate(dose_id = row_number()) %>%
   ungroup() %>%
-  compute(name = "temp_vax_1", temporary = FALSE)
-
-cdm$vaccine_schema <- cdm$temp_vax_1 %>%
-  left_join(
-    cdm$temp_vax_1 %>%
-      mutate(first_janssen = if_else(vaccine_brand == "janssen" & dose_id == 1, TRUE, FALSE)) %>%
-      filter(first_janssen==TRUE) %>%
-      select(subject_id, first_janssen) %>%
-      compute(name = "temp_vax_2", temporary = FALSE),
-    by = "subject_id"
-  ) %>%
-  mutate(
-    first_janssen = if_else(first_janssen == TRUE, TRUE, FALSE)
-  ) %>%
+  mutate(first_janssen = if_else(vaccine_brand == "janssen" & dose_id == 1, TRUE, FALSE)) %>%
   mutate(
     schema_id =
       if_else(first_janssen == TRUE,
@@ -51,7 +38,6 @@ cdm$vaccine_schema <- cdm$temp_vax_1 %>%
   filter(!is.na(schema_id)) %>%
   compute(name = "vaccine_schema", temporary = FALSE) %>%
   newCdmTable(src = cdmSource(cdm), name = "vaccine_schema")
-
 
 exclude_vax_records <- cdm$vaccine_schema |>
   group_by(subject_id) |>

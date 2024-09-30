@@ -2,7 +2,7 @@
 cdm$source_pregnant <- cdm$source_pregnant %>%
   addMatchingAgeGroup() %>%
   addRegion(database_name = database_name) %>%
-  compute()
+  compute(name = "source_matching", temporal = FALSE)
 
 summary <- list()
 matched_cohorts <- list()
@@ -20,10 +20,11 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
     # covid cohort name
     covid_name <- settings_covid$cohort_name[settings_covid$cohort_definition_id == covid_id]
     # source cohort
+    sourceName <-paste0("source_matching_", source_id, "_", "covid_id")
     matching_source <- cdm$source_pregnant %>% # source population to start matching at each iteration
       filter(cohort_definition_id == source_id) %>%
       select(-cohort_definition_id) %>%
-      compute()
+      compute(name = sourceName, temporary = FALSE, overwrite = TRUE)
     # trial weeks
     first_day <- min(unique(matching_source %>% pull(index_vaccine_date)), na.rm = TRUE)
     last_day  <- min(max(unique(matching_source %>% pull(index_vaccine_date)), na.rm = TRUE), enrollment.end, na.rm = TRUE)
@@ -49,7 +50,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
           excludeControls = working.excludeControls, objective = source_id,
           days.booster = days.booster
         ) %>%
-        compute()
+        compute(name = "working_table", temporary = FALSE, overwrite = TRUE)
       # If less than 5 vaccinated: no matching
       if (working.table %>% filter(exposed == 1) %>% tally() %>% pull() <= 5) {
         summary.matching <- summary.matching %>%
@@ -139,9 +140,10 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
       matching_source <- matching_source %>%
         anti_join(
           working.table %>% filter(exposed == 1) %>% select(subject_id), # exclude exposed
-          copy = TRUE,
+          # copy = TRUE,
           by = "subject_id"
-        )
+        )  %>%
+        compute(name = sourceName, temporary = FALSE, overwrite = TRUE)
     }
     # save summary
     summary[[jj]] <- summary.matching %>%

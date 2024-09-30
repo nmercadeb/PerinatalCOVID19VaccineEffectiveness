@@ -113,7 +113,7 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
         cohort_end_date >= week_end      # end after the week
     ) |>
     # elegible for enrollment
-    filter(enrollment_end_date >= week_start) |> # enrollment end > start date
+    filter(enrollment_end_date >= week_start & enrollment_end_date <= week_end) |> # within pregnancy exposure time
     # no covid-19 in the last three months from week start date
     addCohortIntersectFlag(
       targetCohortTable = "covid",
@@ -126,13 +126,11 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
     select(-covid) |>
     # classify exposed - unexposed
     mutate(exposed = if_else(index_vaccine_date >= week_start & index_vaccine_date <= week_end, 1, 0),
-           exposed = if_else(is.na(exposed), 0, exposed)) |>
+           exposed = if_else(is.na(exposed) | is.na(index_vaccine_date), 0, exposed)) |>
     # exclude if not pfizer or moderna
     filter(!(exposed == 1 & index_vaccine_brand %in% c("janssen", "astrazeneca", "unkown"))) |>
     # exclude if exposed before week start
     filter(index_vaccine_date >= week_start | is.na(index_vaccine_date)) |>
-    # in observation at week end date
-    filter(cohort_end_date >= week_end) |>
     # covid during the week
     addCohortIntersectDate(
       targetCohortTable = "covid",
@@ -156,6 +154,17 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
 }
 
 matchItDataset <- function(x, objective_id) {
+  disselect <- c(
+    "cohort_start_date", "cohort_end_date", "observation_period_start_date",
+    "covid_date_week", "week_start", "week_end", "index_vaccine_date",
+    "index_vaccine_brand", "pregnancy_start_date", "pregnancy_end_date",
+    "enrollment_end_date"
+  )
+  if (objective_id == 1) {
+    disselect <- c(disselect, "previous_vaccine_date", "previous_vaccine_brand",
+                   "days_previous_vaccine", "days_previous_vaccine_squared",
+                   "days_previous_vaccine_band")
+  }
   x <- x %>%
     mutate(
       trimester = cut(
@@ -189,6 +198,7 @@ matchItDataset <- function(x, objective_id) {
       censorDate = "pregnancy_start_date",
       nameStyle = "pregnant_visits"
     ) |>
+    compute(name = "temp", temporary = FALSE, overwrite = TRUE) |>
     addCohortIntersectCount(
       targetCohortTable = "covid",
       targetCohortId = covid_id,
@@ -214,6 +224,7 @@ matchItDataset <- function(x, objective_id) {
       window = list(c(-Inf, -1)),
       nameStyle = "{cohort_name}"
     ) |>
+    compute(name = "temp", temporary = FALSE, overwrite = TRUE) |>
     addCohortIntersectCount(
       targetCohortTable = "mother_table",
       indexDate = "pregnancy_start_date",
@@ -222,15 +233,17 @@ matchItDataset <- function(x, objective_id) {
     ) %>%
     mutate(
       previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start")),
-      days_previous_vaccine = as.numeric(!!datediff("previous_vaccine_date", "week_start"))
+      days_previous_vaccine = as.numeric(!!datediff("previous_vaccine_date", "week_start")),
+      days_previous_vaccine_squared = days_previous_vaccine*days_previous_vaccine,
+      days_previous_vaccine_band = cut(
+        days_previous_vaccine,
+        !!seq(0, 21*100, 21),
+        include.lowest = TRUE
+      )
     ) |>
     collect() |>
-    select(-any_of(c(
-      "cohort_start_date", "cohort_end_date", "observation_period_start_date",
-      "covid_date_week", "week_start", "week_end", "index_vaccine_date",
-      "index_vaccine_brand", "pregnancy_start_date", "pregnancy_end_date",
-      "enrollment_end_date"
-    )))
+    select(!any_of(disselect))
+  return(x)
 }
 
 addAttritionReason <- function(attrition_table, reason, x) {
