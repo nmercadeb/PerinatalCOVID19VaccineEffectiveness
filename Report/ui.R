@@ -850,15 +850,18 @@ ui <- dashboardPage(
       # Followup ----
       tabItem(
         tabName = "followup",
-        h3("Follow-up end"),
-        p("End of follow-up."),
+        h3("Available follow-up"),
+        p("Patient available follow-up distribution"),
         selectors(
           data = data$censoring,
           prefix = "followup",
-          columns = c("CDM name", "Cohort name"),
+          columns = c("CDM name", "Comparison", "Covid definition", "Follow-up end", "Reason"),
           default = list(
             "cdm_name" = data$censoring$`CDM name`[1],
-            "Cohort name" = data$censoring$`Cohort name`[1]
+            "Comparison" = data$censoring$Comparison[1],
+            "Covid definition" = data$censoring$`Covid definition`[1],
+            "Follow-up end" = data$censoring$`Follow-up end`[1],
+            "Reason" = data$censoring$Reason
           )
         ),
         downloadButton("followup_summary_download_table", "Download table in word"),

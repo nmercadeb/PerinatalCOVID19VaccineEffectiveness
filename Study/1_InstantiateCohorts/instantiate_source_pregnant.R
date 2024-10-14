@@ -224,8 +224,11 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
     nameStyle = "next_pregnancy_date"
   ) %>%
   mutate(
+    reason = if_else(
+      !is.na(next_pregnancy_date) & next_pregnancy_date < cohort_end_date,
+      "Next pregnancy", "End of observation"),
     cohort_end_date = if_else(
-      !is.na(next_pregnancy_date) & next_pregnancy_date <= cohort_end_date,
+      !is.na(next_pregnancy_date) & next_pregnancy_date < cohort_end_date,
       !!dateadd("next_pregnancy_date", -1), cohort_end_date),
     cohort_end_date = as.Date(cohort_end_date),
     enrollment_end_date = !!dateadd("pregnancy_start_date", 238),
@@ -233,7 +236,7 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   ) %>%
   select(cohort_definition_id, subject_id, cohort_start_date, cohort_end_date, pregnancy_id,
          pregnancy_start_date, pregnancy_end_date, enrollment_end_date, age, index_vaccine_date,
-         index_vaccine_brand, previous_vaccine_date, previous_vaccine_brand, observation_period_start_date) %>%
+         index_vaccine_brand, previous_vaccine_date, previous_vaccine_brand, observation_period_start_date, reason) %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   addInObservation(nameStyle = "start") %>%
   filter(start == 1) %>%

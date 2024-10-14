@@ -222,6 +222,7 @@ data$kaplan_meier <- pre_data$kaplan_meier |>
   select(-c("result_id", "result_type", "package_name", "package_version", "group_name", "group_level", "analysis_type", "variable_name", "variable_level", "estimate_type", "exposed")) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
 data$censoring <- pre_data$censoring |>
+  niceCohortName(col = "cohort_name", removeCol = TRUE) |>
   mutate(
     n = as.numeric(n),
     N = if_else(n < 5 & n != 0, "<5", niceNum(n)),
@@ -229,7 +230,10 @@ data$censoring <- pre_data$censoring |>
     "Mean (SD)" = paste0(niceNum(mean, 2), " (", niceNum(sd, 2), ")"),
     "Median (Q25-Q75)" = paste0(niceNum(median, 2), " (", niceNum(q25, 2), " - ", niceNum(q75, 2), ")")
   ) |>
-  select("CDM name" = "cdm_name", "Cohort name" = "cohort_name", Reason, N, "Mean (SD)", "Median (Q25-Q75)")
+  select("CDM name" = "cdm_name", "Comparison" = "comparison",
+         "Covid definition" = "covid_definition",
+         "Follow-up end" = "followup_end",
+         "Reason", "N", "Mean (SD)", "Median (Q25-Q75)")
 
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))

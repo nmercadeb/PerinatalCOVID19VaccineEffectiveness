@@ -52,7 +52,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         ) %>%
         compute(name = "working_table", temporary = FALSE, overwrite = TRUE)
       # If less than 5 vaccinated: no matching
-      if (working.table %>% filter(exposed == 1) %>% tally() %>% pull() <= 5) {
+      if (working.table %>% filter(exposed == 1) %>% tally() %>% pull() < 5) {
         summary.matching <- summary.matching %>%
           union_all(
             tibble(
@@ -76,7 +76,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
             exactMatch = c("maternal_age", "gestational_age")
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
             exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
-            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - ", paste0(exactMatch, collapse = " - ")))
+            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - reason - ", paste0(exactMatch, collapse = " - ")))
             working.match <- matchit(formula = psFormula, method = "nearest",
                                      distance = "glm", caliper = 0.2,
                                      ratio = 1, std.caliper = FALSE,
@@ -85,7 +85,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
             # Save matched pairs
             working.matched.population <- match.data(working.match) %>%
               inner_join(working.table,
-                         by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed"),
+                         by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed", "reason"),
                          copy = TRUE) %>%
               mutate(match_id = paste0(gsub("-", "", week.k), subclass))
             # Assign index dates and vaccine brand
@@ -161,10 +161,9 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         ) %>%
         select(cohort_definition_id,  subject_id, cohort_start_date, cohort_end_date,
                match_id, exposed, pregnancy_id, pregnancy_start_date, pregnancy_end_date,
-               trimester, index_vaccine_date, vaccine_brand, age, maternal_age)
+               trimester, index_vaccine_date, vaccine_brand, age, maternal_age, reason)
     } else {
-      matched_cohorts[[jj]] <- matched.population %>%
-        bind_rows()
+      matched_cohorts[[jj]] <- matched.population %>% bind_rows()
     }
 
     # cohort settings
@@ -192,95 +191,3 @@ summary %>% bind_rows() %>% mutate(cdm_name = cdmName(cdm)) %>%
 matched_cohorts <- matched_cohorts %>% bind_rows()
 class(matched_cohorts) <- class(matched_cohorts)[!class(matched_cohorts) %in% "matchdata"]
 cdm <- insertTable(cdm, name = "matched_raw", table = matched_cohorts, overwrite = TRUE)
-cdm$matched_raw <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "matched_raw"))) %>%
-  compute()
-
-# "clean" cohort ----
-# "clean" cohort
-cdm$matched <- cdm$matched_raw %>%
-  mutate(reason = "end_observation") %>%
-  left_join(
-    cdm$vaccine_schema %>%
-      filter(!is.na(schema_id)) %>%
-      select(subject_id, dose_id, vaccine_date) %>%
-      pivot_wider(names_from = dose_id, values_from = vaccine_date) %>%
-      select(subject_id, "partial" = "1", "complete" = "2", "booster_1" = "3", "booster_2" = "4"),
-    by = "subject_id"
-  ) %>%
-  ##### Subject level censoring
-  mutate(
-    # do not follow primary schema treatment
-    # days_primary = !!datediff("cohort_start_date", "complete"),
-    recommended_lower = if_else(vaccine_brand == "pfizer", as.Date(!!dateadd("cohort_start_date", pfizer[1])), as.Date(!!dateadd("cohort_start_date", moderna[1]))),
-    recommended_upper = if_else(vaccine_brand == "pfizer", as.Date(!!dateadd("cohort_start_date", pfizer[2])), as.Date(!!dateadd("cohort_start_date", moderna[2]))),
-    reason = case_when(
-      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & is.na(.data$complete) & .data$cohort_end_date > .data$recommended_upper ~ "no second dose", # censor at window recommended days upper
-      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$complete < .data$recommended_lower & .data$cohort_end_date >= .data$complete ~ "second dose before recommended time", # censor at 2nd dose - 1 day
-      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$complete > .data$recommended_upper & .data$cohort_end_date > .data$recommended_upper ~ "second dose after recommended time", # censor at window recommended days upper
-      .default = .data$reason
-    ),
-    cohort_end_date =  case_when(
-      .data$reason == "no second dose" ~ recommended_upper, # censor at window recommended days upper
-      .data$reason == "second dose before recommended time" ~ as.Date(!!dateadd("complete", -1)), # censor at 2nd dose
-      .data$reason == "second dose after recommended time" ~ recommended_upper,
-      .default = .data$cohort_end_date
-    ),
-    # deviate from treatment strategy
-    reason = case_when(
-      .data$cohort_definition_id %in% 1:2 & .data$exposed == 1 & .data$cohort_end_date >= .data$booster_1 ~ "Exposed 3rd dose",
-      .data$cohort_definition_id %in% 1:2 & .data$exposed == 0 & .data$cohort_end_date >= .data$partial ~ "Unexposed 1st dose",
-      .data$cohort_definition_id %in% 3:4 & .data$exposed == 1 & .data$cohort_end_date >= .data$booster_2 ~ "Exposed 4th dose",
-      .data$cohort_definition_id %in% 3:4 & .data$exposed == 0 & .data$cohort_end_date >= .data$booster_1 ~ "Unexposed 3rd dose",
-      .default = .data$reason
-    ),
-    cohort_end_date = case_when(
-      grepl("3rd dose", .data$reason) ~ as.Date(add_days(.data$booster_1, -1)),
-      .data$reason == "Unexposed 1st dose" ~ as.Date(add_days(.data$partial, -1)),
-      .data$reason == "Exposed 4th dose" ~ as.Date(add_days(.data$booster_2, -1)),
-      .default = cohort_end_date
-    )
-  ) %>%
-  compute(name = "matched", temporary = FALSE)
-
-##### Match level censoring
-cdm$matched  <- cdm$matched  %>%
-  select(-reason, -cohort_end_date) %>%
-  inner_join(
-    cdm$matched  %>%
-      group_by(cohort_definition_id, match_id) %>%
-      filter(cohort_end_date == min(cohort_end_date)) %>%
-      ungroup() %>%
-      select(cohort_definition_id, match_id, cohort_end_date, reason) %>%
-      distinct() %>%
-      group_by(cohort_definition_id, match_id) %>%
-      mutate(reason = str_flatten(reason, collapse = "; ")) %>%
-      ungroup() %>%
-      distinct(),
-    by = c("cohort_definition_id", "match_id")
-  ) %>%
-  compute(name = "matched", temporary = FALSE)
-
-# Report censoring
-censoring <- cdm$matched  %>%
-  inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
-  mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
-  group_by(cohort_name, reason) %>%
-  summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75)) %>%
-  collect()
-
-write_csv(
-  censoring |> mutate(cdm_name = cdmName(cdm)),
-  file = here(output_folder, paste0("censoring_", cdmName(cdm), ".csv"))
-)
-
-cdm$matched <- cdm$matched %>%
-  group_by(cohort_definition_id, match_id) %>%
-  mutate(cohort_end_date = min(cohort_end_date)) %>%
-  select(-c(maternal_age, recommended_lower, recommended_upper, reason)) %>%
-  compute(name = "matched", temporary = FALSE) %>%
-  omopgenerics::newCohortTable(cohortSetRef = cohort_set, cohortAttritionRef = cohort_attrition)
-
-write_csv(
-  attrition(cdm$matched) |> inner_join(settings(cdm$matched)) |> mutate(cdm_name = cdmName(cdm)),
-  file = here(output_folder, paste0("population_attrition_", cdmName(cdm), ".csv"))
-)

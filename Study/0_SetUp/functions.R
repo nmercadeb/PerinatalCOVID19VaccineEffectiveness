@@ -113,7 +113,7 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
         cohort_end_date >= week_end      # end after the week
     ) |>
     # elegible for enrollment
-    filter(enrollment_end_date >= week_start & enrollment_end_date <= week_end) |> # within pregnancy exposure time
+    filter(enrollment_end_date >= week_start) |> # within pregnancy exposure time
     # no covid-19 in the last three months from week start date
     addCohortIntersectFlag(
       targetCohortTable = "covid",
@@ -129,6 +129,8 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
            exposed = if_else(is.na(exposed) | is.na(index_vaccine_date), 0, exposed)) |>
     # exclude if not pfizer or moderna
     filter(!(exposed == 1 & index_vaccine_brand %in% c("janssen", "astrazeneca", "unkown"))) |>
+    # within enrollment oregnant period
+    filter(!(exposed == 1 & index_vaccine_date > enrollment_end_date)) |>
     # exclude if exposed before week start
     filter(index_vaccine_date >= week_start | is.na(index_vaccine_date)) |>
     # covid during the week
@@ -295,8 +297,7 @@ trimDates <- function(x, interval, outcomes, endData, analysis) {
   }
   # set end date
   if (is.infinite(interval[2])) {
-    x <- x |>
-      mutate("end_date" = .data[[endData]])
+    x <- x |> mutate("end_date" = .data[[endData]])
   } else {
     x <- x %>%
       mutate("end_date" = !!dateadd(date = "cohort_start_date", number = interval[2]))
@@ -354,7 +355,7 @@ survivalFormat <- function(x, out) {
 
 estimateSurvival <- function(data, group, strata,
                              cox = TRUE, binomial = FALSE,
-                             coxTime = TRUE) {
+                             coxTime = TRUE, coxSandwich = TRUE) {
   results <- list()
   groupLevel = unique(data |> pull(.data[[group]]))
   k <- 1
@@ -423,7 +424,36 @@ estimateSurvival <- function(data, group, strata,
           })
         }
 
-        # cox yime ----
+        # cox sandwitch ----
+        if (coxSandwich) {
+          tryCatch({
+            formula <- as.formula(paste0("Surv(time, status) ~ ", covariates_formula))
+            coxRegression <- coxph(formula,  data = data.k, robust = TRUE, id = "subject_id")
+            results[[k]] <-  summary(coxRegression)$coefficients |>
+              as_tibble(rownames = "variable") |>
+              select(
+                "variable", "coef", "exp_coef" = "exp(coef)",
+                "se_coef" = "se(coef)", "z", "p" = "Pr(>|z|)"
+              ) |>
+              filter(variable == "exposed") |>
+              left_join(
+                summary(coxRegression)$conf.int |>
+                  as_tibble(rownames = "variable") |>
+                  select("variable", "lower_ci" = "lower .95", "upper_ci" = "upper .95"),
+                by = "variable"
+              ) |>
+              regressionToSummarised(
+                type = "cox-sandwich", groupLevel = group.k,
+                strataName = strata.k, strataLevel = strataLevel.k
+              ) |>
+              mutate(exposed = NA) # for KM and followup
+            k <- k + 1
+          },
+          error = function(e) {
+          })
+        }
+
+        # cox time ----
         if (coxTime) {
           tryCatch({
             formula <- as.formula(paste0("Surv(time, status) ~ ", paste0(covariates_formula, " + start_date")))
@@ -443,6 +473,35 @@ estimateSurvival <- function(data, group, strata,
               ) |>
               regressionToSummarised(
                 type = "cox-time", groupLevel = group.k,
+                strataName = strata.k, strataLevel = strataLevel.k
+              ) |>
+              mutate(exposed = NA) # for KM and followup
+            k <- k + 1
+          },
+          error = function(e) {
+          })
+        }
+
+        # cox sandwich + time ----
+        if (coxSandwich & coxTime) {
+          tryCatch({
+            formula <- as.formula(paste0("Surv(time, status) ~ ", paste0(covariates_formula, " + start_date")))
+            coxRegression <- coxph(formula,  data = data.k, robust = TRUE, id = "subject_id")
+            results[[k]] <-  summary(coxRegression)$coefficients |>
+              as_tibble(rownames = "variable") |>
+              select(
+                "variable", "coef", "exp_coef" = "exp(coef)",
+                "se_coef" = "se(coef)", "z", "p" = "Pr(>|z|)"
+              ) |>
+              filter(variable == "exposed") |>
+              left_join(
+                summary(coxRegression)$conf.int |>
+                  as_tibble(rownames = "variable") |>
+                  select("variable", "lower_ci" = "lower .95", "upper_ci" = "upper .95"),
+                by = "variable"
+              ) |>
+              regressionToSummarised(
+                type = "cox-sandwich-time", groupLevel = group.k,
                 strataName = strata.k, strataLevel = strataLevel.k
               ) |>
               mutate(exposed = NA) # for KM and followup

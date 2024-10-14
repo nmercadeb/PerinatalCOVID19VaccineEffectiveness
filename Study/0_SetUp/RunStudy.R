@@ -92,6 +92,7 @@ if (runPSMathcing) {
   }
   info(logger, "STEP 2 MATCHING ----")
   source(here("2_Matching", "matching.R"))
+  source(here("2_Matching", "clean_matched_cohort.R"))
 }
 
 if (runCharacterisation) {

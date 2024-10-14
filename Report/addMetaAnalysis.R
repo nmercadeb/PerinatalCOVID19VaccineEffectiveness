@@ -19,24 +19,18 @@ library(meta)
 source(here("functions.R"))
 
 # load data
-load(here("shinyData2.Rdata"))
+load(here("shinyData.Rdata"))
 
 # add meta analysis
 metaData <- data$risk |>
   filter(variable_name == "study") |>
-  filter(cdm_name != "CPRD Gold") |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
 
-metaanalyses <- expand_grid(
-  comparison = metaData$comparison |> unique(),
-  covid_definition = metaData$covid_definition |> unique(),
-  strata_name = metaData$strata_name |> unique(),
-  strata_level = metaData$strata_level |> unique(),
-  regression = metaData$regression |> unique(),
-  followup_end = metaData$followup_end |> unique(),
-  window = metaData$window |> unique(),
-  outcome = metaData$outcome |> unique()
-)
+metaanalyses <- metaData |>
+  distinct(
+    comparison, covid_definition, strata_name, strata_level, regression,
+    followup_end, window, outcome
+  )
 
 results <- NULL
 for (jj in 1:nrow(metaanalyses)) {
