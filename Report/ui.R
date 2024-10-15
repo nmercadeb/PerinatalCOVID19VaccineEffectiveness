@@ -564,7 +564,7 @@ ui <- dashboardPage(
           columns = c("followup_end", "window"),
           default = list(
             "window" = "0_Inf",
-            "followup_end" = "cohort_end_date"
+            "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
         tabsetPanel(
@@ -629,7 +629,7 @@ ui <- dashboardPage(
           columns = c("followup_end", "window"),
           default = list(
             "window" = "8_Inf",
-            "followup_end" = "cohort_end_date"
+            "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
         tabsetPanel(
@@ -676,7 +676,7 @@ ui <- dashboardPage(
             "regression" = "cox",
             "outcome" = data$risk |> filter(variable_name == "nco") |> pull(outcome) |> unique(),
             "window" = "0_Inf",
-            "followup_end" = "cohort_end_date"
+            "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
         tabsetPanel(
@@ -755,7 +755,7 @@ ui <- dashboardPage(
           columns = c("followup_end", "window"),
           default = list(
             "window" = "8_Inf",
-            "followup_end" = "cohort_end_date"
+            "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
         tabsetPanel(
