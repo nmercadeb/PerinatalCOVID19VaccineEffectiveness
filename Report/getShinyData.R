@@ -182,7 +182,7 @@ data$survival_summary <- pre_data$relative_risk |>
   niceOutcomeName() |>
   select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value)
 data$risk <- pre_data$relative_risk |>
-  filter(result_type %in% c("cox", "cox-time")) |>
+  filter(grepl("cox", result_type)) |>
   splitGroup() |>
   splitAdditional() |>
   rename("outcome" = "variable_level", "regression" = "result_type") |>

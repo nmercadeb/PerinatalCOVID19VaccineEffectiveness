@@ -5,8 +5,8 @@ outcomes <- colnames(cdm$survival_raw)
 outcomes <- outcomes[grepl("nco_|study_", outcomes)]
 study_ends <- c("cohort_end_date", "cohort_end_date_pregnancy")
 windows <- list(
-  c(0, 14), c(15, 28), c(8, 90), c(29, 90), c(29, 180), c(91, 180), c(181, 365),
-  c(366, Inf), c(8, 180), c(8, 365), c(8, Inf), c(0, Inf) # last one only for NCO
+  c(0, 14), c(15, 28), c(15, 90), c(29, 90), c(29, 180), c(91, 180), c(181, 365),
+  c(366, Inf), c(15, 180), c(15, 365), c(15, Inf), c(0, Inf) # last one only for NCO
 )
 analyses <- c("main")
 
