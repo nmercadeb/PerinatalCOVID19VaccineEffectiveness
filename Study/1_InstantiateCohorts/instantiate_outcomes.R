@@ -42,8 +42,6 @@ cdm <- generateVisitRelatedOutcomes(
 cdm <- omopgenerics::bind(cdm$temp_covid, cdm$temp_inpatient, cdm$temp_inpatient_delivery,
                           cdm$temp_icu, cdm$temp_icu_delivery, name = "outcomes")
 
-cdm <- omopgenerics::dropTable(cdm, starts_with("temp"))
-
 # export counts
 read_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name, ".csv"))) %>%
   union_all(cdm$outcomes %>%
@@ -54,3 +52,5 @@ read_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name,
                          by = "cohort_definition_id")) %>%
   mutate(cdm_name = cdmName(cdm)) %>%
   write_csv(file = here(output_folder, paste0("json_cohort_counts_", database_name, ".csv")))
+
+omopgenerics::dropTable(cdm, starts_with("temp"))
