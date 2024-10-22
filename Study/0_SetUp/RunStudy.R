@@ -88,7 +88,7 @@ if (runPSMathcing) {
       .softValidation = TRUE
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
-      compute()
+      compute(name = "vaccine_schema", temporary = FALSE, overwrite = TRUE)
   }
   info(logger, "STEP 2 MATCHING ----")
   source(here("2_Matching", "matching.R"))
@@ -112,7 +112,7 @@ if (runCharacterisation) {
       .softValidation = TRUE
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
-      compute()
+      compute(name = "vaccine_schema", temporary = FALSE, overwrite = TRUE)
   }
   info(logger, "STEP 3 EVALUATE COHORTS ----")
   source(here("3_Characterisation", "characteristics.R"))
@@ -131,7 +131,7 @@ if (runOutcomeModel) {
       cohortTables = c(nco_table_name, outcomes_table_name, matched_cohort_table_name)
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
-      compute()
+      compute(name = "vaccine_schema", temporary = FALSE, overwrite = TRUE)
   }
   source(here("4_OutcomeModel", "get_survival_data.R"))
   source(here("4_OutcomeModel", "estimate_survival.R"))
