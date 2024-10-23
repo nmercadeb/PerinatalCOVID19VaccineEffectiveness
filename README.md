@@ -1,5 +1,5 @@
 # Perinatal COVID-19 vaccine effectiveness
-You can download this repository as a zip folder using Code -> Download ZIP, or you can clone it using GitHub Desktop.
+You can download this repository as a zip folder using Code -> Download ZIP.
 ## Diagnostics
 In the folder **Diagnostics** there is code for running diagnostics and for deploying the shiny with the results.
 1) **PhenotypeR:** work through the `CodeToRun.R` script to execute the diagnostics. After running you should then have zip file with the results.
