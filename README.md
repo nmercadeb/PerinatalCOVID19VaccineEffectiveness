@@ -14,4 +14,4 @@ When opening an R project (for all projects in this repository*) follow this 3 s
 2. Execute `renv::restore()` --> this will load the relevant package with the target version.
 3. Restart your R sesion `.rs.restartR()` --> make changes effective.
 
-*phenotypeR.Rproj, ShinyPhenotypeR.Rproj, and Study.Rproj
+*phenotypeR.Rproj, ShinyPhenotypeR.Rproj, Shiny.Rproj, and Study.Rproj
