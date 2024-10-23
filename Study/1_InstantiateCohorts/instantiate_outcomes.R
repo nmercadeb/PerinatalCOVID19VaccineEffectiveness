@@ -5,7 +5,6 @@ cdm$temp_delivery <- tbl(db, inSchema(schema = mother_table_schema, table = moth
   {if (grepl("CPRD", database_name)) {
     rename(., "pregnancy_outcome" = "original_outcome")
   } else . } %>%
-  compute() |>
   filter(pregnancy_outcome == 4092289) |>
   compute(name = "temp_delivery", temporary = FALSE, overwrite = TRUE)
 
