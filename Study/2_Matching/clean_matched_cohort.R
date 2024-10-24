@@ -66,7 +66,6 @@ cdm$matched  <- cdm$matched  %>%
   inner_join(
     cdm$matched  %>%
       group_by(cohort_definition_id, match_id) %>%
-      mutate(reason = paste0(reason, "_", exposed)) %>%
       filter(cohort_end_date == min(cohort_end_date)) %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, cohort_end_date, reason) %>%

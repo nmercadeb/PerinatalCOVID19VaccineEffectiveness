@@ -186,7 +186,7 @@ matchItDataset <- function(x, objective_id) {
     addTableIntersectCount(
       tableName = "visit_occurrence",
       indexDate = "week_start",
-      window = list(c(-365, -181), c(-180, -31), c(-30, -1)),
+      window = list("first" = c(-365, -181), "second" = c(-180, -31), "third" = c(-30, -1)),
       targetStartDate = "visit_start_date",
       targetEndDate = NULL,
       nameStyle = "visits_{window_name}"
@@ -240,6 +240,21 @@ matchItDataset <- function(x, objective_id) {
       days_previous_vaccine_band = cut(
         days_previous_vaccine,
         !!seq(0, 21*100, 21),
+        include.lowest = TRUE
+      ),
+      visits_first_band = cut(
+        visits_first,
+        !!seq.int(0, 1000, 5),
+        include.lowest = TRUE
+      ),
+      visits_second_band = cut(
+        visits_second,
+        !!seq.int(0, 1000, 5),
+        include.lowest = TRUE
+      ),
+      visits_third_band = cut(
+        visits_third,
+        !!seq.int(0, 1000, 5),
         include.lowest = TRUE
       )
     ) |>
