@@ -443,7 +443,7 @@ estimateSurvival <- function(data, group, strata,
         if (coxSandwich) {
           tryCatch({
             formula <- as.formula(paste0("Surv(time, status) ~ ", covariates_formula))
-            coxRegression <- coxph(formula,  data = data.k, robust = TRUE, id = "subject_id")
+            coxRegression <- coxph(formula,  data = data.k, robust = TRUE)
             results[[k]] <-  summary(coxRegression)$coefficients |>
               as_tibble(rownames = "variable") |>
               select(
@@ -501,7 +501,7 @@ estimateSurvival <- function(data, group, strata,
         if (coxSandwich & coxTime) {
           tryCatch({
             formula <- as.formula(paste0("Surv(time, status) ~ ", paste0(covariates_formula, " + start_date")))
-            coxRegression <- coxph(formula,  data = data.k, robust = TRUE, id = "subject_id")
+            coxRegression <- coxph(formula,  data = data.k, robust = TRUE)
             results[[k]] <-  summary(coxRegression)$coefficients |>
               as_tibble(rownames = "variable") |>
               select(
