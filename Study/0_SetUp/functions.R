@@ -356,7 +356,7 @@ survivalFormat <- function(x, out) {
     )
   x <- x %>%
     mutate(
-      status = if_else(.data[[out]] > start_date & .data[[out]] < end_date, 1, 0),
+      status = if_else(.data[[out]] >= start_date & .data[[out]] < end_date, 1, 0),
       status = if_else(is.na(status), 0, status),
       time = if_else(status == 1, !!datediff("start_date", out), !!datediff("start_date", "end_date")),
     ) |>
