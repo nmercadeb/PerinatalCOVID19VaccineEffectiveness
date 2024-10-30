@@ -47,6 +47,10 @@ ui <- dashboardPage(
           tabName = "index_date"
         ),
         menuSubItem(
+          text = "Follow-up time",
+          tabName = "followup"
+        ),
+        menuSubItem(
           text = "Vaccine uptake",
           tabName = "vaccination"
         ),
@@ -80,22 +84,18 @@ ui <- dashboardPage(
         )
       ),
       menuItem(
-        text = "Study outcomes",
+        text = "Vaccine effectiveness",
         tabName = "outcomes",
         menuSubItem(
           text = "Summary",
           tabName = "study_summary"
         ),
         menuSubItem(
-          text = "Follow-up end",
-          tabName = "followup"
-        ),
-        menuSubItem(
           text = "Kaplan-Meier",
           tabName = "kaplan_meier"
         ),
         menuSubItem(
-          text = "Forest plot",
+          text = "Hazard Ratios",
           tabName = "study_forest_plot"
         )
       )
@@ -115,7 +115,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "cohort_count",
         h3("Cohort counts"),
-        p("Cohort counts for each cohort of the present study"),
+        p("Counts for each JSON cohort instantiated in the study"),
         selectors(data = data$cohort_count, prefix = "cohort_count",
                   columns = c("cdm_name", "cohort_group"), multiple = TRUE,
                   default = list("cdm_name" = data$cohort_count$cdm_name[1],
@@ -124,17 +124,30 @@ ui <- dashboardPage(
           style = "display: inline-block;vertical-align:top; width: 150px;",
           uiOutput("cohort_count_cohort_name_picker")
         ),
-        div(
-          style = "margin-bottom: 20px;",
-          downloadButton("cohort_count_download_table", "Download current table")
-        ),
-        DTOutput("cohort_count_table") %>% withSpinner()
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Raw data",
+            h5(),
+            div(
+              style = "margin-bottom: 20px;",
+              downloadButton("cohort_count_download_table", "Download current table")
+            ),
+            DTOutput("cohort_count_table") %>% withSpinner()
+          ),
+          tabPanel(
+            "Table",
+            h5(),
+            downloadButton("weekly_counts_table_download_word", "Download table in word"),
+            gt_output('cohort_count_table_formatted') %>% withSpinner()
+          )
+        )
       ),
       ### matching counts ----
       tabItem(
         tabName = "weekly_counts",
-        h3("Matching counts"),
-        p("Enrollment counts during propensity score matching:"),
+        h3("Sequential matching counts"),
+        p("Counts of elegible and matched individuals for each calendar week during sequential matching."),
         selectors(
           data$weekly_counts, prefix = "weekly_cnts", columns = c("cdm_name", "comparison", "covid_definition"),
           default = list(
@@ -146,16 +159,16 @@ ui <- dashboardPage(
         tabsetPanel(
           type = "tabs",
           tabPanel(
-            "Summary",
-            h5(),
-            downloadButton("weekly_counts_summary_download", "Download table in word"),
-            gt_output('weekly_counts_summary') %>% withSpinner()
-          ),
-          tabPanel(
-            "Table",
+            "Raw data",
             h5(),
             downloadButton("weekly_counts_table_download", "Download table as csv"),
             DTOutput('weekly_counts_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Summary table",
+            h5(),
+            downloadButton("weekly_counts_summary_download", "Download table in word"),
+            gt_output('weekly_counts_summary') %>% withSpinner()
           ),
           tabPanel(
             "Plot",
@@ -164,8 +177,8 @@ ui <- dashboardPage(
               pickerInput(
                 inputId = "weekly_plot",
                 label = "Matching status",
-                choices = c("exposed_pre", "unexposed_post"),
-                selected = c("exposed_pre", "unexposed_post"),
+                choices = c("elegible_exposed", "matched_exposed", "elegible_unexposed", "matched_unexposed"),
+                selected = c("elegible_exposed", "matched_exposed"),
                 options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
                 multiple = TRUE,
                 inline = TRUE
@@ -183,7 +196,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "index_date",
         h3("Index date"),
-        p("Distribution of index dates (patient follow-up start date)."),
+        p("Distribution of index date (patient follow-up start date)."),
         selectors(
           data$index_date, prefix = "index_dates",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -212,16 +225,16 @@ ui <- dashboardPage(
         tabsetPanel(
           type = "tabs",
           tabPanel(
-            "Summary",
-            h5(),
-            downloadButton("index_date_summary_download", "Download table in word"),
-            gt_output('index_date_summary') %>% withSpinner()
-          ),
-          tabPanel(
-            "Table",
+            "Raw daya",
             h5(),
             downloadButton("index_date_table_download", "Download table as csv"),
             DTOutput('index_date_table') %>% withSpinner()
+          ),
+          tabPanel(
+            "Summary table",
+            h5(),
+            downloadButton("index_date_summary_download", "Download table in word"),
+            gt_output('index_date_summary') %>% withSpinner()
           ),
           tabPanel(
             "Plot",
@@ -240,14 +253,14 @@ ui <- dashboardPage(
         tabName = "reenrollment",
         h3("Re-enrollments"),
         p("Number of subjects firstly enrolled as controls which later became
-          vaccinated an contributed in the exposed group."),
+          vaccinated an are re-enrolled in the exposure cohort."),
         selectors(
           data$index_date, prefix = "reenrolment",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
             "comparison" = data$index_date$comparison[1],
-            "covid_definition" = data$index_date$covid_definition[1],
+            "covid_definition" = "diagnostic_test",
             "strata_name" = data$index_date$strata_name[1]
           )
         ),
@@ -261,6 +274,7 @@ ui <- dashboardPage(
             "Raw data",
             h5(),
             downloadButton("reenrolment_table_download", "Download table as csv"),
+            h5(),
             DTOutput('reenrolment_table') %>% withSpinner()
           ),
           tabPanel(
@@ -275,7 +289,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "vaccination",
         h3("Vaccine uptake"),
-        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine in the study population."),
+        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine in the matched study population. Uptake refers to COVID-19 vaccination anytime during observation time in the database."),
         selectors(
           data$vaccine_distribution, prefix = "vaccination",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -291,6 +305,7 @@ ui <- dashboardPage(
           uiOutput("vaccination_strata_level")
         ),
         div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
           pickerInput(
             inputId = "vaccination_exposed",
             label = "Exposure",
@@ -319,7 +334,7 @@ ui <- dashboardPage(
         tabsetPanel(
           type = "tabs",
           tabPanel(
-            "Raw",
+            "Raw data",
             h5(),
             downloadButton("vaccination_table_download", "Download table as csv"),
             DTOutput('vaccination_table') %>% withSpinner()
@@ -345,7 +360,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "pregnant_vaccination",
         h3("Vaccination during pregnancy"),
-        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine in the study population."),
+        p("Uptake of 1st, 2nd, 3rd and 4th COVID-19 vaccine while pregnant in the macthed study population."),
         selectors(
           data$vaccine_distribution, prefix = "pregnant_vax",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -395,7 +410,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "attrition",
         h3("Population attrition"),
-        p("Population enrollment attrition"),
+        p("Study population attrition. Reason refers to inclusion criteria."),
         selectors(
           data$population_attrition, prefix = "attrition",
           columns = c("cdm_name", "comparison", "covid_definition"),
@@ -415,7 +430,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "count",
         h3("Population counts"),
-        p("Population counts"),
+        p("Number of patients for each database, analysis, and cohort."),
         selectors(
           data$population_count, prefix = "pop_count",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -453,7 +468,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "baseline_characteristics",
         h3("Baseline characteristics"),
-        p("Characterisation of the population before index date"),
+        p("Characterisation of the macthed study population at baseline"),
         selectors(
           data$baseline, prefix = "baseline",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
@@ -478,7 +493,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "large_scale_characteristics",
         h3("Large scale characteristics"),
-        p("Large scale characeristics for each cohort and strata of the study"),
+        p("Large scale characeristics for each cohort and strata in the study, in diferent time windows relative to index date"),
         selectors(
           data = data$large_scale,
           prefix = "large",
@@ -501,7 +516,7 @@ ui <- dashboardPage(
         ),
         div(
           style = "display: inline-block;vertical-align:center; width: 150px;",
-          downloadButton("large_scale_download_table", "Download current as csv")
+          downloadButton("large_scale_download_table", "Download current table as csv")
         ),
         DTOutput("large_scale_table") %>% withSpinner()
       ),
@@ -509,7 +524,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "smd",
         h3("Standardised mean differences"),
-        p("Standardised mean differences between exposed and unexposed cohorts"),
+        p("Standardised mean differences between macthed exposed and unexposed cohorts in diferent time windows relative to index date"),
         selectors(
           data = data$smd,
           prefix = "smd",
@@ -528,15 +543,15 @@ ui <- dashboardPage(
         ),
         div(
           style = "display: inline-block;vertical-align:center; width: 150px;",
-          downloadButton("smd_download_table", "Download current as csv")
+          downloadButton("smd_download_table", "Download current table as csv")
         ),
         DTOutput("smd_table") %>% withSpinner()
       ),
       ## NCO summary ----
       tabItem(
         tabName = "nco_summary",
-        h3("Survival summary"),
-        p("Counts and follor-up for each negative control outcome"),
+        h3("Summary"),
+        p("For each analysis and negative control outcome we present subject and outcome counts, and descriptive statistics of participants age and follow-up time."),
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
@@ -561,9 +576,8 @@ ui <- dashboardPage(
         selectors(
           data = data$survival_summary |> filter(variable_name == "nco"),
           prefix = "nco_summ",
-          columns = c("followup_end", "window"),
+          columns = c("followup_end"),
           default = list(
-            "window" = "0_Inf",
             "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
@@ -572,7 +586,7 @@ ui <- dashboardPage(
           tabPanel(
             "Raw data",
             h5(),
-            downloadButton("nco_summary_download_raw", "Download current as csv"),
+            downloadButton("nco_summary_download_raw", "Download current table as csv"),
             DTOutput("nco_summary_raw") %>% withSpinner()
           ),
           tabPanel(
@@ -586,8 +600,8 @@ ui <- dashboardPage(
       ## STUDY summary ----
       tabItem(
         tabName = "study_summary",
-        h3("Survival summary"),
-        p("Counts and follor-up for each study outcome."),
+        h3("Summary"),
+        p("For each analysis and study outcome we present subject and outcome counts, and descriptive statistics of participants age and follow-up time."),
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
@@ -626,10 +640,19 @@ ui <- dashboardPage(
         selectors(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
-          columns = c("followup_end", "window"),
-          default = list(
-            "window" = "8_Inf",
-            "followup_end" = "cohort_end_date_pregnancy"
+          columns = c("followup_end"),
+          default = list( "followup_end" = "cohort_end_date_pregnancy")
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "study_summ_window",
+            label = "Window",
+            choices = c("0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf"),
+            selected = "15_Inf",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
           )
         ),
         tabsetPanel(
@@ -671,11 +694,10 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "nco"),
           prefix = "nco_risk",
-          columns = c("regression", "outcome", "followup_end", "window"),
+          columns = c("regression", "outcome", "followup_end"),
           default = list(
             "regression" = "cox",
             "outcome" = data$risk |> filter(variable_name == "nco") |> pull(outcome) |> unique(),
-            "window" = "0_Inf",
             "followup_end" = "cohort_end_date_pregnancy"
           )
         ),
@@ -703,7 +725,7 @@ ui <- dashboardPage(
                           "association"),
               default = list("color" = "association", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_nco_risk"),
-            downloadButton("nco_risk_download_plot", "Download table in word"),
+            downloadButton("nco_risk_download_plot", "Download plot"),
             plotlyOutput('nco_risk_plot', height = "1400px") %>% withSpinner()
           )
         )
@@ -711,8 +733,8 @@ ui <- dashboardPage(
       # STUDY FOREST ----
       tabItem(
         tabName = "study_forest_plot",
-        h3("Forest plots"),
-        p("Study outcomes risk estimates for all populations."),
+        h3("Vaccine effectiveness"),
+        p("Hazard ratios for each analysis and study outcome in the study."),
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
@@ -752,10 +774,19 @@ ui <- dashboardPage(
         selectors(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
-          columns = c("followup_end", "window"),
-          default = list(
-            "window" = "8_Inf",
-            "followup_end" = "cohort_end_date_pregnancy"
+          columns = c("followup_end"),
+          default = list("followup_end" = "cohort_end_date_pregnancy")
+        ),
+        div(
+          style = "display: inline-block;vertical-align:top; width: 150px;",
+          pickerInput(
+            inputId = "study_risk_window",
+            label = "Window",
+            choices = c("0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf"),
+            selected = "15_Inf",
+            options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+            multiple = TRUE,
+            inline = TRUE
           )
         ),
         tabsetPanel(
@@ -764,6 +795,7 @@ ui <- dashboardPage(
             "Raw data",
             h5(),
             downloadButton("study_risk_download_raw", "Download current as csv"),
+            h5(),
             DTOutput("study_risk_raw") %>% withSpinner()
           ),
           tabPanel(
@@ -783,6 +815,7 @@ ui <- dashboardPage(
               default = list("color" = "outcome", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_study_risk"),
             downloadButton("study_risk_download_plot", "Download table in word"),
+            h5(),
             plotlyOutput('study_risk_plot', height = "800px") %>% withSpinner()
           )
         )
@@ -791,7 +824,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "kaplan_meier",
         h3("Kaplan-Meier"),
-        p("Kaplan-Meier curves for all populations."),
+        p("Kaplan-Meier curves for each population cohort and outcome in the study."),
         selectors(
           data = data$kaplan_meier,
           prefix = "km",
@@ -837,6 +870,7 @@ ui <- dashboardPage(
             inline = TRUE
           )
         ),
+        h5(),
         plotSelectors(
           selectors = "facet_by",
           prefix = "plt_km",
@@ -845,13 +879,14 @@ ui <- dashboardPage(
           default = list("facet_by" = "cdm_name")),
         plotDownloadSelectors(prefix = "dwn_km"),
         downloadButton("km_download_plot", "Download table in word"),
+        h5(),
         plotlyOutput('km_plot') %>% withSpinner()
       ),
       # Followup ----
       tabItem(
         tabName = "followup",
-        h3("Available follow-up"),
-        p("Patient available follow-up distribution"),
+        h3("Available follow-up time"),
+        p("Distribution of available patient follow-up time for each analysis population."),
         selectors(
           data = data$censoring,
           prefix = "followup",

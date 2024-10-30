@@ -52,15 +52,16 @@ data$population_count <- pre_data$relative_risk |>
 data$weekly_counts <- pre_data$matching_summary |>
   mutate(cohort = paste0(.data$population, "_", .data$covid_cohort)) |>
   select(
-    "cdm_name", "cohort_name" = "cohort", "week_start" = "matching_day", "exposed_pre",
-    "unexposed_pre", "exposed_post", "unexposed_post"
+    "cdm_name", "cohort_name" = "cohort", "week_start" = "matching_day",
+    "elegible_exposed" = "exposed_pre", "matched_exposed" = "exposed_post",
+    "elegible_unexposed" = "unexposed_pre",  "matched_unexposed" = "unexposed_post"
   ) |>
   mutate(
     across(contains("exposed"), ~ as.numeric(.x)),
     week_start = as.Date(week_start)
   ) |>
   niceCohortName() |>
-  select(cdm_name, comparison, covid_definition, week_start, exposed_pre, unexposed_pre, exposed_post, unexposed_post)
+  select(cdm_name, comparison, covid_definition, week_start, elegible_exposed, matched_exposed, elegible_unexposed, matched_unexposed)
 data$index_date <- pre_data$cohort_stats |>
   filter(result_type == "index_date") |>
   mutate("index_date" = as.Date(variable_level)) |>
@@ -125,7 +126,8 @@ data$baseline <- pre_data$characteristics |>
   select(-starts_with("additional")) |>
   uniteAdditional(cols = c("exposed")) |>
   uniteStrata(cols = c("vaccine_brand", "trimester")) |>
-  niceCohortName(col = "group_level", removeCol = FALSE)
+  niceCohortName(col = "group_level", removeCol = FALSE) |>
+  mutate(additional_level = case_when(additional_level == "1" ~ "Exposed", additional_level == "0" ~ "Unexposed", .default = additional_level))
 data$large_scale <- pre_data$characteristics |>
   filter(result_type %in% c("summarised_large_scale_characteristics")) |>
   splitGroup() |>
@@ -198,7 +200,8 @@ data$risk <- pre_data$relative_risk |>
   ) |>
   niceCohortName() |>
   niceOutcomeName() |>
-  relocate(c("comparison", "covid_definition"), .after = "cdm_name")
+  relocate(c("comparison", "covid_definition"), .after = "cdm_name") |>
+  mutate(window = factor(window, levels = c("0_Inf", "0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf")))
 data$population_count <- data$population_count |>
   mutate(total = num_control + num_exposed) |>
   select(cdm_name, comparison, covid_definition, strata_name, strata_level, total, num_control, num_exposed)
@@ -237,3 +240,4 @@ data$censoring <- pre_data$censoring |>
 
 # Save shiny data ----
 save(data, file = here("shinyData.Rdata"))
+

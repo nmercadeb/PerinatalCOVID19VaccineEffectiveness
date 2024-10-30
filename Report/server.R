@@ -38,6 +38,24 @@ server <- function(input, output, session) {
       write_csv(getCohortCount(), file)
     }
   )
+  output$cohort_count_table_formatted <- render_gt({
+    getCohortCount() %>%
+      mutate("Number records" = niceNum(`Number records`), "Number subjects" = niceNum(`Number subjects`)) |>
+      gtTable(groupNameCol = c("CDM name"), groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
+  })
+  output$weekly_counts_table_download_word <- downloadHandler(
+    filename = function() {
+      "cohortCountTable.docx"
+    },
+    content = function(file) {
+      gtsave(data =  getCohortCount() %>%
+               gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE),
+             filename = file,
+             vwidth = 400,
+             vheight = 300)
+    },
+    contentType = "docx"
+  )
   # Weekly counts ----
   getWeeklyCounts <- reactive({
     data$weekly_counts %>%
@@ -48,8 +66,8 @@ server <- function(input, output, session) {
     getWeeklyCounts() %>%
       group_by(cdm_name, comparison, covid_definition) %>%
       summarise(
-        "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
-        "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
+        "Exposed elegible" = sum(elegible_exposed, na.rm = TRUE),
+        "Matched, N(%)" = sum(matched_exposed, na.rm = TRUE),
         .groups = "drop"
       ) %>%
       mutate(
@@ -71,8 +89,8 @@ server <- function(input, output, session) {
       gtsave(data = getWeeklyCounts() %>%
                group_by(cdm_name, comparison, covid_definition) %>%
                summarise(
-                 "Exposed elegible" = sum(exposed_pre, na.rm = TRUE),
-                 "Matched, N(%)" = sum(exposed_post, na.rm = TRUE),
+                 "Exposed elegible" = sum(elegible_exposed, na.rm = TRUE),
+                 "Matched, N(%)" = sum(matched_exposed, na.rm = TRUE),
                  .groups = "drop"
                ) %>%
                mutate(
@@ -100,10 +118,10 @@ server <- function(input, output, session) {
                "Comparison" = "comparison",
                "Covid definition" = "covid_definition",
                "Week start" = "week_start",
-               "Exposed PRE" = "exposed_pre",
-               "Unexposed PRE" = "unexposed_pre",
-               "Exposed POST" = "exposed_post",
-               "Unexposed POST" = "unexposed_post"),
+               "Exposed PRE" = "elegible_exposed",
+               "Unexposed PRE" = "elegible_unexposed",
+               "Exposed POST" = "matched_exposed",
+               "Unexposed POST" = "matched_unexposed"),
       rownames = FALSE,
       extensions = "Buttons",
       options = list(scrollX = TRUE, scrollCollapse = TRUE, pageLength = 25)
@@ -122,17 +140,17 @@ server <- function(input, output, session) {
                          "Comparison" = "comparison",
                          "Covid definition" = "covid_definition",
                          "Week start" = "week_start",
-                         "Exposed PRE" = "exposed_pre",
-                         "Unexposed PRE" = "unexposed_pre",
-                         "Exposed POST" = "exposed_post",
-                         "Unexposed POST" = "unexposed_post"),
+                         "Exposed PRE" = "elegible_exposed",
+                         "Unexposed PRE" = "elegible_unexposed",
+                         "Exposed POST" = "matched_exposed",
+                         "Unexposed POST" = "matched_unexposed"),
                 file)
     }
   )
   getWeeklyCountsPlot <- reactive({
     table <- getWeeklyCounts() %>%
-      select(-"unexposed_pre", -"unexposed_post") %>%
-      pivot_longer(cols = c("exposed_pre", "exposed_post"), names_to = "matching_status", values_to = "n") |>
+      pivot_longer(cols = c("elegible_exposed", "matched_exposed", "elegible_unexposed", "matched_unexposed"), names_to = "matching_status", values_to = "n") |>
+      filter(matching_status %in% input$weekly_plot) %>%
       mutate(n = if_else(n<5 & n>0, NA, n))
 
     validate(need(ncol(table)>1,
@@ -395,7 +413,8 @@ server <- function(input, output, session) {
       } else .} %>%
       group_by(cdm_name, comparison, covid_definition, strata_name, strata_level, exposed, vaccine_dose, date) %>%
       summarise(estimate_value = sum(estimate_value), .groups = "drop") %>%
-      ungroup()
+      ungroup() %>%
+      arrange(comparison, covid_definition, vaccine_dose, date)
   })
   output$vaccination_summary <- render_gt({
     getVaccination() %>%
@@ -406,7 +425,7 @@ server <- function(input, output, session) {
       niceChar() |>
       rename("estimate_value" = "Estimate value") |>
       formatHeader(header = c("Strata name", "Strata level", "Exposed"), includeHeaderName = FALSE) |>
-      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
+      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$vaccination_summary_download <- downloadHandler(
     filename = function() {
@@ -514,7 +533,7 @@ server <- function(input, output, session) {
       niceChar() |>
       rename("estimate_value" = "Estimate value") |>
       formatHeader(header = c("Strata name", "Strata level", "Exposed"), includeHeaderName = FALSE) |>
-      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE)
+      gtTable(groupNameCol = "CDM name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$pregnant_vax_summary <- render_gt({
     getVaccinationPregnant()
@@ -775,7 +794,7 @@ server <- function(input, output, session) {
         header = c("strata_name", "strata_level", "exposed"),
         includeHeaderName = FALSE,
       ) |>
-      arrange(cdm_name, comparison, covid_definition) |>
+      arrange(cdm_name, comparison, covid_definition, window) |>
       select(!c("estimate_type", "exposed_censoring")) |>
       relocate(c("window", "followup_end"), .before = "outcome") |>
       select(!c("variable_name")) |>
@@ -797,7 +816,7 @@ server <- function(input, output, session) {
       filter(variable_name == "nco") |>
       select(!"estimate_type") |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
-      select(!c("variable_name"))
+      select(!c("variable_name", "delivery_excluded"))
   })
   output$nco_risk_raw <- renderDataTable({
     datatable(getNCOForestRaw(),
@@ -822,7 +841,7 @@ server <- function(input, output, session) {
         includeHeaderName = FALSE,
       ) |>
       arrange(comparison, covid_definition) |>
-      select(!c("estimate_type", "variable_name")) |>
+      select(!c("estimate_type", "variable_name", "delivery_excluded")) |>
       gtTable(colsToMergeRows = "all_columns")
   })
   output$nco_risk_table <- render_gt({
@@ -909,7 +928,8 @@ server <- function(input, output, session) {
       ) |>
       select(!c("estimate_type", "exposed_censoring")) |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
-      select(!c("variable_name"))
+      select(!c("variable_name")) |>
+      arrange(cdm_name, comparison, covid_definition, window)
   })
   output$study_risk_raw <- renderDataTable({
     datatable(getStudyForestRaw(),
@@ -933,11 +953,11 @@ server <- function(input, output, session) {
         estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
         keepNotFormatted = FALSE
       ) |>
+      arrange(cdm_name, comparison, covid_definition, window) |>
       formatHeader(
         header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
         includeHeaderName = FALSE,
       ) |>
-      arrange(comparison, covid_definition) |>
       select(!c("estimate_type", "variable_name", "exposed_censoring")) |>
       gtTable(colsToMergeRows = "all_columns")
   })
@@ -971,7 +991,13 @@ server <- function(input, output, session) {
         data$survival_summary |>
           filter(grepl("count", estimate_name)) |>
           pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
-      )
+      ) |>
+      mutate(window = factor(window, levels = c("0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf"))) |>
+      arrange(cdm_name, comparison, covid_definition, window)
+
+    orderY <- unique(table$outcome_plot)
+
+    table <- table |> mutate(outcome_plot = factor(outcome_plot, levels = orderY))
 
     if (!"i2" %in% colnames(table)) {
       table <- table |> mutate(i2 = NA)
@@ -1059,6 +1085,6 @@ server <- function(input, output, session) {
   output$followup_summary_table <- render_gt({
     data$censoring |>
       filterData("followup", input) |>
-      gtTable(colsToMergeRows = "all_columns")
+      gtTable(colsToMergeRows = "all_columns", groupNameCol = "CDM name")
   })
 }
