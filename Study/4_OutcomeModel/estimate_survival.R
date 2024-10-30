@@ -82,8 +82,8 @@ km_results_obs <- estimateSingleEventSurvival(
 )
 
 cdm$matched_preg <- cdm$matched %>%
-  mutate(cohort_end_date = pregnancy_end_date) %>%
-  compute(name = "matched_preg")
+  mutate(cohort_end_date = cohort_end_date_pregnancy) %>%
+  compute(name = "matched_preg", temporary = FALSE, overwrite = TRUE)
 km_results_pregnancy <- estimateSingleEventSurvival(
   cdm = cdm,
   targetCohortTable = "matched_preg",
