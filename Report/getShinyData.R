@@ -148,7 +148,8 @@ data$smd <- pre_data$characteristics |>
   filter(result_type %in% c("large_scale_differences")) |>
   splitGroup() |>
   splitAdditional() |>
-  mutate(smd = as.numeric(estimate_value), asmd = abs(smd)) |>
+  mutate(smd = as.numeric(estimate_value), asmd = abs(smd),
+         smd = if_else(variable_level == "propensity_score", NA, smd)) |>
   rename("window" = "variable_level", "concept_name" = "variable_name") |>
   select(!c("result_id", "result_type", "package_name", "package_version",
             "estimate_type", "estimate_name", "estimate_value")) |>

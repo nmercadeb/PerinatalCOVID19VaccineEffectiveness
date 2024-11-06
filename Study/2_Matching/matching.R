@@ -1,7 +1,7 @@
 # prepare data:
 cdm$source_pregnant <- cdm$source_pregnant %>%
   addMatchingAgeGroup() %>%
-  addRegion(database_name = database_name) %>%
+  # addRegion(database_name = database_name) %>%
   compute(name = "source_matching", temporal = FALSE)
 
 summary <- list()
@@ -73,7 +73,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         matchSucceed <- FALSE
         tryCatch({
           while (doMatching) {
-            exactMatch = c("maternal_age", "gestational_age")
+            exactMatch = c("maternal_age", "gestational_age", "days_previous_vaccine_band_month")
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
             exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
             psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - reason - ", paste0(exactMatch, collapse = " - ")))
@@ -105,10 +105,10 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
                 anti_join(covidBefore %>% select(subject_id, exposed), by = c("subject_id", "exposed"))
             }
           }
-          matchSucceed <- TRUE},
-          error = function(cond) {
-            message("No units could be matched.")
-          }
+          matchSucceed <- TRUE
+        }, error = function(cond) {
+          message("No units could be matched.")
+        }
         )
 
         if (matchSucceed) {

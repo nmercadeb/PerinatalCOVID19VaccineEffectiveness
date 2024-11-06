@@ -78,7 +78,6 @@ cdm$matched  <- cdm$matched  %>%
   left_join(
     cdm$matched  %>%
       group_by(cohort_definition_id, match_id) %>%
-      mutate(reason = paste0(reason, "_", exposed)) %>%
       filter(end_strategy_date == min(end_strategy_date)) %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, end_strategy_date, reason) %>%

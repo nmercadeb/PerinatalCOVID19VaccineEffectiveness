@@ -30,7 +30,7 @@ table_one <- summariseCharacteristics(
       targetCohortTable = "mother_table", value = "count", window = c(-Inf, -1)
     )
   ),
-  otherVariables = c("vaccine_brand", "trimester", "region")
+  otherVariables = c("vaccine_brand", "trimester")
 )
 
 table_one |>
@@ -84,11 +84,78 @@ smd <- summarised_lsc %>%
   ) |>
   select(all_of(resultColumns()))
 
+
+## PS vars
+psVars <- cdm$matched |>
+  mutate(week_start = cohort_start_date) |>
+  inner_join(
+    union_all(
+      cdm$source_pregnant |>
+        mutate(cohort_definition_id = if_else(cohort_definition_id == 2, 3, cohort_definition_id)) |>
+        select(
+          "cohort_definition_id", "subject_id", "pregnancy_id", "previous_vaccine_date",
+          "previous_vaccine_brand", "observation_period_start_date"
+        ) |>
+        distinct(),
+      cdm$source_pregnant |>
+        mutate(cohort_definition_id = if_else(cohort_definition_id == 1, 2, 4)) |>
+        select(
+          "cohort_definition_id", "subject_id", "pregnancy_id", "previous_vaccine_date",
+          "previous_vaccine_brand", "observation_period_start_date"
+        ) |>
+        distinct()
+    ) |>
+      compute()
+  ) |>
+  matchItDataset(2)
+
+continuous <- c("visits_m365_m181", "visits_m180_m31", "visits_m30_m1", "covid_test", "influenza",
+                "tdap", "previous_pregnancies", "previous_observation", "days_previous_vaccine")
+binary <- c("liver_disease_chronic_severe", "diabetes", "bloodcancer_within_past_5yr", "organ_transplant_receipient", "solid_cancer_within_past_5yr",
+            "obesity", "immunodeficiency", "asthma_copd_bronchiectasis_bronchitis", "cardiologicaldisease_excl_hypertension")
+categorical <- c("gestational_age", "previous_vaccine_brand", "days_previous_vaccine_band_month")
+asmd <- list()
+for (id in settings(cdm$matched)$cohort_definition_id) {
+  asmd[[id]] <- bind_rows(
+    psVars |>
+      filter(cohort_definition_id == id) |>
+      asmdCategorical(variables = categorical, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]),
+    psVars |>
+      filter(cohort_definition_id == id) |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]),
+    psVars |>
+      filter(cohort_definition_id == id) |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id])
+  )
+}
+
+asmd <- asmd |>
+  bind_rows() |>
+  filter(!is.na(asmd)) |>
+  visOmopResults::uniteGroup("cohort_name") |>
+  visOmopResults::uniteStrata() |>
+  mutate(result_id = 1,
+         cdm_name = cdmName(cdm),
+         result_type = "large_scale_differences",
+         package_name = "study_code",
+         package_version = NA_character_,
+         variable_level = "propensity_score",
+         estimate_type = "numeric",
+         estimate_name = "asmd",
+         exposed = "overall", ) |>
+  rename("variable_name" = "variable", "estimate_value" = "asmd") |>
+  select(!c("asmd_type")) |>
+  visOmopResults::uniteAdditional("exposed") |>
+  newSummarisedResult()
+
 summarised_lsc |>
   mutate(
     additional_name = paste0(additional_name, " &&& exposed"),
     additional_level = paste0(additional_level, " &&& ", exposed)
   ) |>
   select(-exposed) |>
-  bind_rows(smd) |>
+  bind_rows(smd, asmd) |>
   write_csv(file = here(output_folder, paste0("large_scale_characteristics_", cdmName(cdm), ".csv")))
