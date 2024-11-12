@@ -70,8 +70,12 @@ cdm$matched  <- cdm$matched  %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, cohort_end_date, reason) %>%
       group_by(cohort_definition_id, match_id) %>%
-      mutate(reason = str_flatten(reason, collapse = "; ")) %>%
-      ungroup() %>%
+      window_order(cohort_definition_id, match_id, cohort_end_date, reason) %>%
+      mutate(reason_num = paste0("reason_", row_number())) |>
+      ungroup() |>
+      pivot_wider(names_from = "reason_num", values_from = "reason") |>
+      mutate(reason = paste0(.data$reason_1, ";", .data$reason_2)) |>
+      select(!starts_with("reason_")) %>%
       distinct(),
     by = c("cohort_definition_id", "match_id")
   ) |>
@@ -82,9 +86,13 @@ cdm$matched  <- cdm$matched  %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, end_strategy_date, reason) %>%
       group_by(cohort_definition_id, match_id) %>%
-      mutate(reason_pregnancy = str_flatten(reason, collapse = "; ")) %>%
+      window_order(cohort_definition_id, match_id, end_strategy_date, reason) %>%
+      mutate(reason_num = paste0("reason_", row_number())) |>
+      ungroup() |>
+      pivot_wider(names_from = "reason_num", values_from = "reason") |>
+      mutate(reason_pregnancy = paste0(.data$reason_1, ";", .data$reason_2)) %>%
       ungroup() %>%
-      select(!"reason") %>%
+      select(!c("reason_1", "reason_2")) %>%
       distinct(),
     by = c("cohort_definition_id", "match_id")
   ) |>
