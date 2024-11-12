@@ -49,7 +49,7 @@ cdm$matched <- cdm$matched %>%
     ),
     ## update individual end date
     cohort_end_date = case_when(
-      grepl("3rd dose", .data$reason) ~ as.Date(add_days(.data$booster_1, -1)),
+      .data$reason == "Exposed 3rd dose" | .data$reason == "Unexposed 3rd dose" ~ as.Date(add_days(.data$booster_1, -1)),
       .data$reason == "Unexposed 1st dose" ~ as.Date(add_days(.data$partial, -1)),
       .data$reason == "Exposed 4th dose" ~ as.Date(add_days(.data$booster_2, -1)),
       .default = cohort_end_date

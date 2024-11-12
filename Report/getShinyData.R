@@ -216,7 +216,7 @@ data$kaplan_meier <- pre_data$kaplan_meier |>
   niceOutcomeName(col = "variable_level") |>
   mutate(
     estimate_value = as.numeric(estimate_value),
-    followup_end = if_else(result_id == 1, "cohort_end_date", "pregnancy_end_date"),
+    followup_end = if_else(result_id == 1, "cohort_end_date", "cohort_end_date_pregnancy"),
     time = as.numeric(time),
     Cohort = if_else(exposed == "0", "Unexposed", "Exposed"),
     strata_level = factor(strata_level,

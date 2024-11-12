@@ -863,8 +863,8 @@ ui <- dashboardPage(
           pickerInput(
             inputId = "km_followup_end",
             label = "Followup end",
-            choices = c("cohort_end_date", "pregnancy_end_date"),
-            selected = "cohort_end_date",
+            choices = c("cohort_end_date", "cohort_end_date_pregnancy"),
+            selected = "cohort_end_date_pregnancy",
             options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
             multiple = FALSE,
             inline = TRUE
