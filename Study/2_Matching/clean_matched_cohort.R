@@ -1,6 +1,6 @@
 ### Read data
 cdm$matched_raw <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "matched_raw"))) %>%
-  compute(name = "matched_raw", overwrite = TRUE, temporary = FALSE)
+  compute()
 
 ### Add end of observation
 cdm$matched <- cdm$matched_raw |>
@@ -69,15 +69,13 @@ cdm$matched  <- cdm$matched  %>%
       filter(cohort_end_date == min(cohort_end_date)) %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, cohort_end_date, reason) %>%
+      collect() %>%
       group_by(cohort_definition_id, match_id) %>%
-      window_order(cohort_definition_id, match_id, cohort_end_date, reason) %>%
-      mutate(reason_num = paste0("reason_", row_number())) |>
-      ungroup() |>
-      pivot_wider(names_from = "reason_num", values_from = "reason") |>
-      mutate(reason = paste0(.data$reason_1, ";", .data$reason_2)) |>
-      select(!starts_with("reason_")) %>%
+      mutate(reason = str_flatten(reason, collapse = "; ")) %>%
+      ungroup() %>%
       distinct(),
-    by = c("cohort_definition_id", "match_id")
+    by = c("cohort_definition_id", "match_id"),
+    copy = TRUE
   ) |>
   left_join(
     cdm$matched  %>%
@@ -85,16 +83,14 @@ cdm$matched  <- cdm$matched  %>%
       filter(end_strategy_date == min(end_strategy_date)) %>%
       ungroup() %>%
       distinct(cohort_definition_id, match_id, end_strategy_date, reason) %>%
+      collect() %>%
       group_by(cohort_definition_id, match_id) %>%
-      window_order(cohort_definition_id, match_id, end_strategy_date, reason) %>%
-      mutate(reason_num = paste0("reason_", row_number())) |>
-      ungroup() |>
-      pivot_wider(names_from = "reason_num", values_from = "reason") |>
-      mutate(reason_pregnancy = paste0(.data$reason_1, ";", .data$reason_2)) %>%
+      mutate(reason_pregnancy = str_flatten(reason, collapse = "; ")) %>%
       ungroup() %>%
-      select(!c("reason_1", "reason_2")) %>%
+      select(!"reason") %>%
       distinct(),
-    by = c("cohort_definition_id", "match_id")
+    by = c("cohort_definition_id", "match_id"),
+    copy = TRUE
   ) |>
   mutate(
     cohort_end_date_pregnancy = case_when(
