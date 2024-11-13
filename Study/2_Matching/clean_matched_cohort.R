@@ -1,6 +1,6 @@
 ### Read data
 cdm$matched_raw <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "matched_raw"))) %>%
-  compute()
+  compute(name = "matched_raw", overwrite = TRUE, temporary = FALSE)
 
 ### Add end of observation
 cdm$matched <- cdm$matched_raw |>
@@ -99,9 +99,9 @@ cdm$matched  <- cdm$matched  %>%
       .default = pregnancy_end_date
     ),
     reason_pregnancy = case_when(
-      is.na(end_strategy_date) ~ paste0("End of pregnancy_", exposed),
+      is.na(end_strategy_date) ~ paste0("End of pregnancy_", as.character(exposed)),
       end_strategy_date < pregnancy_end_date ~ reason,
-      .default = paste0("End of pregnancy_", exposed)
+      .default = paste0("End of pregnancy_", as.character(exposed))
     )
   ) |>
   compute(name = "matched", temporary = FALSE)
