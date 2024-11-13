@@ -111,14 +111,14 @@ censoring_observation <- cdm$matched  %>%
   inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
   mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
   group_by(cohort_name, reason) %>%
-  summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
+  summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
   collect() |>
   bind_rows(
     cdm$matched  %>%
       inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
       mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
       group_by(cohort_name) %>%
-      summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
+      summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
       mutate(reason = "overall") %>%
       collect()
   ) |>
@@ -128,7 +128,7 @@ censoring_pregnancy <- cdm$matched  %>%
   inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
   mutate(time = !!datediff("cohort_start_date", "cohort_end_date_pregnancy")) %>%
   group_by(cohort_name, reason_pregnancy) %>%
-  summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
+  summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
   collect() |>
   rename("reason" = "reason_pregnancy") |>
   bind_rows(
@@ -136,7 +136,7 @@ censoring_pregnancy <- cdm$matched  %>%
       inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
       mutate(time = !!datediff("cohort_start_date", "cohort_end_date_pregnancy")) %>%
       group_by(cohort_name) %>%
-      summarise(n = n(), mean = mean(time), sd = sd(time), median = median(time), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
+      summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
       mutate(reason = "overall") %>%
       collect()
   ) |>
