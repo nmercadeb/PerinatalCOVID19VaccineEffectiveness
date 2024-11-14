@@ -86,6 +86,7 @@ smd <- summarised_lsc %>%
 
 
 ## PS vars
+covid_id <- 1
 psVars <- cdm$matched |>
   mutate(week_start = cohort_start_date) |>
   inner_join(
