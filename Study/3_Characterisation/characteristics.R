@@ -110,7 +110,7 @@ psVars <- cdm$matched |>
   ) |>
   matchItDataset(2)
 
-continuous <- c("visits_m365_m181", "visits_m180_m31", "visits_m30_m1", "covid_test", "influenza",
+continuous <- c("visits_m365_m181", "visits_m180_m31", "visits_m30_m1", "covid_diagnostic_test", "influenza",
                 "tdap", "previous_pregnancies", "previous_observation", "days_previous_vaccine")
 binary <- c("liver_disease_chronic_severe", "diabetes", "bloodcancer_within_past_5yr", "organ_transplant_receipient", "solid_cancer_within_past_5yr",
             "obesity", "immunodeficiency", "asthma_copd_bronchiectasis_bronchitis", "cardiologicaldisease_excl_hypertension")
