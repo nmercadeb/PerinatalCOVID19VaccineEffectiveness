@@ -22,8 +22,12 @@ source(here("functions.R"))
 load(here("shinyData.Rdata"))
 
 # add meta analysis
+results <- NULL
+metaName <- "Meta-analysis (UiO-MBRN)"
+cdm_names <- c("CPRD Gold", "SIDIAP", "scifi-pearl", "UiO_MBRN")
+
 metaData <- data$risk |>
-  filter(variable_name == "study") |>
+  filter(variable_name == "study" & cdm_name %in% cdm_names) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value")
 
 metaanalyses <- metaData |>
@@ -32,7 +36,6 @@ metaanalyses <- metaData |>
     followup_end, window, outcome
   )
 
-results <- NULL
 for (jj in 1:nrow(metaanalyses)) {
   for (delivery in c("yes", "no")) {
     tempData <- metaData |>
@@ -47,7 +50,7 @@ for (jj in 1:nrow(metaanalyses)) {
         union_all(
           tempData |>
             mutate(
-              cdm_name = "Meta-analysis", exp_coef = exp(meta$TE.random),
+              cdm_name = metaName, exp_coef = exp(meta$TE.random),
               coef = meta$TE.random, se_coef = meta$seTE.random,
               lower_ci = exp(meta$lower.random), upper_ci = exp(meta$upper.random),
               i2 = meta$I2, z= NA, p = NA
@@ -59,9 +62,13 @@ for (jj in 1:nrow(metaanalyses)) {
 }
 
 data$risk <- data$risk |>
-  union_all(results |>
-              pivot_longer(cols = c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci", "i2"),
-                           names_to = "estimate_name", values_to = "estimate_value") |>
-              distinct())
+  union_all(
+    results |>
+      pivot_longer(
+        cols = c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci", "i2"),
+        names_to = "estimate_name", values_to = "estimate_value"
+      ) |>
+      distinct()
+  )
 
-save(data, file = here("shinyData2.Rdata"))
+save(data, file = here("shinyData-meta.Rdata"))

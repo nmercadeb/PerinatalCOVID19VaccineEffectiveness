@@ -31,7 +31,7 @@ library(CohortSurvival)
 source(here("functions.R"))
 
 # load data
-load(here("shinyData.Rdata"))
+load(here("shinyData-meta.Rdata"))
 
 # run shiny
 source(here("server.R"))
