@@ -929,7 +929,10 @@ server <- function(input, output, session) {
       select(!c("estimate_type", "exposed_censoring")) |>
       pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
       select(!c("variable_name")) |>
-      arrange(cdm_name, comparison, covid_definition, window)
+      arrange(cdm_name, comparison, covid_definition, window) %>%
+      {if (input$study_risk_raw_hr == "Vaccine effectiveness") {
+        mutate(., coef = 1-coef, exp_coef = 1-exp_coef, lower_ci = 1-lower_ci, upper_ci = 1-upper_ci)
+      } else .}
   })
   output$study_risk_raw <- renderDataTable({
     datatable(getStudyForestRaw(),
@@ -947,7 +950,10 @@ server <- function(input, output, session) {
       filter(
         variable_name == "study",
         delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
-      ) |>
+      ) %>%
+      {if (input$study_risk_format_hr == "Vaccine effectiveness") {
+        mutate(., estimate_value = as.character(1-as.numeric(estimate_value)))
+      } else .} %>%
       formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
@@ -976,7 +982,10 @@ server <- function(input, output, session) {
         delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
       ) |>
       select(!"estimate_type") |>
-      pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+      pivot_wider(names_from = "estimate_name", values_from = "estimate_value")  %>%
+      # {if (input$study_risk_hr == "Vaccine effectiveness") {
+      #   mutate(., coef = 1-coef, exp_coef = 1-exp_coef, lower_ci = 1-lower_ci, upper_ci = 1-upper_ci)
+      # } else .} %>%
       mutate(
         outcome_plot = glue::glue(paste0("{", paste0(format, collapse = "}; {"), "}")),
         outcome_plot = if_else(.data$delivery_excluded == "no", paste0(outcome_plot, "; delivery_not_excluded"), outcome_plot),

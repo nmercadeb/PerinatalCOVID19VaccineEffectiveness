@@ -95,7 +95,7 @@ ui <- dashboardPage(
           tabName = "kaplan_meier"
         ),
         menuSubItem(
-          text = "Hazard Ratios",
+          text = "Effectiveness estimates",
           tabName = "study_forest_plot"
         )
       )
@@ -794,6 +794,15 @@ ui <- dashboardPage(
           tabPanel(
             "Raw data",
             h5(),
+            pickerInput(
+              inputId = "study_risk_raw_hr",
+              label = "Estimate",
+              choices = c("Hazard Ratio", "Vaccine effectiveness"),
+              selected = "Hazard Ratio",
+              options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+              multiple = FALSE,
+              inline = TRUE
+            ),
             downloadButton("study_risk_download_raw", "Download current as csv"),
             h5(),
             DTOutput("study_risk_raw") %>% withSpinner()
@@ -801,6 +810,15 @@ ui <- dashboardPage(
           tabPanel(
             "Table",
             h5(),
+            pickerInput(
+              inputId = "study_risk_format_hr",
+              label = "Estimate",
+              choices = c("Hazard Ratio", "Vaccine effectiveness"),
+              selected = "Hazard Ratio",
+              options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
+              multiple = FALSE,
+              inline = TRUE
+            ),
             downloadButton("study_risk_download_table", "Download table in word"),
             gt_output('study_risk_table') %>% withSpinner()
           ),
@@ -814,7 +832,7 @@ ui <- dashboardPage(
                           "association"),
               default = list("color" = "outcome", "facet_by" = "cdm_name")),
             plotDownloadSelectors(prefix = "dwn_study_risk"),
-            downloadButton("study_risk_download_plot", "Download table in word"),
+            downloadButton("study_risk_download_plot", "Download plot"),
             h5(),
             plotlyOutput('study_risk_plot', height = "800px") %>% withSpinner()
           )

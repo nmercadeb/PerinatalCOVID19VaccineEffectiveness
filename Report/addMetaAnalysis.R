@@ -23,8 +23,10 @@ load(here("shinyData.Rdata"))
 
 # add meta analysis
 results <- NULL
-metaName <- "Meta-analysis (UiO-MBRN)"
-cdm_names <- c("CPRD Gold", "SIDIAP", "scifi-pearl", "UiO_MBRN")
+# metaName <- "Meta-analysis (UiO-MBRN)"
+# cdm_names <- c("CPRD Gold", "SIDIAP", "scifi-pearl", "UiO_MBRN")
+metaName <- "Meta-analysis (UiO-Algorithm)"
+cdm_names <- c("CPRD Gold", "SIDIAP", "scifi-pearl", "UiO_PregAlgorithm")
 
 metaData <- data$risk |>
   filter(variable_name == "study" & cdm_name %in% cdm_names) |>
