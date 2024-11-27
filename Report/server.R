@@ -569,10 +569,10 @@ server <- function(input, output, session) {
     content = function(file) {
       write_csv( data$pregnant_vaccination %>%
                    filterData(prefix = "pregnant_vax", input = input) %>%
-                  mutate(estimate_value = if_else(estimate_value < 5 & estimate_value > 0, NA, estimate_value)) %>%
-                  niceChar() |>
-                  rename("Counts" = "Estimate value"),
-                file)
+                   mutate(estimate_value = if_else(estimate_value < 5 & estimate_value > 0, NA, estimate_value)) %>%
+                   niceChar() |>
+                   rename("Counts" = "Estimate value"),
+                 file)
     }
   )
   # attrition ----
@@ -931,7 +931,9 @@ server <- function(input, output, session) {
       select(!c("variable_name")) |>
       arrange(cdm_name, comparison, covid_definition, window) %>%
       {if (input$study_risk_raw_hr == "Vaccine effectiveness") {
-        mutate(., coef = 1-coef, exp_coef = 1-exp_coef, lower_ci = 1-lower_ci, upper_ci = 1-upper_ci)
+        mutate(., exp_coef = (1-exp_coef)*100, lower_ci_1 = (1-lower_ci)*100,
+               lower_ci = (1-upper_ci)*100, upper_ci = lower_ci_1, se_coef = se_coef*100) |>
+          select(!c("coef", "lower_ci_1"))
       } else .}
   })
   output$study_risk_raw <- renderDataTable({
@@ -952,13 +954,21 @@ server <- function(input, output, session) {
         delivery_excluded %in% input$delivery_risk | delivery_excluded == "-"
       ) %>%
       {if (input$study_risk_format_hr == "Vaccine effectiveness") {
-        mutate(., estimate_value = as.character(1-as.numeric(estimate_value)))
-      } else .} %>%
-      formatEstimateValue() |>
-      formatEstimateName(
-        estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
-        keepNotFormatted = FALSE
-      ) |>
+        mutate(.,
+          estimate_value = as.character((1-as.numeric(estimate_value))*100)
+          ) |>
+          formatEstimateValue() |>
+          formatEstimateName(
+            estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef>% [<upper_ci>, <lower_ci>]"),
+            keepNotFormatted = FALSE
+          )
+      } else {
+        formatEstimateValue(.) |>
+          formatEstimateName(
+            estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
+            keepNotFormatted = FALSE
+          )
+      }} %>%
       arrange(cdm_name, comparison, covid_definition, window) |>
       formatHeader(
         header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
@@ -1087,8 +1097,39 @@ server <- function(input, output, session) {
   output$km_plot <- renderPlotly({
     plotKM()
   })
-  output$study_risk_download_plot <- serverPlotDownload(
-    prefix = "km_download_plot", name = "kaplanMeier", plot = plotKM(), input = input
+  output$km_download_plot <- serverPlotDownload(
+    prefix = "dwn_km", name = "kaplanMeier", plot = plotKM(), input = input
+  )
+  # log log
+  plotLogLog <- reactive({
+    table <- data$kaplan_meier |>
+      filterData("km", input = input) |>
+      filter(delivery_excluded %in% input$delivery_km | delivery_excluded == "-") |>
+      mutate(estimate = log(-log(estimate)))
+    if (!is.null(input$plt_km_facet_by)) {
+      table <- table |>
+        unite("facet_by", input$plt_km_facet_by, sep = "; ", remove = FALSE)
+    }
+    gg <- table |>
+      ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort)) +
+      geom_step(size = 1) +
+      scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+      scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+      scale_x_continuous(trans='log10') +
+      theme_bw() +
+      xlab("Time (days)") +
+      ylab("log(-log(S(t)))")
+    if (!is.null(input$plt_km_facet_by)) {
+      gg <- gg +
+        facet_wrap(vars(facet_by))
+    }
+    gg
+  })
+  output$loglog_plot <- renderPlotly({
+    plotLogLog()
+  })
+  output$loglog_download_plot <- serverPlotDownload(
+    prefix = "dwn_loglog", name = "logLog", plot = plotLogLog(), input = input
   )
   # FOLLOW-UP ----
   output$followup_summary_table <- render_gt({

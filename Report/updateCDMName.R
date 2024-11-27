@@ -8,8 +8,8 @@ library(stringr)
 library(zip)
 
 # Get data
-folderName <- "Results_MBRN_UiO_MBRN_20241028/Results_MBRN_UiO_MBRN"
-newCDMName <- "UiO_MBRN"
+folderName <- "Results_scifi-pearl_20241119/Results_scifi-pearl"
+newCDMName <- "SCIFI-PEARL"
 
 files <- list.files(here::here("data", folderName), full.names = TRUE)
 for (file in files) {

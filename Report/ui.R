@@ -895,10 +895,25 @@ ui <- dashboardPage(
           choices = c("cdm_name", "comparison", "covid_definition", "strata_name",
                       "strata_level", "outcome", "followup_end"),
           default = list("facet_by" = "cdm_name")),
-        plotDownloadSelectors(prefix = "dwn_km"),
-        downloadButton("km_download_plot", "Download table in word"),
-        h5(),
-        plotlyOutput('km_plot') %>% withSpinner()
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Kaplan-Meier",
+            h5(),
+            plotDownloadSelectors(prefix = "dwn_km"),
+            downloadButton("km_download_plot", "Download plot"),
+            h5(),
+            plotlyOutput('km_plot') %>% withSpinner()
+          ),
+          tabPanel(
+            "Log-Log plot",
+            h5(),
+            plotDownloadSelectors(prefix = "dwn_loglog"),
+            downloadButton("loglog_download_plot", "Download plot"),
+            h5(),
+            plotlyOutput('loglog_plot') %>% withSpinner()
+          )
+        )
       ),
       # Followup ----
       tabItem(
