@@ -23,9 +23,10 @@ library(SqlRender)
 library(omopgenerics)
 library(visOmopResults)
 library(CohortSurvival)
-library(odbc)
+library(clock)
+library(fmsb)
 
-database_name <- "..." # "SIDIAP", "UiO", "CPRD Gold
+database_name <- "..."
 
 # Connection details
 server_dbi <- Sys.getenv("...")

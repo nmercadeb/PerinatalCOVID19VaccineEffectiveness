@@ -43,7 +43,7 @@ days.moderna     <- 28 # days for 2nd dose after moderna
 days.astrazeneca <- 28 # days for 2nd dose after astrazeneca
 days.pfizer      <- 21 # days for 2nd dose after pfizer
 pfizer <- c(17, 42)
-moderna <- c(21, 42)
+moderna <- c(24, 49)
 days.badrecord <- 4
 
 # save study settings ----
@@ -74,7 +74,7 @@ if (runInstantiateCohorts) {
 }
 
 if (runPSMathcing) {
-  if (! runInstantiateCohorts) {
+  if (!runInstantiateCohorts) {
     info(logger, "Load cohorts")
     cdm <- cdmFromCon(
       con = db,
@@ -88,7 +88,7 @@ if (runPSMathcing) {
       .softValidation = TRUE
     )
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
-      compute(name = "vaccine_schema", temporary = FALSE, overwrite = TRUE)
+      compute(name = inSchema(schema = results_database_schema, table = "vaccine_schema"), temporary = FALSE, overwrite = TRUE)
   }
   info(logger, "STEP 2 MATCHING ----")
   source(here("2_Matching", "matching.R"))
@@ -119,7 +119,6 @@ if (runCharacterisation) {
   source(here("3_Characterisation", "cohort_stats.R"))
 }
 
-info(logger, "STEP 4 OUTCOME MODEL ----")
 if (runOutcomeModel) {
   if (!runPSMathcing & !runCharacterisation) {
     info(logger, "Load cohorts")
@@ -133,6 +132,7 @@ if (runOutcomeModel) {
     cdm$vaccine_schema <- tbl(db, inSchema(schema = results_database_schema, table = paste0(table_stem, "vaccine_schema"))) %>%
       compute(name = "vaccine_schema", temporary = FALSE, overwrite = TRUE)
   }
+  info(logger, "STEP 4 OUTCOME MODEL ----")
   source(here("4_OutcomeModel", "get_survival_data.R"))
   source(here("4_OutcomeModel", "estimate_survival.R"))
 }

@@ -16,7 +16,7 @@ result_patterns <- c(
   "attrition", "matching_summary", "relative_risk", "vaccine_records_censor",
   "kaplan_meier", "censoring"
 )
-pre_data <- readData(here("data")) |> mergeData(result_patterns)
+pre_data <- readData(here("data-try")) |> mergeData(result_patterns)
 
 # Shiny format ----
 data <- list()
@@ -183,9 +183,10 @@ data$survival_summary <- pre_data$relative_risk |>
   select(!c("suppress", "result_type", "package_name", "package_version", "analysis")) |>
   niceCohortName() |>
   niceOutcomeName() |>
-  select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value)
+  select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value) |>
+  distinct()
 data$risk <- pre_data$relative_risk |>
-  filter(grepl("cox", result_type)) |>
+  filter(grepl("cox|irr", result_type)) |>
   splitGroup() |>
   splitAdditional() |>
   rename("outcome" = "variable_level", "regression" = "result_type") |>
@@ -240,5 +241,5 @@ data$censoring <- pre_data$censoring |>
          "Reason", "N", "Mean (SD)", "Median (Q25-Q75)")
 
 # Save shiny data ----
-save(data, file = here("shinyData.Rdata"))
+save(data, file = here("shinyData-try.Rdata"))
 

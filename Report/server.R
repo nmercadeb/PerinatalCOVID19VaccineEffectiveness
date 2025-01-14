@@ -680,7 +680,8 @@ server <- function(input, output, session) {
   )
   getSMD <- reactive({
     data$smd |>
-      filterData(prefix = "smd", input = input)
+      filterData(prefix = "smd", input = input) |>
+      distinct()
   })
   output$smd_table <- renderDataTable({
     datatable(getSMD(), options = list(pageLength = 25))

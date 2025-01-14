@@ -26,12 +26,11 @@ library(stats)
 library(PatientProfiles)
 library(CohortSurvival)
 
-
 # load functions
 source(here("functions.R"))
 
 # load data
-load(here("shinyData-meta.Rdata"))
+load(here("shinyData-try.Rdata"))
 
 # run shiny
 source(here("server.R"))

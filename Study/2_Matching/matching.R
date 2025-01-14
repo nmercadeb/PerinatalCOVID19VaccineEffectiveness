@@ -73,7 +73,9 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
         matchSucceed <- FALSE
         tryCatch({
           while (doMatching) {
-            exactMatch = c("maternal_age", "gestational_age", "days_previous_vaccine_band_month")
+            exactMatch = c(
+              "maternal_age", "gestational_age", "days_previous_vaccine_band"
+            )
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
             exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
             psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - reason - ", paste0(exactMatch, collapse = " - ")))

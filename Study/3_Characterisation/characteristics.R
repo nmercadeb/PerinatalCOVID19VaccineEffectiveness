@@ -86,7 +86,6 @@ smd <- summarised_lsc %>%
 
 
 ## PS vars
-covid_id <- 1
 psVars <- cdm$matched |>
   mutate(week_start = cohort_start_date) |>
   inner_join(
@@ -108,36 +107,100 @@ psVars <- cdm$matched |>
     ) |>
       compute()
   ) |>
-  matchItDataset(2)
+  matchItDataset(2, asmd = TRUE) |>
+  mutate(trimester = case_when(
+    trimester == "[0,90]" ~ "T1",
+    trimester == "(90,180]" ~ "T2",
+    trimester == "(180,330]" ~ "T3"
+  ))
 
-continuous <- c("visits_m365_m181", "visits_m180_m31", "visits_m30_m1", "covid_diagnostic_test", "influenza",
-                "tdap", "previous_pregnancies", "previous_observation", "days_previous_vaccine")
-binary <- c("liver_disease_chronic_severe", "diabetes", "bloodcancer_within_past_5yr", "organ_transplant_receipient", "solid_cancer_within_past_5yr",
-            "obesity", "immunodeficiency", "asthma_copd_bronchiectasis_bronchitis", "cardiologicaldisease_excl_hypertension")
-categorical <- c("gestational_age", "previous_vaccine_brand", "days_previous_vaccine_band_month")
+continuous <- c(
+  "covid_test", "influenza", "visits_year_before_pregnancy", "tdap",
+  "previous_pregnancies", "previous_observation", "days_previous_vaccine"
+)
+binary <- c(
+  "liver_disease_chronic_severe", "diabetes", "bloodcancer_within_past_5yr",
+  "organ_transplant_receipient", "solid_cancer_within_past_5yr", "obesity",
+  "immunodeficiency", "asthma_copd_bronchiectasis_bronchitis",
+  "cardiologicaldisease_excl_hypertension"
+)
 asmd <- list()
 for (id in settings(cdm$matched)$cohort_definition_id) {
   asmd[[id]] <- bind_rows(
-    psVars |>
-      filter(cohort_definition_id == id) |>
-      asmdCategorical(variables = categorical, groupName = "exposed") |>
-      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]),
+    # general
     psVars |>
       filter(cohort_definition_id == id) |>
       asmdBinary(variables = binary, groupName = "exposed") |>
-      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]),
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]) |>
+      uniteStrata(),
     psVars |>
       filter(cohort_definition_id == id) |>
       asmdContinuous(variables = continuous, groupName = "exposed") |>
-      mutate(cohort_name = settings(cdm$matched)$cohort_name[id])
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id]) |>
+      uniteStrata(),
+    # t1
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T1") |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T1"),
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T1") |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T1"),
+    # t2
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T2") |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T2"),
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T2") |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T2"),
+    # t3
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T3") |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T3"),
+    psVars |>
+      filter(cohort_definition_id == id & trimester == "T3") |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "trimester", strata_level = "T3"),
+    # pfizer
+    psVars |>
+      filter(cohort_definition_id == id & vaccine_brand == "pfizer") |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "vaccine_brand", strata_level = "pfizer"),
+    psVars |>
+      filter(cohort_definition_id == id & vaccine_brand == "pfizer") |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "vaccine_brand", strata_level = "pfizer"),
+    # moderna
+    psVars |>
+      filter(cohort_definition_id == id & vaccine_brand == "moderna") |>
+      asmdBinary(variables = binary, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "vaccine_brand", strata_level = "moderna"),
+    psVars |>
+      filter(cohort_definition_id == id & vaccine_brand == "moderna") |>
+      asmdContinuous(variables = continuous, groupName = "exposed") |>
+      mutate(cohort_name = settings(cdm$matched)$cohort_name[id],
+             strata_name = "vaccine_brand", strata_level = "moderna")
   )
 }
 
 asmd <- asmd |>
   bind_rows() |>
-  filter(!is.na(asmd)) |>
+  # filter(!is.na(asmd)) |>
   visOmopResults::uniteGroup("cohort_name") |>
-  visOmopResults::uniteStrata() |>
+  pivot_longer(cols = c("asmd", "smd"), names_to = "estimate_name", values_to = "estimate_value") |>
   mutate(result_id = 1,
          cdm_name = cdmName(cdm),
          result_type = "large_scale_differences",
@@ -145,9 +208,8 @@ asmd <- asmd |>
          package_version = NA_character_,
          variable_level = "propensity_score",
          estimate_type = "numeric",
-         estimate_name = "asmd",
-         exposed = "overall", ) |>
-  rename("variable_name" = "variable", "estimate_value" = "asmd") |>
+         exposed = "overall") |>
+  rename("variable_name" = "variable") |>
   select(!c("asmd_type")) |>
   visOmopResults::uniteAdditional("exposed") |>
   newSummarisedResult()

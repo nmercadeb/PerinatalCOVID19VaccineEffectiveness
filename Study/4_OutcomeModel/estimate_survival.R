@@ -31,14 +31,14 @@ for (analysis in analyses) {
       }
       for (outcome in outcomes.k) {
         # survival format for outcome
-        survival_data <- survivalFormat(survival_window, outcome)|>
+        survival_data <- survivalFormat(survival_window, outcome) |>
           mutate(overall = "overall")
         # get estimates
         if(grepl("nco", outcome)) {
           results[[k]] <- estimateSurvival(
             data = survival_data,
             group = "cohort_name", c("overall", "vaccine_brand", "trimester"),
-            cox = TRUE, binomial = FALSE, coxTime = FALSE
+            cox = TRUE, binomial = FALSE, coxTime = FALSE, rateratio = FALSE
           ) |>
             mutate(
               cdm_name = cdmName(cdm),

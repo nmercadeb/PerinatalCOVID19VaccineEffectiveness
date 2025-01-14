@@ -30,7 +30,7 @@ estimates <- data$risk |>
     regression == "cox-sandwich",
     followup_end == "cohort_end_date_pregnancy",
     variable_name == "study",
-    delivery_excluded %in% c("-", "yes"),
+    delivery_excluded %in% c("-", "no"),
     window == "15_Inf",
     outcome != "icu_covid",
     !(cdm_name == "CPRD Gold" & outcome == "inpatient_covid")

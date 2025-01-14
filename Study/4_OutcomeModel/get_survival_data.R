@@ -4,7 +4,7 @@ cdm$survival_raw <- cdm$matched |>
   addCohortIntersectDate(
     targetCohortTable = nco_table_name,
     indexDate = "cohort_start_date",
-    censorDate = "cohort_end_date",
+    # censorDate = "cohort_end_date",
     targetDate = "cohort_start_date",
     order = "first",
     window = c(0, Inf),
@@ -13,7 +13,7 @@ cdm$survival_raw <- cdm$matched |>
   addCohortIntersectDate(
     targetCohortTable = outcomes_table_name,
     indexDate = "cohort_start_date",
-    censorDate = "cohort_end_date",
+    # censorDate = "cohort_end_date",
     targetDate = "cohort_start_date",
     order = "first",
     window = c(0, Inf),

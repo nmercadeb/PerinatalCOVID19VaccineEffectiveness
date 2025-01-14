@@ -155,16 +155,15 @@ pregnantMatchingTable <- function(sourceTable, covidId, weekStart, weekEnd, excl
   return(temp)
 }
 
-matchItDataset <- function(x, objective_id) {
+matchItDataset <- function(x, objective_id, asmd = FALSE) {
   disselect <- c(
     "cohort_start_date", "cohort_end_date", "observation_period_start_date",
     "covid_date_week", "week_start", "week_end", "index_vaccine_date",
     "index_vaccine_brand", "pregnancy_start_date", "pregnancy_end_date",
-    "enrollment_end_date"
+    "enrollment_end_date", "days_previous_vaccine", "previous_vaccine_date"
   )
   if (objective_id == 1) {
-    disselect <- c(disselect, "previous_vaccine_date", "previous_vaccine_brand",
-                   "days_previous_vaccine", "days_previous_vaccine_band_month")
+    disselect <- c(disselect, "previous_vaccine_brand", "days_previous_vaccine_band")
   }
   x <- x %>%
     mutate(
@@ -184,11 +183,11 @@ matchItDataset <- function(x, objective_id) {
     ) |>
     addTableIntersectCount(
       tableName = "visit_occurrence",
-      indexDate = "week_start",
-      window = list("m365_m181" = c(-365, -181), "m180_m31" = c(-180, -31), "m30_m1" = c(-30, -1)),
+      indexDate = "pregnancy_start_date",
+      window = list("m365_m1" = c(-365, 0)),
       targetStartDate = "visit_start_date",
       targetEndDate = NULL,
-      nameStyle = "visits_{window_name}"
+      nameStyle = "visits_year_before_pregnancy"
     ) |>
     compute(name = "temp", temporary = FALSE, overwrite = TRUE) |>
     addCohortIntersectCount(
@@ -226,15 +225,18 @@ matchItDataset <- function(x, objective_id) {
     mutate(
       previous_observation = as.numeric(!!datediff("observation_period_start_date", "week_start")),
       days_previous_vaccine = as.numeric(!!datediff("previous_vaccine_date", "week_start")),
-      # days_previous_vaccine_squared = days_previous_vaccine*days_previous_vaccine,
-      days_previous_vaccine_band_month = cut(
+      days_previous_vaccine_band = cut(
         days_previous_vaccine,
         !!seq(0, 10000, 30),
         include.lowest = TRUE
       )
     ) |>
-    collect() |>
-    select(!any_of(disselect))
+    collect()
+
+  if (!asmd) {
+    x <- x |> select(!any_of(disselect))
+  }
+
   return(x)
 }
 
@@ -331,7 +333,8 @@ survivalFormat <- function(x, out) {
     )
   x <- x %>%
     mutate(
-      status = if_else(.data[[out]] >= start_date & .data[[out]] < end_date, 1, 0),
+      # status 1 if outcome in window
+      status = if_else(.data[[out]] >= start_date & .data[[out]] <= end_date, 1, 0),
       status = if_else(is.na(status), 0, status),
       time = if_else(status == 1, !!datediff("start_date", out), !!datediff("start_date", "end_date")),
     ) |>
@@ -344,7 +347,7 @@ survivalFormat <- function(x, out) {
 }
 
 estimateSurvival <- function(data, group, strata,
-                             cox = TRUE, binomial = FALSE,
+                             cox = TRUE, binomial = FALSE, rateratio = TRUE,
                              coxTime = TRUE, coxSandwich = TRUE) {
   results <- list()
   groupLevel = unique(data |> pull(.data[[group]]))
@@ -501,6 +504,36 @@ estimateSurvival <- function(data, group, strata,
           })
         }
 
+        # rateratio ----
+        if (rateratio) {
+          tryCatch({
+            dataIRR <- data.k |>
+              group_by(exposed) |>
+              summarise(person_days = sum(time), cases = sum(status))
+            res <- rateratio(
+              dataIRR$cases[dataIRR$exposed == 1],
+              dataIRR$cases[dataIRR$exposed == 0],
+              dataIRR$person_days[dataIRR$exposed == 1],
+              dataIRR$person_days[dataIRR$exposed == 1]
+            )
+
+            results[[k]] <- tibble(
+              exp_coef = res$estimate,
+              lower_ci = res$conf.int[1],
+              upper_ci = res$conf.int[2]
+            ) |>
+              mutate(variable = "exposed") |>
+              regressionToSummarised(
+                type = "irr", groupLevel = group.k, cols = c("exp_coef", "lower_ci", "upper_ci"),
+                strataName = strata.k, strataLevel = strataLevel.k
+              ) |>
+              mutate(exposed = NA) # for KM and followup
+            k <- k + 1
+          },
+          error = function(e) {
+          })
+        }
+
         # binomial ----
         if (binomial) {
           # regression
@@ -629,8 +662,8 @@ asmdBinary <- function(x, variables = NULL, groupName = "group", weight = NULL) 
     tidyr::pivot_longer(!"group", names_to = "variable.func") %>%
     tidyr::separate("variable.func", c("variable", "func"), " ") %>%
     tidyr::pivot_wider(names_from = c("func", "group"), values_from = "value") %>%
-    dplyr::mutate(asmd = abs(.data$mean_1-.data$mean_2)/sqrt((.data$var_1+.data$var_2)/2)) %>%
-    dplyr::select("variable", "asmd") %>%
+    dplyr::mutate(smd = (.data$mean_1-.data$mean_2)/sqrt((.data$var_1+.data$var_2)/2), asmd = abs(smd)) %>%
+    dplyr::select("variable", "asmd", "smd") %>%
     mutate(asmd_type = "binary")
 
 }
@@ -660,8 +693,8 @@ asmdContinuous <- function(x, variables = NULL, groupName = "group", weight = NU
     tidyr::pivot_longer(!"group", names_to = "variable.func") %>%
     tidyr::separate("variable.func", c("variable", "func"), " ") %>%
     tidyr::pivot_wider(names_from = c("func", "group"), values_from = "value") %>%
-    dplyr::mutate(asmd = abs(.data$mean_1-.data$mean_2)/sqrt(.data$var_1+.data$var_2)) %>%
-    dplyr::select("variable", "asmd") %>%
+    dplyr::mutate(smd = (.data$mean_1-.data$mean_2)/sqrt(.data$var_1+.data$var_2), asmd = abs(smd)) %>%
+    dplyr::select("variable", "asmd", "smd") %>%
     mutate(asmd_type = "continuous")
 
 }
