@@ -112,7 +112,8 @@ psVars <- cdm$matched |>
     trimester == "[0,90]" ~ "T1",
     trimester == "(90,180]" ~ "T2",
     trimester == "(180,330]" ~ "T3"
-  ))
+  )) |>
+  collect()
 
 continuous <- c(
   "covid_test", "influenza", "visits_year_before_pregnancy", "tdap",

@@ -127,10 +127,10 @@ censoring_observation <- cdm$matched  %>%
     cdm$matched  %>%
       inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
       mutate(time = !!datediff("cohort_start_date", "cohort_end_date")) %>%
+      collect() %>%
       group_by(cohort_name) %>%
       summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
-      mutate(reason = "overall") %>%
-      collect()
+      mutate(reason = "overall")
   ) |>
   mutate(cdm_name = cdmName(cdm), followup_end = "observation_end")
 
@@ -145,10 +145,10 @@ censoring_pregnancy <- cdm$matched  %>%
     cdm$matched  %>%
       inner_join(cohort_set, by = "cohort_definition_id", copy = TRUE) %>%
       mutate(time = !!datediff("cohort_start_date", "cohort_end_date_pregnancy")) %>%
+      collect() %>%
       group_by(cohort_name) %>%
       summarise(n = n(), mean = mean(time), sd = sd(time), median = quantile(time, 0.5), q25 = quantile(time, 0.25), q75 = quantile(time, 0.75), min = min(time), max = max(time)) %>%
-      mutate(reason = "overall") %>%
-      collect()
+      mutate(reason = "overall")
   ) |>
   mutate(cdm_name = cdmName(cdm), followup_end = "pregnancy_end")
 
