@@ -14,10 +14,10 @@ settings_covid <- settings(cdm$covid)
 popSummary <- list()
 jj <- 0
 
-for (source_id in 1) {
+for (source_id in settings_source_pregnant$cohort_definition_id) {
   # source cohort name
   source_name <- settings_source_pregnant$cohort_name[settings_source_pregnant$cohort_definition_id == source_id]
-  for (covid_id in 1) {
+  for (covid_id in settings(cdm$covid)$cohort_definition_id) {
     # covid cohort name
     covid_name <- settings_covid$cohort_name[settings_covid$cohort_definition_id == covid_id]
     # source cohort
