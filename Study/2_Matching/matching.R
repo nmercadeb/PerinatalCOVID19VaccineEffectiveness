@@ -209,8 +209,10 @@ for (source_id in 2) {
 summary %>% bind_rows() %>% mutate(cdm_name = cdmName(cdm)) %>%
   write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
 
-do.call(bind, popSummary[-which(sapply(popSummary, is.null))]) %>% mutate(cdm_name = cdmName(cdm)) %>%
-  write_csv(file = here(output_folder, paste0("matching_summary_characteristics_", database_name, ".csv")))
+popSummary %>% 
+  bind_rows() %>%
+  mutate(cdm_name = cdmName(cdm)) %>% 
+  write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
 
 # instantiate matching cohort
 matched_cohorts <- matched_cohorts %>% bind_rows()
