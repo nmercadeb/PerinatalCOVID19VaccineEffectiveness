@@ -13,11 +13,12 @@ settings_source_pregnant <- settings(cdm$source_pregnant)
 settings_covid <- settings(cdm$covid)
 popSummary <- list()
 jj <- 0
+ii <- 0
 
-for (source_id in settings_source_pregnant$cohort_definition_id) {
+for (source_id in 2) {
   # source cohort name
   source_name <- settings_source_pregnant$cohort_name[settings_source_pregnant$cohort_definition_id == source_id]
-  for (covid_id in settings(cdm$covid)$cohort_definition_id) {
+  for (covid_id in 1) {
     # covid cohort name
     covid_name <- settings_covid$cohort_name[settings_covid$cohort_definition_id == covid_id]
     # source cohort
@@ -41,6 +42,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
     info(logger, paste0("Matching population: ", source_name, ". Covid definition: ", covid_name))
     paste0("Matching population: ", source_name, ". Covid definition: ", covid_name)
     for(kk in 1:length(trialWeeks)) {
+      ii <- ii + 1
       week.k <- trialWeeks[kk]
       week.k.end <- week.k + weeks(1) - days(1)
       print(paste0("Processing week: ", week.k, ". Progress: ", as.character(round(kk/length(trialWeeks) *100, 2)), " %."))
@@ -64,7 +66,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
               unexposed_post =  0
             )
           )
-        popSummary[[jj]] <- NULL
+        popSummary[[ii]] <- NULL
       } else {
         # Matching dataframe
         working.match_data <- matchItDataset(working.table, source_id)
@@ -86,7 +88,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
                                      ratio = 1, std.caliper = FALSE,
                                      data = working.match_data,
                                      exact = exactFormula)
-            popSummary[[jj]] <- summariseResult(
+            popSummary[[ii]] <- summariseResult(
               working.match_data |> mutate(cohort_name = paste0(source_name, "_", covid_name)),
               group = list("cohort_name"),
               includeOverallGroup = FALSE,
