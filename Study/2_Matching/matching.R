@@ -13,12 +13,11 @@ settings_source_pregnant <- settings(cdm$source_pregnant)
 settings_covid <- settings(cdm$covid)
 popSummary <- list()
 jj <- 0
-ii <- 0
 
-for (source_id in 2) {
+for (source_id in settings_source_pregnant$cohort_definition_id) {
   # source cohort name
   source_name <- settings_source_pregnant$cohort_name[settings_source_pregnant$cohort_definition_id == source_id]
-  for (covid_id in 1) {
+  for (covid_id in settings_covid$cohort_definition_id) {
     # covid cohort name
     covid_name <- settings_covid$cohort_name[settings_covid$cohort_definition_id == covid_id]
     # source cohort
@@ -42,7 +41,6 @@ for (source_id in 2) {
     info(logger, paste0("Matching population: ", source_name, ". Covid definition: ", covid_name))
     paste0("Matching population: ", source_name, ". Covid definition: ", covid_name)
     for(kk in 1:length(trialWeeks)) {
-      ii <- ii + 1
       week.k <- trialWeeks[kk]
       week.k.end <- week.k + weeks(1) - days(1)
       print(paste0("Processing week: ", week.k, ". Progress: ", as.character(round(kk/length(trialWeeks) *100, 2)), " %."))
@@ -66,7 +64,6 @@ for (source_id in 2) {
               unexposed_post =  0
             )
           )
-        popSummary[[ii]] <- NULL
       } else {
         # Matching dataframe
         working.match_data_raw <- matchItDataset(working.table, source_id)
@@ -90,22 +87,6 @@ for (source_id in 2) {
                                      ratio = 1, std.caliper = FALSE,
                                      data = working.match_data,
                                      exact = exactFormula)
-            popSummary[[ii]] <- summariseResult(
-              working.match_data |> mutate(cohort_name = paste0(source_name, "_", covid_name, "_", week.k)),
-              group = list("cohort_name"),
-              includeOverallGroup = FALSE,
-              strata = list("exposed"),
-              includeOverallStrata = FALSE,
-              variables = c(
-                "age", exactMatch, "trimester", "visits_year_before_pregnancy", "covid_diagnostic_test", "influenza", "tdap",
-                "liver_disease_chronic_severe", "diabetes", "organ_transplant_receipient", "solid_cancer_within_past_5yr",
-                "obesity", "immunodeficiency", "asthma_copd_bronchiectasis_bronchitis", "bloodcancer_within_past_5yr",
-                "cardiologicaldisease_excl_hypertension", "previous_pregnancies", "previous_observation"
-              ),
-              estimates = c("min", "q25", "median", "q75", "max", "count", "percentage"),
-              counts = TRUE
-            )
-
             # Save matched pairs
             working.matched.population <- match.data(working.match) %>%
               inner_join(
@@ -217,11 +198,6 @@ for (source_id in 2) {
 # export summary
 summary %>% bind_rows() %>% mutate(cdm_name = cdmName(cdm)) %>%
   write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
-
-popSummary %>%
-  bind_rows() %>%
-  mutate(cdm_name = cdmName(cdm)) %>%
-  write_csv(file = here(output_folder, paste0("matching_summary_char", database_name, ".csv")))
 
 # instantiate matching cohort
 matched_cohorts <- matched_cohorts %>% bind_rows()
