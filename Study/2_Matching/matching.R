@@ -16,7 +16,7 @@ jj <- 0
 for (source_id in settings_source_pregnant$cohort_definition_id) {
   # source cohort name
   source_name <- settings_source_pregnant$cohort_name[settings_source_pregnant$cohort_definition_id == source_id]
-  for (covid_id in settings(cdm$covid)$cohort_definition_id) {
+  for (covid_id in settings_covid$cohort_definition_id) {
     # covid cohort name
     covid_name <- settings_covid$cohort_name[settings_covid$cohort_definition_id == covid_id]
     # source cohort
@@ -65,10 +65,12 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
           )
       } else {
         # Matching dataframe
-        working.match_data <- matchItDataset(working.table, source_id)
-        columns <- sapply(lapply(working.match_data, unique), length)
+        working.match_data_raw <- matchItDataset(working.table, source_id)
+        columns <- sapply(lapply(working.match_data_raw, unique), length)
         columns <- names(columns)[columns > 1]
-        working.match_data <- working.match_data %>% select(all_of(columns))
+        working.match_data <- working.match_data_raw %>%
+          select(all_of(columns)) %>%
+          select(-any_of(c("trimester", "reason")))
         doMatching <- TRUE
         matchSucceed <- FALSE
         tryCatch({
@@ -78,7 +80,7 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
             )
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
             exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
-            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - reason - ", paste0(exactMatch, collapse = " - ")))
+            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - ", paste0(exactMatch, collapse = " - ")))
             working.match <- matchit(formula = psFormula, method = "nearest",
                                      distance = "glm", caliper = 0.2,
                                      ratio = 1, std.caliper = FALSE,
@@ -86,9 +88,16 @@ for (source_id in settings_source_pregnant$cohort_definition_id) {
                                      exact = exactFormula)
             # Save matched pairs
             working.matched.population <- match.data(working.match) %>%
-              inner_join(working.table,
-                         by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed", "reason"),
-                         copy = TRUE) %>%
+              inner_join(
+                working.match_data_raw |>
+                  select(c("subject_id", "pregnancy_id", "age", exactMatch, "exposed", "reason", "trimester")),
+                by = c("subject_id", "pregnancy_id", "age", exactMatch, "exposed")
+              ) %>%
+              inner_join(
+                working.table,
+                by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed", "reason"),
+                copy = TRUE
+              ) %>%
               mutate(match_id = paste0(gsub("-", "", week.k), subclass))
             # Assign index dates and vaccine brand
             working.matched.population <- working.matched.population %>%
