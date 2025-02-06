@@ -69,10 +69,12 @@ for (source_id in 2) {
         popSummary[[ii]] <- NULL
       } else {
         # Matching dataframe
-        working.match_data <- matchItDataset(working.table, source_id)
-        columns <- sapply(lapply(working.match_data, unique), length)
+        working.match_data_raw <- matchItDataset(working.table, source_id)
+        columns <- sapply(lapply(working.match_data_raw, unique), length)
         columns <- names(columns)[columns > 1]
-        working.match_data <- working.match_data %>% select(all_of(columns))
+        working.match_data <- working.match_data_raw %>%
+          select(all_of(columns)) %>%
+          select(-c("trimester", "reason"))
         doMatching <- TRUE
         matchSucceed <- FALSE
         tryCatch({
@@ -82,14 +84,14 @@ for (source_id in 2) {
             )
             exactMatch = exactMatch[exactMatch %in% colnames(working.match_data)]
             exactFormula = formula(paste0("exposed ~", paste0(exactMatch, collapse = " + ")))
-            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - trimester - reason - ", paste0(exactMatch, collapse = " - ")))
+            psFormula = formula(paste0("exposed ~ . - subject_id - pregnancy_id - ", paste0(exactMatch, collapse = " - ")))
             working.match <- matchit(formula = psFormula, method = "nearest",
                                      distance = "glm", caliper = 0.2,
                                      ratio = 1, std.caliper = FALSE,
                                      data = working.match_data,
                                      exact = exactFormula)
             popSummary[[ii]] <- summariseResult(
-              working.match_data |> mutate(cohort_name = paste0(source_name, "_", covid_name)),
+              working.match_data |> mutate(cohort_name = paste0(source_name, "_", covid_name, "_", week.k)),
               group = list("cohort_name"),
               includeOverallGroup = FALSE,
               strata = list("exposed"),
@@ -106,9 +108,16 @@ for (source_id in 2) {
 
             # Save matched pairs
             working.matched.population <- match.data(working.match) %>%
-              inner_join(working.table,
-                         by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed", "reason"),
-                         copy = TRUE) %>%
+              inner_join(
+                working.match_data_raw |>
+                  select(c("subject_id", "pregnancy_id", "age", exactMatch, "exposed", "reason", "trimester")),
+                by = c("subject_id", "pregnancy_id", "age", exactMatch, "exposed")
+              ) %>%
+              inner_join(
+                working.table,
+                by = c("subject_id", "pregnancy_id", "age", "maternal_age", "exposed", "reason"),
+                copy = TRUE
+              ) %>%
               mutate(match_id = paste0(gsub("-", "", week.k), subclass))
             # Assign index dates and vaccine brand
             working.matched.population <- working.matched.population %>%
@@ -209,10 +218,10 @@ for (source_id in 2) {
 summary %>% bind_rows() %>% mutate(cdm_name = cdmName(cdm)) %>%
   write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
 
-popSummary %>% 
+popSummary %>%
   bind_rows() %>%
-  mutate(cdm_name = cdmName(cdm)) %>% 
-  write_csv(file = here(output_folder, paste0("matching_summary_", database_name, ".csv")))
+  mutate(cdm_name = cdmName(cdm)) %>%
+  write_csv(file = here(output_folder, paste0("matching_summary_char", database_name, ".csv")))
 
 # instantiate matching cohort
 matched_cohorts <- matched_cohorts %>% bind_rows()
