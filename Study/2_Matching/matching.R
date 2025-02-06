@@ -74,7 +74,7 @@ for (source_id in 2) {
         columns <- names(columns)[columns > 1]
         working.match_data <- working.match_data_raw %>%
           select(all_of(columns)) %>%
-          select(-c("trimester", "reason"))
+          select(-any_of(c("trimester", "reason")))
         doMatching <- TRUE
         matchSucceed <- FALSE
         tryCatch({
