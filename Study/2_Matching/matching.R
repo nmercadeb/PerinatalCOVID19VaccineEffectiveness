@@ -11,7 +11,6 @@ cohort_attrition <- NULL
 
 settings_source_pregnant <- settings(cdm$source_pregnant)
 settings_covid <- settings(cdm$covid)
-popSummary <- list()
 jj <- 0
 
 for (source_id in settings_source_pregnant$cohort_definition_id) {
