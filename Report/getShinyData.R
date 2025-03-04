@@ -16,7 +16,7 @@ result_patterns <- c(
   "attrition", "matching_summary", "relative_risk", "vaccine_records_censor",
   "kaplan_meier", "censoring"
 )
-pre_data <- readData(here("data-try")) |> mergeData(result_patterns)
+pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
 # Shiny format ----
 data <- list()
@@ -241,5 +241,5 @@ data$censoring <- pre_data$censoring |>
          "Reason", "N", "Mean (SD)", "Median (Q25-Q75)")
 
 # Save shiny data ----
-save(data, file = here("shinyData-try.Rdata"))
+save(data, file = here("shinyData.Rdata"))
 
