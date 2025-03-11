@@ -6,7 +6,6 @@
 *.zip
 *.png
 *.csv
-*.docx
 *.txt
 Report/figures/*
 Report/data/*

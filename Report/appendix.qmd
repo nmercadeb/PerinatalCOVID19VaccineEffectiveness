@@ -1,0 +1,109 @@
+---
+title: "APPENDIX"
+subtitle: "Effectiveness of COVID-19 mRNA primary and booster vaccination during pregnancy: a target trial emulation and meta-analysis of data from 4 European countries"
+format:
+  docx:
+    reference-doc: reference-doc.docx
+    fig-cap-location: top
+execute:
+  echo: false
+crossref:
+  fig-title: '**Figure**'
+  fig-labels: arabic
+  title-delim: "**.**"
+toc: TRUE
+toc-title: "Table of Contents"
+---
+
+```{r}
+# prepare packages and data
+library(dplyr)
+library(readr)
+library(here)
+library(tidyr)
+library(stringr)
+library(visOmopResults)
+library(omopgenerics)
+library(ggplot2)
+library(forestploter)
+library(latex2exp)
+library(egg)
+library(grid)
+library(ggh4x)
+library(ggtext)
+
+load(here("shinyData-meta.Rdata"))
+
+num_text <- 1
+num_figure <- 1
+num_table <- 1
+```
+
+
+```{r}
+# Database description
+cat("\n\n\\pagebreak\n")
+cat("\n") 
+cat("## ",paste0("**Appendix Text", num_text, ":** Database descriptions."))
+cat("\n")
+num_text <- num_text + 1
+cat("\n")
+cat("\n\n\\pagebreak\n")
+
+# Relevant information on vaccination and covid on each country
+cat("\n\n\\pagebreak\n")
+cat("\n") 
+cat("## ",paste0("**Appendix Text", num_text, ":** COVID-19 vaccination campaing in each country."))
+cat("\n")
+num_text <- num_text + 1
+cat("\n")
+cat("\n\n\\pagebreak\n")
+
+# PS variables
+cat("\n\n\\pagebreak\n")
+cat("\n") 
+cat("## ",paste0("**Appendix Figure", num_figure, ":** Study Desing Diagram and Propensity Score Covariates."))
+cat("\n")
+# include_graphics(here("figures", "studyDesing.png"))
+num_text <- num_figure + 1
+cat("\n")
+cat("\n\n\\pagebreak\n")
+
+# Flowcharts
+# db <- rep(c("CPRD", "", ""), 2)
+# for (ii in 1:6) {
+#   cat("\n\n\\pagebreak\n")
+#   cat("\n") 
+#   cat("## ",paste0("**Appendix Figure", num_figure, ":** Attrition for the study population in the ", db[ii] , " database, for the", analysis[ii], " analysis."))
+#   cat("\n")
+#   # include_graphics(here("figures", "studyDesing.png"))
+#   num_text <- num_figure + 1
+#   cat("\n")
+#   cat("\n\n\\pagebreak\n")
+# }
+```
+
+
+```{r}
+# BASELINE CHARACTERISTICS
+captions <- expand_grid(
+  cdm_name = c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD"),
+  comparison = c("complete_booster", "none_first"),
+  strata_name = "overall"
+) |>
+  mutate(
+    caption = paste0("Baseline characteristics of the study population in the ", cdm_name, " database, for the ", comparison, " analysis."),
+    caption = if_else(
+      comparison == "complete_booster",
+      gsub("complete_booster", "Booster vs. Complete Schema", caption),
+      gsub("none_first", "Complete Schema vs. Unvaccinated", caption)
+      )
+    )
+data$baseline |>
+  mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
+  inner_join(captions)
+```
+
+
+```{r}
+```
