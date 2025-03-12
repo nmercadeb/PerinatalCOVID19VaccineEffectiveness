@@ -4,18 +4,13 @@ subtitle: "Effectiveness of COVID-19 mRNA primary and booster vaccination during
 format:
   docx:
     reference-doc: reference-doc.docx
-    fig-cap-location: top
 execute:
   echo: false
-crossref:
-  fig-title: '**Figure**'
-  fig-labels: arabic
-  title-delim: "**.**"
-toc: TRUE
+toc: true
 toc-title: "Table of Contents"
 ---
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # prepare packages and data
 library(dplyr)
 library(readr)
@@ -31,65 +26,64 @@ library(egg)
 library(grid)
 library(ggh4x)
 library(ggtext)
+library(PatientProfiles)
 
 load(here("shinyData-meta.Rdata"))
 
 num_text <- 1
 num_figure <- 1
 num_table <- 1
+
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, results = 'asis')
 ```
 
 
 ```{r}
 # Database description
-cat("\n\n\\pagebreak\n")
 cat("\n") 
-cat("## ",paste0("**Appendix Text", num_text, ":** Database descriptions."))
+cat("## ", paste0("**Appendix Text ", num_text, ":** Database descriptions."))
 cat("\n")
 num_text <- num_text + 1
 cat("\n")
-cat("\n\n\\pagebreak\n")
 
-# Relevant information on vaccination and covid on each country
-cat("\n\n\\pagebreak\n")
+# COVID-19 vaccination campaign in each country
 cat("\n") 
-cat("## ",paste0("**Appendix Text", num_text, ":** COVID-19 vaccination campaing in each country."))
+cat(paste0("## **Appendix Text ", num_text, ":** COVID-19 vaccination campaign in each country."))
 cat("\n")
 num_text <- num_text + 1
 cat("\n")
-cat("\n\n\\pagebreak\n")
 
-# PS variables
-cat("\n\n\\pagebreak\n")
+# Study Design Diagram and Propensity Score Covariates
 cat("\n") 
-cat("## ",paste0("**Appendix Figure", num_figure, ":** Study Desing Diagram and Propensity Score Covariates."))
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Study Design Diagram and Propensity Score Covariates."))
 cat("\n")
-# include_graphics(here("figures", "studyDesing.png"))
-num_text <- num_figure + 1
+# Check if file exists before including
+# if (file.exists(here("figures", "studyDesign.png"))) {
+#   include_graphics(here("figures", "studyDesign.png"))
+# }
+num_figure <- num_figure + 1
 cat("\n")
-cat("\n\n\\pagebreak\n")
 
 # Flowcharts
 # db <- rep(c("CPRD", "", ""), 2)
 # for (ii in 1:6) {
 #   cat("\n\n\\pagebreak\n")
 #   cat("\n") 
-#   cat("## ",paste0("**Appendix Figure", num_figure, ":** Attrition for the study population in the ", db[ii] , " database, for the", analysis[ii], " analysis."))
+#   cat("## ",paste0("**Appendix Figure ", num_figure, ":** Attrition for the study population in the ", db[ii] , " database, for the", analysis[ii], " analysis."))
 #   cat("\n")
 #   # include_graphics(here("figures", "studyDesing.png"))
-#   num_text <- num_figure + 1
+#   num_figure <- num_figure + 1
 #   cat("\n")
 #   cat("\n\n\\pagebreak\n")
 # }
 ```
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # BASELINE CHARACTERISTICS
 captions <- expand_grid(
   cdm_name = c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD"),
-  comparison = c("complete_booster", "none_first"),
-  strata_name = "overall"
+  comparison = c("none_first", "complete_booster")
 ) |>
   mutate(
     caption = paste0("Baseline characteristics of the study population in the ", cdm_name, " database, for the ", comparison, " analysis."),
@@ -97,13 +91,87 @@ captions <- expand_grid(
       comparison == "complete_booster",
       gsub("complete_booster", "Booster vs. Complete Schema", caption),
       gsub("none_first", "Complete Schema vs. Unvaccinated", caption)
-      )
     )
-data$baseline |>
+  )
+
+orderVarsName <- tibble(
+  variable_name = c(
+    "Number records", "Age", "Age group", "Trimester", 
+    "Vaccine brand", "Number prior pregnancies", "Number visits prior year", 
+    "Prior observation", "Covid-19 any time prior", "Ohter vaccines any time prior",
+    "Conditions any time prior",  "Drugs prior 180 days" 
+  ),
+  Covariate = factor(
+    c(
+      "Number records", "Age (Years)", "Age Group", "Gestational Trimester",  
+      "Vaccine Product", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",  
+      "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",  
+      "Medications Prescribed (Last 180 Days)"  
+    ),
+    levels = c(
+      "Number records", "Age (Years)", "Age Group", "Gestational Trimester",  
+      "Vaccine Product", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",  
+      "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",  
+      "Medications Prescribed (Last 180 Days)"  
+    ))
+)
+
+baseline <- data$baseline |>
   mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
-  inner_join(captions)
+  filter(
+    strata_name == "overall", covid_definition == "diagnostic_test", 
+    !estimate_name %in% c("min", "max", "q05", "q95", "mean", "sd"),
+    !variable_level %in% str_to_sentence(gsub("_", " ", c(
+      "covid_test", "chronic_liver_disease", "bronchiectasis", "pulmonary_hypertension",
+      "eclampsia_preeclampsia", "schizophrenia_spectrum_disorder", "gestational_diabetes",
+      "hematological_malignancies", "cerebrovascular_disease", "chronic_obstructive_lung_disease",
+      "pulmonary_embolism", "Immunoglobulins", "Propulsives", "Antiacids", "Antiseptics and desinfectants",
+      "Obstructive respiratory diseases", "Epilepsy", "Antiacids"))),
+    cdm_name %in% c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD")
+  ) |>
+  splitAll() |>
+  select(cdm_name, exposed, variable_name, variable_level, estimate_name, estimate_type, estimate_value, comparison) |>
+  formatEstimateValue() |>
+  formatEstimateName(c(
+    "N (%)" = "<count> (<percentage>%)", "N" = "<count>", "Median (Q25 - Q75)" = "<median> (<q25> - <q75>)"
+  )) |>
+  inner_join(orderVarsName, by = "variable_name") |>
+  mutate(
+    variable_level = case_when(
+      variable_level == "Cohort 1" ~ "-",
+      variable_level == "Covid diagnostic test" ~ "-",
+      variable_level == "Diabetes mellitus" ~ "Diabetes (any type)",
+      variable_level %in% c("Hiv", "Pcos") ~ toupper(variable_level),
+      .default = variable_level
+    ),
+    estimate_value = if_else(
+      Covariate == "Vaccine Product" & exposed == "Unexposed", "-", estimate_value
+    )
+  )
+
+
+for (ii in 1:nrow(captions)) {
+  # prep
+  tab.ii <- baseline |>
+    mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
+    inner_join(captions[ii,] |> select(!c("caption")), by = c("cdm_name", "comparison")) |>
+    select(Covariate, `Covariate level` = variable_level, Estimate = estimate_name, Cohort = exposed, estimate_value) |>
+    formatHeader(header = c("Cohort")) |>
+    arrange(Covariate)
+  if (captions[ii,] |> pull("cdm_name") == "SCIFI-PEARL") {
+    tab.ii <- tab.ii |> filter(Covariate != "Other Vaccinations (Any Time Prior)")
+  }
+  
+  # display
+  cat("\n") 
+  cat("## ", paste0("**Appendix Table ", num_table, ":** ", captions[ii,] |> pull("caption")))
+  cat("\n")
+  gt::as_word(tab.ii |> gtTable(colsToMergeRows = "all_columns"))
+  num_table <- num_table + 1
+  cat("\n")
+}
 ```
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ```
