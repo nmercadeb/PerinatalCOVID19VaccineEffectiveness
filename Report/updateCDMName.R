@@ -8,10 +8,10 @@ library(stringr)
 library(zip)
 
 # Get data
-folderName <- "Results_SCIFI-PEARLpregnancy_20250209/Results_SCIFI-PEARLpregnancy"
-newCDMName <- "SCIFI-PEARL 2022"
+folderName <- "Results_SIDIAP_20250114 (1)/Results_SIDIAP"
+newCDMName <- "SIDIAP_20250114"
 
-files <- list.files(here::here("data", folderName), full.names = TRUE)
+files <- list.files(here::here("dataOld", folderName), full.names = TRUE)
 for (file in files) {
   readr::read_csv(file, col_types = readr::cols(.default = readr::col_character())) |>
     mutate(cdm_name = newCDMName) |>

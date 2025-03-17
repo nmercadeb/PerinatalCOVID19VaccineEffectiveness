@@ -20,9 +20,10 @@ source(here("functions.R"))
 # load data
 load(here("shinyData-meta.Rdata"))
 
-cdmMain <- c("CPRD Gold", "SCIFI-PEARL", "SIDIAP", "UiO_PregAlgorithm", "Meta-Analysis (UiO_PregAlgorithm + SCIFI-PEARL)")
+cdmMain <- c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS")
 
 estimates <- data$risk |>
+  mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
   filter(
     cdm_name %in% cdmMain,
@@ -33,11 +34,12 @@ estimates <- data$risk |>
     delivery_excluded %in% c("-", "no"),
     window == "15_Inf",
     outcome != "icu_covid",
-    !(cdm_name == "CPRD Gold" & outcome == "inpatient_covid")
+    !(cdm_name == "CPRD GOLD" & outcome == "inpatient_covid")
   ) |>
   select(!estimate_type) |>
   left_join(
     data$survival_summary |>
+      mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
       filter(grepl("count", estimate_name)) |>
       select(!estimate_type) |>
       pivot_wider(names_from = c("exposed", "estimate_name"), values_from = "estimate_value") |>
@@ -49,21 +51,16 @@ estimates <- data$risk |>
           group_by(comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, variable_name, outcome, delivery_excluded) |>
           summarise(unexposed_count = sum(unexposed_count, na.rm = TRUE), exposed_count = sum(exposed_count, na.rm = TRUE),
                     unexposed_count_events = sum(unexposed_count_events, na.rm = TRUE), exposed_count_events = sum(exposed_count_events, na.rm = TRUE), .groups = "drop") |>
-          mutate(cdm_name = "Meta-Analysis (UiO_PregAlgorithm + SCIFI-PEARL)")
+          mutate(cdm_name = "META-ANALYSIS")
       )
   ) |>
   mutate(
-    cdm_name = case_when(
-      cdm_name == "UiO_PregAlgorithm" ~ "UiO",
-      cdm_name == "Meta-Analysis (UiO_PregAlgorithm + SCIFI-PEARL)" ~ "Meta-Analysis",
-      .default = cdm_name
-    ),
     comparison = factor(
       comparison, levels = c("none_first", "complete_booster"),
       labels = c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
     ),
     cdm_name = factor(
-      cdm_name, levels = c("CPRD Gold", "SCIFI-PEARL", "SIDIAP", "UiO", "Meta-Analysis")
+      cdm_name, levels = c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS")
     ),
     outcome = factor(
       outcome, levels = c("covid", "inpatient_covid"), labels = c("COVID-19 infection", "COVID-19-related hospitalisation")
@@ -105,7 +102,7 @@ estimates <- data$risk |>
   )
 
 # Overall figs ----
-cdmName <- c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
+# cdmName <- c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
 
 for (ii in 1:2) {
   fig1 <- estimates |>
@@ -251,7 +248,7 @@ for (ii in 1:2) {
               gp = gpar(col = "#415a77", fill = "#415a77"))
 
   p_wh <- get_wh(p)
-  png(paste0("forest_", ii, ".png"), width = 3500, height = 1200, res = 300)
+  png(here::here(paste0("forest_main_", ii, ".png")), width = 3500, height = 1200, res = 300)
   plot(p)
   dev.off()
 }
@@ -264,7 +261,7 @@ fig2 <- estimates |>
   mutate(
     trimester = factor(trimester, levels = c("T1", "T2", "T3"), labels = paste0("Trimester ", 1:3)),
     Database = factor(Database,
-                      levels = rev(c("CPRD Gold", "SCIFI-PEARL", "SIDIAP", "UiO", "Meta-Analysis"))),
+                      levels = rev(cdmMain)),
     meta = grepl("Meta", Database),
     Hetereogeneity = if_else(i2<=0.4 | is.na(i2) , "i2 <= 0.4", "i2>0.4")
   ) |>
@@ -284,7 +281,7 @@ ggplot(fig2, aes(x = exp_coef, xmin = lower_ci, xmax = upper_ci, y = Database)) 
   geom_linerange(aes(xmin = lower_ci, xmax = upper_ci, color = Database, linetype = Hetereogeneity), size = 0.8) +
   # scale_y_continuous(breaks = y_breaks, labels = strata_level,
   #                    limits = c(0.5, max(y_breaks) + 0.5) ) +
-  scale_x_continuous(limits = c(0.1, 4), breaks = c(0.1, 0.25, 0.5, 1, 2, 4), trans = "log10",
+  scale_x_continuous(limits = c(0.07, 4), breaks = c(0.1, 0.25, 0.5, 1, 2, 4), trans = "log10",
                      oob=scales::rescale_none) +
   geom_vline(xintercept = 1)  +
   geom_rect(aes(xmin = 0.01, xmax = 10, ymin = 0.5, ymax = 1.5),
@@ -309,7 +306,7 @@ ggplot(fig2, aes(x = exp_coef, xmin = lower_ci, xmax = upper_ci, y = Database)) 
     axis.title.y = ggplot2::element_text(size = fontsizeRef, vjust = 1.25, color = color.axis.title),
     # legend
     legend.text = ggplot2::element_text(size = fontsizeRef-1),
-    legend.title = ggplot2::element_text(size = fontsizeRef),
+    legend.title = ggplot2::element_text(size = fontsizeRef, face = "bold"),
     # legend.position = legendPosition,
     # background
     panel.background = ggplot2::element_rect(fill = color.background, colour = color.background),
@@ -324,7 +321,7 @@ ggplot(fig2, aes(x = exp_coef, xmin = lower_ci, xmax = upper_ci, y = Database)) 
   # scale_color_brewer(palette = "Paired")
   scale_color_manual(values = c("#1b263b", "#778da9","#778da9", "#778da9", "#778da9")) +
   scale_linetype_manual(values = c("solid", "dashed"), labels = unname(TeX(c("$i^2 \\leq 0.4$", "$i^2 > 0.4$")))) +
-  scale_y_discrete(labels = rev(c("CPRD Gold", "SCIFI-PEARL", "SIDIAP", "UiO", "**Meta-Analysis**"))) +
+  scale_y_discrete(labels = rev(c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "**META-ANALYSIS**"))) +
   scale_shape_manual(values = c(15, 16, 17, 18, 8)) +
   xlab("Hazard Ratio")
 
