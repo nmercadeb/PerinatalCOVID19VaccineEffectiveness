@@ -16,7 +16,7 @@ result_patterns <- c(
   "attrition", "matching_summary", "relative_risk", "vaccine_records_censor",
   "kaplan_meier", "censoring"
 )
-pre_data <- readData(here("dataOld")) |> mergeData(result_patterns)
+pre_data <- readData(here("data")) |> mergeData(result_patterns)
 
 # Shiny format ----
 data <- list()
@@ -173,14 +173,21 @@ data$survival_summary <- pre_data$relative_risk |>
   filter(estimate_name != "mean") |>
   mutate(estimate_value = as.numeric(estimate_value)) |>
   group_by(cdm_name, cohort_name, strata_name, strata_level, variable_name, outcome, window, analysis, study_end, exposed) |>
-  mutate(suppress = if_else(any(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0), TRUE, FALSE)) |>
+  mutate(
+    suppress_group = if_else(any(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0), TRUE, FALSE),
+    suppress_count = if_else(grepl("count", estimate_name) & estimate_value < 5 & estimate_value > 0, TRUE, FALSE)
+    ) |>
   ungroup() |>
   mutate(
-    estimate_value = if_else(suppress, NA, estimate_value),
+    estimate_value = case_when(
+      suppress_group & suppress_count ~ NA,
+      suppress_group & !suppress_count & !grepl("count", estimate_name) ~ NA,
+      .default = estimate_value
+      ),
     exposed_censoring = if_else(analysis == "main", "none", "3rd/4rt dose")
   ) |>
   rename("followup_end" = "study_end") |>
-  select(!c("suppress", "result_type", "package_name", "package_version", "analysis")) |>
+  select(!c("suppress_group", "suppress_count", "result_type", "package_name", "package_version", "analysis")) |>
   niceCohortName() |>
   niceOutcomeName() |>
   select(cdm_name, comparison, covid_definition, strata_name, strata_level, window, followup_end, exposed_censoring, exposed, variable_name, outcome, delivery_excluded, estimate_name, estimate_type, estimate_value) |>
@@ -241,5 +248,5 @@ data$censoring <- pre_data$censoring |>
          "Reason", "N", "Mean (SD)", "Median (Q25-Q75)")
 
 # Save shiny data ----
-save(data, file = here("shinyData-old.Rdata"))
+save(data, file = here("shinyData.Rdata"))
 

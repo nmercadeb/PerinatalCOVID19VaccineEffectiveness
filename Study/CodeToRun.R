@@ -76,6 +76,7 @@ runInstantiateCohorts <- TRUE
 runPSMathcing         <- TRUE
 runCharacterisation   <- TRUE
 runOutcomeModel       <- TRUE
+sensitvitySCIFIPEARL  <- FALSE
 
 source(here("0_SetUp/RunStudy.R"))
 

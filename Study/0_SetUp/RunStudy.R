@@ -64,6 +64,35 @@ source(here("0_SetUp", "functions.R"))
 # Database snapshot:
 readr::write_csv(CDMConnector::snapshot(cdm), here(output_folder, paste0("cdm_snapshot_", cdmName(cdm), ".csv")))
 
+if (sensitvitySCIFIPEARL) {
+  locations <- readr::read_csv(here::here("Data", "locations_sweden.csv"))
+  cdm$person <- cdm$person |>
+    inner_join(locations |> select("location_id"), by = "location_id", copy = TRUE) |>
+    compute()
+  subjects <- cdm$person |> distinct("person_id") |> compute()
+  cdm$observation_period <- cdm$observation_period |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$observation <- cdm$observation |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$condition_occurrence <- cdm$condition_occurrence |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$drug_exposure <- cdm$drug_exposure |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$measurement <- cdm$measurement |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$visit_occurrence <- cdm$visit_occurrence |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+  cdm$procedure_occurrence <- cdm$procedure_occurrence |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+}
+
 if (runInstantiateCohorts) {
   info(logger, "STEP 1 INSTANTIATE COHORTS ----")
   source(here("1_InstantiateCohorts", "instantiate_json.R"))

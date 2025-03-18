@@ -39,9 +39,16 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, results = 'asis')
 
 
 ```{r}
+# TTE
+cat("\n\n\\pagebreak\n")
+cat("## ", paste0("**Appendix Text ", num_text, ":** Specifications of the target trials."))
+cat("\n")
+num_text <- num_text + 1
+cat("\n")
+
 # Database description
 cat("\n\n\\pagebreak\n")
-cat("## ", paste0("**Appendix Text ", num_text, ":** Database descriptions."))
+cat("## ", paste0("**Appendix Text ", num_text, ":** Descriptions of the data sources."))
 cat("\n")
 num_text <- num_text + 1
 cat("\n")
@@ -323,7 +330,7 @@ for (ii in 1:nrow(captions)) {
 #| fig-align: center
 #| fig-width: 9
 #| fig-asp: 0.5
-#| out-width: "90%"
+#| out-width: "100%"
 #| fig-dpi: 500
 #| fig.retina: 2
 
@@ -397,12 +404,11 @@ data$reenrollment |>
 #| fig-align: center
 #| fig-width: 15
 #| fig-asp: 0.4
-#| out-width: "90%"
+#| out-width: "100%"
 #| fig-dpi: 500
-#| fig.retina: 2
 
 cat("\n\n\\pagebreak\n")
-cat("## ", paste0("**Appendix Figure ", num_table, ":** Hazard ratios for COVID-19 infection and COVID-19-related hospitalization, stratified by vaccine product, across databases, and analysis"))
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Hazard ratios for COVID-19 infection and COVID-19-related hospitalization, stratified by vaccine product, across databases, and analysis"))
 num_figure <- num_figure + 1
 cat("\n")
 vaxProduct <- data$risk |>
@@ -487,7 +493,157 @@ vaxProduct |>
 ```
 
 ```{r}
+#| fig-align: center
+#| fig-width: 15
+#| fig-asp: 0.5
+#| out-width: "100%"
+#| fig-dpi: 500
+
+# KAPLAN - MEIER
+kaplanMeier <- data$kaplan_meier |>
+  mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
+  filter(
+    strata_name == "overall", covid_definition == "diagnostic_test", 
+    cdm_name %in% c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD", "META-ANALYSIS"),
+    followup_end == "cohort_end_date_pregnancy",
+    delivery_excluded %in% c("yes", "-"), outcome != "icu_covid"
+  ) |>
+  mutate(
+    Database = factor(cdm_name, levels = rev(c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS")),
+                      labels = rev(c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "Meta-Analysis"))),
+    outcome = factor(
+      outcome, levels = c("covid", "inpatient_covid"), labels = c("COVID-19 infection", "COVID-19-related hospitalisation")
+    ),
+    Comparison = factor(
+      comparison, levels = c("none_first", "complete_booster"),
+      labels = c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
+    )
+  ) |>
+  arrange(Database, Comparison, outcome)
+
+cat("\n\n\\pagebreak\n")
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Kaplan-Meier curves for COVID-19 infection, across databases, and analysis"))
+num_figure <- num_figure + 1
+cat("\n")
+kaplanMeier |>
+  filter(outcome == "COVID-19 infection") |>
+  ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort, ymin = estimate_95CI_lower, ymax = estimate_95CI_upper)) +
+  geom_step(size = 1) +
+  geom_ribbon(alpha = 0.3, colour = NA) +
+  scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+  ggh4x::facet_grid2(rows = vars(cdm_name), cols = vars(Comparison), scales = "free", independent = "y") +
+  theme_bw() +
+  xlab("Time (days)") +
+  ylab("Survival probability")
+
+cat("\n\n\\pagebreak\n")
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Kaplan-Meier curves for COVID-19-related hospitalisation, across databases, and analysis"))
+num_figure <- num_figure + 1
+cat("\n")
+kaplanMeier |>
+  filter(outcome == "COVID-19-related hospitalisation") |>
+  ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort, ymin = estimate_95CI_lower, ymax = estimate_95CI_upper)) +
+  geom_step(size = 1) +
+  geom_ribbon(alpha = 0.3, colour = NA) +
+  scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+  ggh4x::facet_grid2(rows = vars(cdm_name), cols = vars(Comparison), scales = "free", independent = "y") +
+  theme_bw() +
+  xlab("Time (days)") +
+  ylab("Survival probability")
+
+cat("\n\n\\pagebreak\n")
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Log-Log plots for COVID-19 infection, across databases, and analysis"))
+num_figure <- num_figure + 1
+cat("\n")
+kaplanMeier |>
+  filter(outcome == "COVID-19 infection") |>
+  mutate(estimate = log(-log(estimate))) |>
+  ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort, ymin = estimate_95CI_lower, ymax = estimate_95CI_upper)) +
+  geom_step(size = 1) +
+  scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_x_continuous(trans='log10') +
+  theme_bw() +
+  ggh4x::facet_grid2(rows = vars(cdm_name), cols = vars(Comparison), scales = "free", independent = "y") +
+  xlab("Time (days)") +
+  ylab("log(-log(S(t)))")
+
+cat("\n\n\\pagebreak\n")
+cat("## ", paste0("**Appendix Figure ", num_figure, ":** Log-Log plots for COVID-19-related hospitalisation, across databases, and analysis"))
+num_figure <- num_figure + 1
+cat("\n")
+kaplanMeier |>
+  filter(outcome == "COVID-19-related hospitalisation") |>
+  mutate(estimate = log(-log(estimate))) |>
+  ggplot(aes(x = time, y = estimate, color = Cohort, fill = Cohort, ymin = estimate_95CI_lower, ymax = estimate_95CI_upper)) +
+  geom_step(size = 1) +
+  scale_color_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_fill_manual(values = c("#87b38d", "#0d3b66")) +
+  scale_x_continuous(trans='log10') +
+  theme_bw() +
+  ggh4x::facet_grid2(rows = vars(cdm_name), cols = vars(Comparison), scales = "free", independent = "y") +
+  xlab("Time (days)") +
+  ylab("log(-log(S(t)))")
 ```
 
 ```{r}
+#| fig-align: center
+#| fig-width: 15
+#| fig-asp: 0.3
+#| out-width: "100%"
+#| fig-dpi: 500
+
+# NCO
+nco <- data$risk |>
+    mutate(cdm_name = if_else(cdm_name == "UiO Algorithm", "UiO", toupper(cdm_name))) |>
+    filter(
+        strata_name == "overall", covid_definition == "diagnostic_test", 
+        cdm_name %in% c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD", "META-ANALYSIS"),
+        regression == "cox-sandwich", followup_end == "cohort_end_date_pregnancy",  variable_name == "nco"
+    ) |>
+    splitStrata() |>
+    pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+    mutate(
+        Database = factor(cdm_name, levels = rev(c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS")),
+                          labels = rev(c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS"))),
+        comparison = factor(
+            comparison, levels = c("none_first", "complete_booster"),
+            labels = c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
+        ),
+        Outcome = stringr::str_to_sentence(gsub("_", " ", outcome)),
+        Association = case_when(
+          lower_ci > 1 ~ "Positive association",
+          upper_ci < 1 ~ "Negative association",
+          lower_ci <= 1 & upper_ci >= 1 ~ "No association",
+          .default = "No association"
+        )
+    ) |>
+    arrange(Database, comparison)
+
+for (cdm in c("SCIFI-PEARL", "UiO", "SIDIAP", "CPRD GOLD")) {
+  cat("\n\n\\pagebreak\n")
+  cat("## ", paste0("**Appendix Figure ", num_figure, ":** Negative Control Outcomes results for ", cdm, "database."))
+  num_figure <- num_figure + 1
+  cat("\n")
+  nco |>
+    filter(cdm_name %in% cdm) |>
+    ggplot(aes(x = exp_coef, y = Outcome, color = Association)) +
+    geom_vline(xintercept = 1) +
+    geom_point() +
+    geom_linerange(aes(xmin = lower_ci, xmax = upper_ci), linewidth = 0.8) +
+    scale_x_continuous(breaks = c(0.1, 0.25, 0.5, 1, 2, 4),
+                       labels = c(0.1, 0.25, 0.5, 1, 2, 4),
+                       limits = c(0.1, 4),
+                       trans = "log10",
+                       oob = scales::rescale_none) +
+    facet_grid(cols = vars(comparison)) +
+    ylab("") +
+    xlab("Hazard Ratio")
+}
+```
+
+```{r}
+
 ```

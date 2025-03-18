@@ -31,7 +31,7 @@ estimates <- data$risk |>
     regression == "cox-sandwich",
     followup_end == "cohort_end_date_pregnancy",
     variable_name == "study",
-    delivery_excluded %in% c("-", "no"),
+    delivery_excluded %in% c("-", "yes"),
     window == "15_Inf",
     outcome != "icu_covid",
     !(cdm_name == "CPRD GOLD" & outcome == "inpatient_covid")
@@ -65,10 +65,10 @@ estimates <- data$risk |>
     outcome = factor(
       outcome, levels = c("covid", "inpatient_covid"), labels = c("COVID-19 infection", "COVID-19-related hospitalisation")
     ),
-    # across(
-    #   all_of(c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci", "i2")),
-    #   ~ if_else(is.na(unexposed_count) | is.na(exposed_count), NA, .x)
-    # ),
+    across(
+      all_of(c("coef", "se_coef", "exp_coef", "z", "p", "lower_ci", "upper_ci", "i2")),
+      ~ if_else(is.na(unexposed_count) | is.na(exposed_count) | is.na(unexposed_count_events) | is.na(exposed_count_events), NA, .x)
+    ),
     unexposed_count_events = if_else(
       is.na(unexposed_count_events), "<5",
       paste0(
@@ -102,11 +102,10 @@ estimates <- data$risk |>
   )
 
 # Overall figs ----
-# cdmName <- c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
-
+comparisonNms <- c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
 for (ii in 1:2) {
   fig1 <- estimates |>
-    filter(comparison == cdmName[ii], strata_name == "overall") |>
+    filter(comparison == comparisonNms[ii], strata_name == "overall") |>
     select(!starts_with("strata")) |>
     arrange(outcome, Database) |>
     mutate(
@@ -115,7 +114,8 @@ for (ii in 1:2) {
       "  " = " ",
       i2 = as.character(round(i2,4))
     ) |>
-    select(outcome, Database, starts_with("exposed"), "  ", starts_with("unexposed"), " ", starts_with("HR"), "i2", "VE", "exp_coef", "lower_ci", "upper_ci", "se_coef")
+    select(outcome, Database, starts_with("exposed"), "  ", starts_with("unexposed"), " ",
+           starts_with("HR"), "i2", "VE", "exp_coef", "lower_ci", "upper_ci", "se_coef")
 
   fig1 <- bind_rows(
     tibble(Database = "COVID-19 infection"),
@@ -150,7 +150,7 @@ for (ii in 1:2) {
     # footnote_gp = gpar(fontsize = base_size, fontfamily = base_family, cex = 0.6, fontface
     #                    = "plain", col = "black"),
     footnote_parse = TRUE,
-    title_just = c("left", "right", "center"),
+    title_just = c("center"),
     # title_gp = gpar(cex = 1.2, fontface = "bold", col = "black", fontfamily = base_family),
     arrow_type = c("open", "closed"),
     arrow_label_just = c("start", "end"),
@@ -162,9 +162,9 @@ for (ii in 1:2) {
     padding = unit(100, "mm")
   )
 
-  fig1Forestploter <- fig1[,1:9]
+  fig1Forestploter <- fig1[,1:10]
   colnames(fig1Forestploter) <- c(
-    "", "Population (N)", "Events (N(%))", " ", "Population (N)", "Events (N(%))", " ", " ", "i2"
+    "", "Population (N)", "Events (N(%))", " ", "Population (N)", "Events (N(%))", " ", " ", "i2", "VE"
   )
   fig1Forestploter[is.na(fig1Forestploter)] <- ""
 
@@ -213,7 +213,8 @@ for (ii in 1:2) {
              part = "header",
              row = 1,
              col = 1,
-             gp = gpar(fontface = "bold")) |>
+             gp = gpar(fontface = "bold"),
+             just = c("left")) |>
     add_border(part = "header",
                row = 0,
                col = 2:3,

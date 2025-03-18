@@ -5,6 +5,13 @@ cdm$mother_table_original <- tbl(db, inSchema(schema = mother_table_schema, tabl
   } else . } %>%
   compute(name = inSchema(results_database_schema, "mother_table_original"), temporary = FALSE, overwrite = TRUE)
 
+if (sensitvitySCIFIPEARL) {
+  subjects <- cdm$person |> distinct("person_id") |> compute()
+  cdm$mother_table_original <- cdm$mother_table_original |>
+    inner_join(subjects, by = "person_id") |>
+    compute()
+}
+
 # CLEAN MOTHER TABLE----
 info(logger, "Clean mother table")
 ## Start with all population
