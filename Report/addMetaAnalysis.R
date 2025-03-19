@@ -54,7 +54,8 @@ for (jj in 1:nrow(metaanalyses)) {
         metaanalyses[jj, ],
         by = c("comparison", "covid_definition", "strata_name", "strata_level", "regression", "followup_end", "window", "outcome")
       ) %>%
-      filter(delivery_excluded %in% c(delivery, "-"))
+      filter(delivery_excluded %in% c(delivery, "-")) |>
+      filter(!is.na(coef))
     if (nrow(tempData) > 0) {
       meta <- metagen(TE = tempData$coef, seTE = tempData$se_coef, sm = "HR", random = TRUE, method.tau = "DL")
       results <- results |>

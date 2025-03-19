@@ -12,7 +12,6 @@ library(egg)
 library(grid)
 library(ggh4x)
 library(ggtext)
-library(bbplot)
 
 # load functions
 source(here("functions.R"))
@@ -57,7 +56,7 @@ estimates <- data$risk |>
   mutate(
     comparison = factor(
       comparison, levels = c("none_first", "complete_booster"),
-      labels = c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
+      labels = c("Primary Vaccination Schema vs. Unvaccination", "Booster vs. Primary Vaccination Schema")
     ),
     cdm_name = factor(
       cdm_name, levels = c("CPRD GOLD", "SCIFI-PEARL", "SIDIAP", "UiO", "META-ANALYSIS")
@@ -102,7 +101,7 @@ estimates <- data$risk |>
   )
 
 # Overall figs ----
-comparisonNms <- c("Complete vaccination schema vs. Unvaccination", "Booster vs. Complete vaccination schema")
+comparisonNms <- c("Primary Vaccination Schema vs. Unvaccination", "Booster vs. Primary Vaccination Schema")
 for (ii in 1:2) {
   fig1 <- estimates |>
     filter(comparison == comparisonNms[ii], strata_name == "overall") |>
@@ -115,7 +114,7 @@ for (ii in 1:2) {
       i2 = as.character(round(i2,4))
     ) |>
     select(outcome, Database, starts_with("exposed"), "  ", starts_with("unexposed"), " ",
-           starts_with("HR"), "i2", "VE", "exp_coef", "lower_ci", "upper_ci", "se_coef")
+           starts_with("HR"), "VE", "i2", "exp_coef", "lower_ci", "upper_ci", "se_coef")
 
   fig1 <- bind_rows(
     tibble(Database = "COVID-19 infection"),
@@ -164,7 +163,7 @@ for (ii in 1:2) {
 
   fig1Forestploter <- fig1[,1:10]
   colnames(fig1Forestploter) <- c(
-    "", "Population (N)", "Events (N(%))", " ", "Population (N)", "Events (N(%))", " ", " ", "i2", "VE"
+    "", "Population (N)", "Events (N(%))", " ", "Population (N)", "Events (N(%))", " ", " ", "VE", "i2"
   )
   fig1Forestploter[is.na(fig1Forestploter)] <- ""
 
@@ -195,7 +194,7 @@ for (ii in 1:2) {
     graphwidth = unit(5, "cm")
   ) |>
     # HR header
-    add_text(text = "Hazard Ratio, 95% CI",
+    add_text(text = "HR (95% CI)",
              part = "header",
              col = 7:8,
              gp = gpar(fontface = "bold")) |>

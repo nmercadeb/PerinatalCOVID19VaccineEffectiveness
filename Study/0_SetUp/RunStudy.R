@@ -69,7 +69,7 @@ if (sensitvitySCIFIPEARL) {
   cdm$person <- cdm$person |>
     inner_join(locations |> select("location_id"), by = "location_id", copy = TRUE) |>
     compute()
-  subjects <- cdm$person |> distinct("person_id") |> compute()
+  subjects <- cdm$person |> distinct(person_id) |> compute()
   cdm$observation_period <- cdm$observation_period |>
     inner_join(subjects, by = "person_id") |>
     compute()
