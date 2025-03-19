@@ -7,7 +7,6 @@
 *.png
 *.csv
 *.txt
-Report/figures/*
 Report/data/*
 Study/CodeToRunDevelop.R
 
