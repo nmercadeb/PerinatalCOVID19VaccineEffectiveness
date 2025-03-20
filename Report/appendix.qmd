@@ -138,7 +138,7 @@ orderVarsName <- tibble(
   ),
   Covariate = factor(
     c(
-      "Number subjects", "Age (Years)", "Age Group", "Gestational Trimester",  
+      "Number records", "Age (Years)", "Age Group", "Gestational Trimester",  
       "Vaccine Product", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",  
       "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",  
       "Medications Prescribed (Last 180 Days)"  

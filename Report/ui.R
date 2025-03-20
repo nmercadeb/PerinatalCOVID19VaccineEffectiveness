@@ -4,6 +4,10 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem(
+        text = "Study Abstract",
+        tabName = "abstract"
+      ),
+      menuItem(
         text = "Database details",
         tabName = "database_details",
         menuSubItem(
@@ -32,7 +36,7 @@ ui <- dashboardPage(
         )
       ),
       menuItem(
-        text = "Popultation",
+        text = "Population",
         tabName = "population",
         menuSubItem(
           text = "Attrition",
@@ -67,7 +71,7 @@ ui <- dashboardPage(
           tabName = "large_scale_characteristics"
         ),
         menuSubItem(
-          text = "Standardised mean differences",
+          text = "Standardised Mean Differences",
           tabName = "smd"
         )
       ),
@@ -104,6 +108,25 @@ ui <- dashboardPage(
   ## body ----
   dashboardBody(
     tabItems(
+      ### abstract----
+      tabItem(
+        tabName = "abstract",
+        h2("Effectiveness of COVID-19 mRNA primary and booster vaccination during pregnancy: a target trial emulation and meta-analysis of data from 4 European countries."),
+        h3("Objective"),
+        p("To estimate vaccine effectiveness (VE) of COVID-19 mRNA vaccines administered during pregnancy against COVID-19. Strategies compared were: primary vaccination (2-dose regimen) vs unvaccination; and 1st booster (3rd dose) vs primary vaccination."),
+        h3("Design"),
+        p("Cohort study emulating two comparative effectiveness trials."),
+        h3("Setting"),
+        p("Routinely collected health data from UK, Sweden, Spain and Norway. All had complete vaccine exposure data and were mapped to the OMOP common data model."),
+        h3("Participants"),
+        p("Pregnant women (aged 12-55) with ≤34 weeks of gestation, no history of COVID-19 in the 90 days prior and ³1 year of prior observation. We included 62,061 and 41,096 exposed pregnant women at date of vaccination with a first and third dose. Women were matched 1:1 to unexposed counterparts using weekly sequential matching."),
+        h3("Main outcome measures"),
+        p("The main outcome measure was VE against COVID-19 infection, hospitalisation and Intensive Care Unit (ICU) admission (excluding delivery-related care). Hazard ratios (HR) were estimated with Cox from 15 days since vaccination onwards, and VE was reported as 100 x (1-HR). Analyses were stratified by pregnancy trimester and vaccine brand. Database-specific findings were meta-analysed using random effects."),
+        h3("Results"),
+        p("Enrollment occurred in time periods dominated by the Delta (primary vaccination) and Omicron (booster) variants. Median follow-up ranged from 42 to 55 days for primary vaccination and 73 to 116 days for boosters. For primary vaccination meta-analytic VE were 26.2% (16.2, 35.1; I2 =0.7) against infection and 55.6% (44.1, 64.8; I2 =0) against hospitalisation. For boosters, corresponding figures were 33.6% (-1.6, 56.6; I2=1) and 34.1% (0.62, 56.36; I2 =0.5). Event counts were insufficient to analyse VE against ICU admission. Results were similar by pregnancy trimester and vaccine brand."),
+        h3("Conclusions"),
+        p("Vaccination with a primary or a booster dose during pregnancy was to be effective in preventing COVID-19 hospitalisations, with modest protection against infection.")
+      ),
       ### cdm_snapshot ----
       tabItem(
         tabName = "cdm_snapshot",
@@ -203,7 +226,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
             "comparison" = data$index_date$comparison[1],
-            "covid_definition" = data$index_date$covid_definition[1],
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = data$index_date$strata_name[1]
           )
         ),
@@ -260,7 +283,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$index_date$cdm_name[1],
             "comparison" = data$index_date$comparison[1],
-            "covid_definition" = "diagnostic_test",
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = data$index_date$strata_name[1]
           )
         ),
@@ -296,7 +319,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$vaccine_distribution$cdm_name[1],
             "comparison" = data$vaccine_distribution$comparison[1],
-            "covid_definition" = data$vaccine_distribution$covid_definition[1],
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -367,7 +390,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$vaccine_distribution$cdm_name[1],
             "comparison" = data$vaccine_distribution$comparison[1],
-            "covid_definition" = data$vaccine_distribution$covid_definition[1],
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -417,7 +440,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$population_attrition$cdm_name[1],
             "comparison" = data$population_attrition$comparison[1],
-            "covid_definition" = data$population_attrition$covid_definition[1]
+            "covid_definition" = "Diangostics and Positive Tests"
           ),
           multiple = FALSE
         ),
@@ -437,7 +460,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$population_count$cdm_name[1],
             "comparison" = data$population_count$comparison[1],
-            "covid_definition" = data$population_count$covid_definition[1],
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = data$population_count$strata_name[1]
           )
         ),
@@ -475,7 +498,7 @@ ui <- dashboardPage(
           default = list(
             "cdm_name" = data$baseline$cdm_name[1],
             "comparison" = data$baseline$comparison[1],
-            "covid_definition" = data$baseline$covid_definition[1],
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -557,8 +580,8 @@ ui <- dashboardPage(
           prefix = "nco_summ",
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list("cdm_name" = data$survival_summary$cdm_name[1],
-                         "comparison" = "none_first",
-                         "covid_definition" = "diagnostic_test",
+                         "comparison" = "Primary Vaccination vs. Unvaccination",
+                         "covid_definition" = "Diangostics and Positive Tests",
                          "strata_name" = "overall")
         ),
         div(
@@ -578,7 +601,7 @@ ui <- dashboardPage(
           prefix = "nco_summ",
           columns = c("followup_end"),
           default = list(
-            "followup_end" = "cohort_end_date_pregnancy"
+            "followup_end" = "End of pregnancy"
           )
         ),
         tabsetPanel(
@@ -608,8 +631,8 @@ ui <- dashboardPage(
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$survival_summary$cdm_name[1],
-            "comparison" = "none_first",
-            "covid_definition" = "diagnostic_test",
+            "comparison" = "Primary Vaccination vs. Unvaccination",
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -622,7 +645,7 @@ ui <- dashboardPage(
           prefix = "study_summ",
           columns = c("outcome"),
           default = list(
-            "outcome" = data$survival_summary |> filter(variable_name == "study") |> pull(outcome) |> unique()
+            "outcome" = "COVID-19"
           )
         ),
         div(
@@ -641,7 +664,7 @@ ui <- dashboardPage(
           data = data$survival_summary |> filter(variable_name == "study"),
           prefix = "study_summ",
           columns = c("followup_end"),
-          default = list( "followup_end" = "cohort_end_date_pregnancy")
+          default = list( "followup_end" = "End of pregnancy")
         ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
@@ -682,8 +705,8 @@ ui <- dashboardPage(
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$survival_summary$cdm_name[1],
-            "comparison" = "none_first",
-            "covid_definition" = "diagnostic_test",
+            "comparison" = "Primary Vaccination vs. Unvaccination",
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -696,9 +719,9 @@ ui <- dashboardPage(
           prefix = "nco_risk",
           columns = c("regression", "outcome", "followup_end"),
           default = list(
-            "regression" = "cox",
+            "regression" = "cox-sandwich",
             "outcome" = data$risk |> filter(variable_name == "nco") |> pull(outcome) |> unique(),
-            "followup_end" = "cohort_end_date_pregnancy"
+            "followup_end" = "End of pregnancy"
           )
         ),
         tabsetPanel(
@@ -741,8 +764,8 @@ ui <- dashboardPage(
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$survival_summary$cdm_name[1],
-            "comparison" = "none_first",
-            "covid_definition" = "diagnostic_test",
+            "comparison" = "Primary Vaccination vs. Unvaccination",
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -755,8 +778,8 @@ ui <- dashboardPage(
           prefix = "study_risk",
           columns = c("regression", "outcome"),
           default = list(
-            "regression" = "cox",
-            "outcome" = data$risk |> filter(variable_name == "study") |> pull(outcome) |> unique()
+            "regression" = "cox-sandwich",
+            "outcome" = "COVID-19"
           )
         ),
         div(
@@ -775,7 +798,7 @@ ui <- dashboardPage(
           data = data$risk |> filter(variable_name == "study"),
           prefix = "study_risk",
           columns = c("followup_end"),
-          default = list("followup_end" = "cohort_end_date_pregnancy")
+          default = list("followup_end" = "End of pregnancy")
         ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
@@ -849,8 +872,8 @@ ui <- dashboardPage(
           columns = c("cdm_name", "comparison", "covid_definition", "strata_name"),
           default = list(
             "cdm_name" = data$survival_summary$cdm_name[1],
-            "comparison" = "none_first",
-            "covid_definition" = "diagnostic_test",
+            "comparison" = "Primary Vaccination vs. Unvaccination",
+            "covid_definition" = "Diangostics and Positive Tests",
             "strata_name" = "overall"
           )
         ),
@@ -862,7 +885,7 @@ ui <- dashboardPage(
           data = data$kaplan_meier,
           prefix = "km",
           columns = "outcome",
-          default = list( "outcome" = "covid")
+          default = list( "outcome" = "COVID-19")
         ),
         div(
           style = "display: inline-block;vertical-align:top; width: 150px;",
@@ -881,8 +904,8 @@ ui <- dashboardPage(
           pickerInput(
             inputId = "km_followup_end",
             label = "Followup end",
-            choices = c("cohort_end_date", "cohort_end_date_pregnancy"),
-            selected = "cohort_end_date_pregnancy",
+            choices = c("End of data", "End of pregnancy"),
+            selected = "End of pregnancy",
             options = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
             multiple = FALSE,
             inline = TRUE
@@ -923,13 +946,12 @@ ui <- dashboardPage(
         selectors(
           data = data$censoring,
           prefix = "followup",
-          columns = c("CDM name", "Comparison", "Covid definition", "Follow-up end", "Reason"),
+          columns = c("CDM name", "Comparison", "Covid definition", "Follow-up end"),
           default = list(
-            "cdm_name" = data$censoring$`CDM name`[1],
+            "CDM name" = data$censoring$`CDM name`[1],
             "Comparison" = data$censoring$Comparison[1],
             "Covid definition" = data$censoring$`Covid definition`[1],
-            "Follow-up end" = data$censoring$`Follow-up end`[1],
-            "Reason" = data$censoring$Reason
+            "Follow-up end" = data$censoring$`Follow-up end`[1]
           )
         ),
         downloadButton("followup_summary_download_table", "Download table in word"),

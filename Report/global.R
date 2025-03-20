@@ -29,8 +29,31 @@ library(CohortSurvival)
 # load functions
 source(here("functions.R"))
 
+# variables
+orderVarsName <- tibble(
+  variable_name = c(
+    "Number records", "Age", "Age group", "Trimester",
+    "Vaccine brand", "Number prior pregnancies", "Number visits prior year",
+    "Prior observation", "Covid-19 any time prior", "Ohter vaccines any time prior",
+    "Conditions any time prior",  "Drugs prior 180 days"
+  ),
+  Covariate = factor(
+    c(
+      "Number records", "Age (Years)", "Age Group", "Gestational Trimester",
+      "Vaccine Brand", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",
+      "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",
+      "Medications Prescribed (Last 180 Days)"
+    ),
+    levels = c(
+      "Number records", "Age (Years)", "Age Group", "Gestational Trimester",
+      "Vaccine Brand", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",
+      "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",
+      "Medications Prescribed (Last 180 Days)"
+    ))
+)
+
 # load data
-load(here("shinyData-old.Rdata"))
+load(here("shinyData-mod.Rdata"))
 
 # run shiny
 source(here("server.R"))

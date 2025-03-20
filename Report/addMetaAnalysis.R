@@ -24,10 +24,10 @@ load(here("shinyData.Rdata"))
 # add meta analysis
 # metaName <- "Meta-analysis (UiO-MBRN)"
 # cdm_names <- c("CPRD Gold", "SIDIAP", "scifi-pearl", "UiO_MBRN")
-cdm_names <- c("CPRD Gold", "SIDIAP", "SCIFI-PEARL", "UiO Algorithm")
+cdm_names <- c("CPRD GOLD", "SIDIAP", "SCIFI-PEARL", "UiO")
 results <- NULL
 
-metaName <- paste0("Meta-Analysis")
+metaName <- paste0("MEtA-ANALYSIS")
 metaData <- data$risk |>
   filter(variable_name == "study" & cdm_name %in% c(cdm_names)) |>
   pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
@@ -85,4 +85,4 @@ data$risk <- data$risk |>
       dplyr::distinct()
   )
 
-save(data, file = here::here("shinyData-meta.Rdata"))
+save(data, file = here::here("shinyData-paper-meta.Rdata"))

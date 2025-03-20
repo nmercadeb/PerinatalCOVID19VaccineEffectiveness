@@ -255,3 +255,10 @@ cdm$source_pregnant <- cdm$source_pregnant %>%
   compute(name = "source_pregnant", temporary = FALSE) %>%
   recordCohortAttrition(reason = "After date arrangements: In observation at end date") %>%
   newCohortTable()
+
+if (sensitvitySCIFIPEARL) {
+  subjects <- cdm$person |> distinct(person_id) |> compute()
+  cdm$source_pregnant <- cdm$source_pregnant |>
+    inner_join(subjects |> rename("subject_id" = "person_id"), by = "subject_id") |>
+    compute(name = "source_pregnant", temporary = FALSE)
+}

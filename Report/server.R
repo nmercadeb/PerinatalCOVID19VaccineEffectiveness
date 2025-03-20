@@ -375,6 +375,7 @@ server <- function(input, output, session) {
         estimate_value = paste0(count, " (", round(percentage, 2), " %)")
       ) %>%
       select(-c("count", "percentage")) %>%
+      rename_with(.cols = !c("strata_name", "strata_level", "estimate_value", "cdm_name"), .fn = ~str_to_sentence(gsub("_", " ", .x))) |>
       formatHeader(
         header = c("strata_name", "strata_level"),
         includeHeaderName = FALSE
@@ -618,6 +619,7 @@ server <- function(input, output, session) {
       select(!starts_with("num")) |>
       mutate(estimate_name = "Number individuals") |>
       rename("estimate_value" = "total") |>
+      rename_with(.cols = !c("strata_name", "strata_level", "estimate_value", "cdm_name"), .fn = ~str_to_sentence(gsub("_", " ", .x))) |>
       formatHeader(
         header = c("strata_name", "strata_level"),
         includeHeaderName = FALSE
@@ -638,18 +640,51 @@ server <- function(input, output, session) {
   getBaseline <- reactive({
     data$baseline |>
       filterData(prefix = "baseline", input = input) |>
-      filter(variable_name != "Number subjects") |>
-      select(!starts_with("group")) |>
-      uniteGroup(cols = c("comparison", "covid_definition")) |>
-      tableCharacteristics(
-        header = c("cdm_name", "additional"),
-        excludeColumns = c(
-          "result_id", "result_type", "package_name","package_version", "estimate_type"
-        )
-      )
+        filter(
+          !estimate_name %in% c("min", "max", "q05", "q95", "mean", "sd"),
+          !variable_level %in% str_to_sentence(gsub("_", " ", c(
+            "covid_test", "chronic_liver_disease", "bronchiectasis", "pulmonary_hypertension",
+            "eclampsia_preeclampsia", "schizophrenia_spectrum_disorder", "gestational_diabetes",
+            "hematological_malignancies", "cerebrovascular_disease", "chronic_obstructive_lung_disease",
+            "pulmonary_embolism", "Immunoglobulins", "Propulsives", "Antiacids", "Antiseptics and desinfectants",
+            "Obstructive respiratory diseases", "Epilepsy", "Antiacids"
+          )))
+        ) |>
+        splitAll() |>
+        select(cdm_name, exposed, variable_name, variable_level, estimate_name, estimate_type, estimate_value, comparison) |>
+        formatEstimateValue() |>
+        formatEstimateName(c(
+          "N (%)" = "<count> (<percentage>%)", "N" = "<count>", "Median (Q25 - Q75)" = "<median> (<q25> - <q75>)"
+        )) |>
+        inner_join(orderVarsName, by = "variable_name") |>
+        mutate(
+          variable_level = case_when(
+            variable_level == "Cohort 1" ~ "-",
+            variable_level == "Covid diagnostic test" ~ "-",
+            variable_level == "Diabetes mellitus" ~ "Diabetes (any type)",
+            variable_level %in% c("Hiv", "Pcos") ~ toupper(variable_level),
+            .default = variable_level
+          ),
+          estimate_value = if_else(
+            Covariate == "Vaccine Brand" & exposed == "Unexposed", "-", estimate_value
+          )
+        ) |>
+      select("Covariate", "Covariate level" = "variable_level", "Estimate" = "estimate_name", "cdm_name", "exposed", "estimate_value") |>
+      formatHeader(header = c("cdm_name", "exposed"), includeHeaderName = FALSE) |>
+      arrange(Covariate)
   })
   output$baseline_table <- render_gt({
-    getBaseline()
+    getBaseline() |>
+      gtTable(
+        groupNameCol = "Covariate",
+        groupNameAsColumn = TRUE,
+        groupOrder = c(
+          "Number records", "Age (Years)", "Age Group", "Gestational Trimester",
+          "Vaccine Brand", "Previous Pregnancies", "Healthcare Visits (Past Year)", "Days of Prior Observation",
+          "COVID-19 Infection (Any Time Prior)", "Other Vaccinations (Any Time Prior)", "Comorbidities (Any Time Prior)",
+          "Medications Prescribed (Last 180 Days)"
+        )
+      )
   })
   output$baseline_table_download <- serverGTDownload(
     name = "baseline", gt = getBaseline()
@@ -730,14 +765,18 @@ server <- function(input, output, session) {
         ),
         keepNotFormatted = FALSE
       ) |>
-      formatHeader(
-        header = c("strata_name", "strata_level", "exposed"),
-        includeHeaderName = FALSE,
-      ) |>
       arrange(cdm_name, comparison, covid_definition) |>
       select(!c("estimate_type")) |>
       relocate(c("window", "followup_end"), .before = "outcome") |>
       select(!c("variable_name", "window", "exposed_censoring", "delivery_excluded")) |>
+      rename_with(
+        .cols = !c("strata_name", "strata_level", "exposed", "estimate_value", "cdm_name"),
+        .fn = ~ str_to_sentence(gsub("_", " ", .x))
+      ) |>
+      formatHeader(
+        header = c("strata_name", "strata_level", "exposed"),
+        includeHeaderName = FALSE,
+      ) |>
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$nco_summary_table <- render_gt({
@@ -791,14 +830,18 @@ server <- function(input, output, session) {
         ),
         keepNotFormatted = FALSE
       ) |>
-      formatHeader(
-        header = c("strata_name", "strata_level", "exposed"),
-        includeHeaderName = FALSE,
-      ) |>
       arrange(cdm_name, comparison, covid_definition, window) |>
       select(!c("estimate_type", "exposed_censoring")) |>
       relocate(c("window", "followup_end"), .before = "outcome") |>
       select(!c("variable_name")) |>
+      rename_with(
+        .cols = !c("strata_name", "strata_level", "exposed", "estimate_value", "cdm_name"),
+        .fn = ~ str_to_sentence(gsub("_", " ", .x))
+      ) |>
+      formatHeader(
+        header = c("strata_name", "strata_level", "exposed"),
+        includeHeaderName = FALSE,
+      ) |>
       gtTable(groupNameCol = "cdm_name", groupNameAsColumn = TRUE, colsToMergeRows = "all_columns")
   })
   output$study_summary_table <- render_gt({
@@ -837,12 +880,16 @@ server <- function(input, output, session) {
         estimateNameFormat = c("Point estimate [95% CI]" = "<exp_coef> [<lower_ci>, <upper_ci>]"),
         keepNotFormatted = FALSE
       ) |>
+      arrange(comparison, covid_definition) |>
+      select(!c("estimate_type", "variable_name", "delivery_excluded")) |>
+      rename_with(
+        .cols = !c("strata_name", "strata_level", "estimate_value", "estimate_name", "cdm_name"),
+        .fn = ~ str_to_sentence(gsub("_", " ", .x))
+      ) |>
       formatHeader(
         header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
         includeHeaderName = FALSE,
       ) |>
-      arrange(comparison, covid_definition) |>
-      select(!c("estimate_type", "variable_name", "delivery_excluded")) |>
       gtTable(colsToMergeRows = "all_columns")
   })
   output$nco_risk_table <- render_gt({
@@ -870,6 +917,7 @@ server <- function(input, output, session) {
       left_join(
         data$survival_summary |>
           filter(grepl("count", estimate_name)) |>
+          mutate(exposed = tolower(exposed)) |>
           pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
       )
 
@@ -971,11 +1019,15 @@ server <- function(input, output, session) {
           )
       }} %>%
       arrange(cdm_name, comparison, covid_definition, window) |>
+      select(!c("estimate_type", "variable_name", "exposed_censoring")) |>
+      rename_with(
+        .cols = !c("strata_name", "strata_level", "estimate_value", "cdm_name"),
+        .fn = ~ str_to_sentence(gsub("_", " ", .x))
+      ) |>
       formatHeader(
         header = c("estimate_name", "cdm_name", "strata_name", "strata_level"),
         includeHeaderName = FALSE,
       ) |>
-      select(!c("estimate_type", "variable_name", "exposed_censoring")) |>
       gtTable(colsToMergeRows = "all_columns")
   })
   output$study_risk_table <- render_gt({
@@ -1010,10 +1062,14 @@ server <- function(input, output, session) {
       left_join(
         data$survival_summary |>
           filter(grepl("count", estimate_name)) |>
+          mutate(exposed = tolower(exposed)) |>
           pivot_wider(names_from = c("estimate_name", "exposed"), values_from = "estimate_value")
       ) |>
-      mutate(window = factor(window, levels = c("0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf"))) |>
-      arrange(cdm_name, comparison, covid_definition, window)
+      mutate(
+        window = factor(window, levels = c("0_14", "15_Inf", "15_28", "15_90", "15_180", "15_365", "29_90", "29_180", "91_180", "181_365", "366_Inf")),
+        strata_level = factor(strata_level, levels = rev(c("overall", "BNT162b2", "mRNA-1273", paste0("Trimester ", 1:3))))
+        ) |>
+      arrange(cdm_name, comparison, covid_definition, window, strata_level)
 
     orderY <- unique(table$outcome_plot)
 
@@ -1134,8 +1190,48 @@ server <- function(input, output, session) {
   )
   # FOLLOW-UP ----
   output$followup_summary_table <- render_gt({
-    data$censoring |>
+    overallCounts <- data$censoring |>
       filterData("followup", input) |>
-      gtTable(colsToMergeRows = "all_columns", groupNameCol = "CDM name")
+      filter(
+        .data$Reason == "Overall"
+      ) |>
+      select(`CDM name`, `Comparison`, `Covid definition`, `Follow-up end`, "overall" = "N")
+    censClean <- data$censoring |>
+      filter(
+        .data$Reason != "Overall"
+      ) |>
+      inner_join(overallCounts) |>
+      mutate(
+        Cohort = if_else(grepl("- unexposed", Reason), "Unexposed", "Exposed"),
+        Reason = gsub(" -(.*)", "", Reason),
+        Reason = case_when(
+          Reason == "Exposed 3rd dose" & Cohort == "Exposed" ~ "Next COVID-19 vaccine dose",
+          Reason == "Exposed 3rd dose" & Cohort == "Unexposed" ~ "Pair matched next COVID-19 vaccine dose",
+          Reason == "Unexposed 1st dose" & Cohort == "Exposed" ~ "Pair matched next COVID-19 vaccine dose",
+          Reason == "Unexposed 1st dose" & Cohort == "Unexposed" ~ "Next COVID-19 vaccine dose",
+          Reason == "No second dose; unexposed 1st dose" ~ "Unexposed 1st dose; no second dose",
+          Reason == "Exposed 4th dose" & Cohort == "Exposed" ~ "Next COVID-19 vaccine dose",
+          Reason == "Exposed 4th dose" & Cohort == "Unexposed"  ~ "Pair matched next COVID-19 vaccine dose",
+          Reason == "Unexposed 3rd dose" & Cohort == "Exposed" ~ "Pair matched next COVID-19 vaccine dose",
+          Reason == "Unexposed 3rd dose" & Cohort == "Unexposed"  ~ "Next COVID-19 vaccine dose",
+          .default = Reason
+        ),
+        Reason = factor(
+          Reason, levels = c(
+            "End of pregnancy", "Next COVID-19 vaccine dose", "Pair matched next COVID-19 vaccine dose",
+            "No second dose", "Second dose before recommended time", "Second dose after recommended time",
+            "Second dose after recommended time; unexposed 1st dose" , "Unexposed 1st dose; no second dose",
+            "Second dose before recommended time; unexposed 1st dose", "Exposed 3rd dose; unexposed 1st dose",
+            "Unexposed 1st dose; second dose after recommended time"
+          )
+        ),
+        `Median (Q25-Q75)` = if_else(is.na(N), "-", .data$`Median (Q25-Q75)`),
+        overall = as.numeric(gsub(",", "", overall)),
+        N = if_else(is.na(N), "<5", paste0(N, "(", as.character(round(as.numeric(gsub(",", "", N))/overall,3)), "%)"))
+      ) |>
+      select(`CDM name`, `Comparison`, `Covid definition`, `Follow-up end`, `Cohort`, Reason, N, `Median (Q25-Q75)`) |>
+      distinct() |>
+      arrange(Reason) |>
+      gtTable()
   })
 }
