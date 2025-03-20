@@ -1021,7 +1021,7 @@ server <- function(input, output, session) {
       arrange(cdm_name, comparison, covid_definition, window) |>
       select(!c("estimate_type", "variable_name", "exposed_censoring")) |>
       rename_with(
-        .cols = !c("strata_name", "strata_level", "estimate_value", "cdm_name"),
+        .cols = !c("strata_name", "strata_level", "estimate_value", "cdm_name", "estimate_name"),
         .fn = ~ str_to_sentence(gsub("_", " ", .x))
       ) |>
       formatHeader(
