@@ -514,7 +514,7 @@ estimateSurvival <- function(data, group, strata,
               dataIRR$cases[dataIRR$exposed == 1],
               dataIRR$cases[dataIRR$exposed == 0],
               dataIRR$person_days[dataIRR$exposed == 1],
-              dataIRR$person_days[dataIRR$exposed == 1]
+              dataIRR$person_days[dataIRR$exposed == 0]
             )
 
             results[[k]] <- tibble(
